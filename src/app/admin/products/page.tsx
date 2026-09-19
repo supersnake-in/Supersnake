@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -41,19 +42,43 @@ const ALL_SIZES: Size[] = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL'
 
 export default function AdminProductsPage() {
   const { products, addProduct, updateProduct, deleteProduct } = useStore();
+  const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGender, setSelectedGender] = useState('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
+  const modalBodyRef = useRef<HTMLDivElement>(null);
 
-  // Lock background scroll when modal is open
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Lock background scroll on BOTH body and <main> when modal is open
   useEffect(() => {
     if (isModalOpen) {
-      const prevOverflow = document.body.style.overflow;
+      const prevBodyOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
+
+      const mainEl = document.querySelector('main');
+      const prevMainOverflow = mainEl?.style.overflow || '';
+      if (mainEl) {
+        mainEl.style.overflow = 'hidden';
+      }
+
+      // Auto-focus scrollable body so keyboard and wheel events immediately target it
+      const timer = setTimeout(() => {
+        if (modalBodyRef.current) {
+          modalBodyRef.current.focus();
+        }
+      }, 50);
+
       return () => {
-        document.body.style.overflow = prevOverflow;
+        clearTimeout(timer);
+        document.body.style.overflow = prevBodyOverflow;
+        if (mainEl) {
+          mainEl.style.overflow = prevMainOverflow;
+        }
       };
     }
   }, [isModalOpen]);
@@ -595,13 +620,20 @@ export default function AdminProductsPage() {
       </div>
 
       {/* ============================================================
-          CREATE / EDIT PRODUCT MODAL (VERTICAL SCROLL FIXED + STICKY FOOTER SAVE BUTTON)
+          CREATE / EDIT PRODUCT MODAL (PORTALED TO BODY, BACKGROUND LOCKED)
           ============================================================ */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md">
+      {mounted && isModalOpen && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsModalOpen(false);
+          }}
+          onWheel={(e) => e.stopPropagation()}
+        >
           <div
             className="relative w-full max-w-3xl bg-[#0e0e0e] border border-neutral-800 rounded-xl shadow-2xl flex flex-col overflow-hidden"
             style={{ height: '88vh', maxHeight: '88vh' }}
+            onWheel={(e) => e.stopPropagation()}
           >
             {/* 1. STICKY HEADER */}
             <div className="shrink-0 h-16 border-b border-neutral-800 px-6 flex justify-between items-center bg-[#0e0e0e] z-20">
@@ -626,13 +658,16 @@ export default function AdminProductsPage() {
 
             {/* 2. SCROLLABLE BODY CONTAINER (EXPLICIT HEIGHT, GUARANTEED SCROLL) */}
             <div
+              ref={modalBodyRef}
               tabIndex={0}
               className="overflow-y-auto overscroll-contain p-6 text-xs modal-scroller focus:outline-none"
               style={{
                 height: 'calc(88vh - 136px)',
                 maxHeight: 'calc(88vh - 136px)',
                 overflowY: 'scroll',
+                WebkitOverflowScrolling: 'touch',
               }}
+              onWheel={(e) => e.stopPropagation()}
             >
               <form id="product-modal-form" onSubmit={handleSaveProduct} className="space-y-6">
                 {/* SECTION 1: IMAGES UPLOAD */}
@@ -1107,7 +1142,8 @@ export default function AdminProductsPage() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
