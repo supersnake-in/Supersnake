@@ -614,12 +614,27 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Product actions
+  const saveProductsToLocalStorage = (productList: Product[]) => {
+    try {
+      localStorage.setItem('supersnake_products', JSON.stringify(productList));
+    } catch (err) {
+      console.warn('LocalStorage quota exceeded, storing lightweight offline cache:', err);
+      try {
+        const lightList = productList.map((p) => ({
+          ...p,
+          images: p.images.slice(0, 2),
+        }));
+        localStorage.setItem('supersnake_products', JSON.stringify(lightList));
+      } catch (inner) {
+        console.warn('Could not cache products in localStorage:', inner);
+      }
+    }
+  };
+
   const addProduct = (newProduct: Product) => {
     setProducts((prev) => {
       const next = [newProduct, ...prev];
-      try {
-        localStorage.setItem('supersnake_products', JSON.stringify(next));
-      } catch (e) {}
+      saveProductsToLocalStorage(next);
       return next;
     });
     createProductInSupabase(newProduct).catch((err) => {
@@ -630,9 +645,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const updateProduct = (updatedProduct: Product) => {
     setProducts((prev) => {
       const next = prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p));
-      try {
-        localStorage.setItem('supersnake_products', JSON.stringify(next));
-      } catch (e) {}
+      saveProductsToLocalStorage(next);
       return next;
     });
     updateProductInSupabase(updatedProduct).catch((err) => {
@@ -643,9 +656,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const deleteProduct = (productId: string) => {
     setProducts((prev) => {
       const next = prev.filter((p) => p.id !== productId);
-      try {
-        localStorage.setItem('supersnake_products', JSON.stringify(next));
-      } catch (e) {}
+      saveProductsToLocalStorage(next);
       return next;
     });
     deleteProductFromSupabase(productId).catch((err) => {

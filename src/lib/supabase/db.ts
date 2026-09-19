@@ -167,17 +167,26 @@ export async function createProductInSupabase(product: Product): Promise<boolean
 
     // 3. Insert images
     if (product.images && product.images.length > 0) {
-      const imageRows = product.images.map((img, idx) => ({
-        product_id: productId,
-        url: img.url,
-        alt: img.alt || `${product.name} view ${idx + 1}`,
-        angle: ['front', 'back', 'detail', 'model', 'fabric', 'studio', 'side'].includes(img.angle as any)
-          ? img.angle
-          : 'front',
-        display_order: idx,
-      }));
+      const imageRows = product.images.map((img, idx) => {
+        const rawAngle = (img.angle || '').toLowerCase();
+        const angle = ['front', 'back', 'detail', 'model', 'fabric', 'studio', 'side'].includes(rawAngle)
+          ? rawAngle
+          : 'front';
+        return {
+          product_id: productId,
+          url: img.url,
+          alt: img.alt || `${product.name} view ${idx + 1}`,
+          angle,
+          display_order: idx,
+        };
+      });
       const { error: imgErr } = await supabase.from('product_images').insert(imageRows);
-      if (imgErr) console.warn('Supabase images insert error:', imgErr.message);
+      if (imgErr) {
+        console.warn('Supabase images batch insert error, retrying individually:', imgErr.message);
+        for (const row of imageRows) {
+          await supabase.from('product_images').insert(row);
+        }
+      }
     }
 
     // 4. Insert variants
@@ -255,8 +264,23 @@ export async function updateProductInSupabase(product: Product): Promise<boolean
     let targetId = product.id;
 
     if (isUuid) {
-      const { error } = await supabase.from('products').update(updatePayload).eq('id', product.id);
+      const { data: updatedRows, error } = await supabase.from('products').update(updatePayload).eq('id', product.id).select('id');
       if (error) console.warn('Supabase update product error by id:', error.message);
+      if (!updatedRows || updatedRows.length === 0) {
+        // ID didn't exist in Supabase products table; fallback to slug
+        const { data: existingBySlug } = await supabase
+          .from('products')
+          .select('id')
+          .eq('slug', product.slug)
+          .maybeSingle();
+
+        if (existingBySlug) {
+          targetId = existingBySlug.id;
+          await supabase.from('products').update(updatePayload).eq('id', targetId);
+        } else {
+          return await createProductInSupabase(product);
+        }
+      }
     } else {
       // Find product by slug
       const { data: existing } = await supabase
@@ -278,17 +302,26 @@ export async function updateProductInSupabase(product: Product): Promise<boolean
     // 2. Update product images (delete old & insert new)
     if (product.images && product.images.length > 0) {
       await supabase.from('product_images').delete().eq('product_id', targetId);
-      const imageRows = product.images.map((img, idx) => ({
-        product_id: targetId,
-        url: img.url,
-        alt: img.alt || `${product.name} view ${idx + 1}`,
-        angle: ['front', 'back', 'detail', 'model', 'fabric', 'studio', 'side'].includes(img.angle as any)
-          ? img.angle
-          : 'front',
-        display_order: idx,
-      }));
+      const imageRows = product.images.map((img, idx) => {
+        const rawAngle = (img.angle || '').toLowerCase();
+        const angle = ['front', 'back', 'detail', 'model', 'fabric', 'studio', 'side'].includes(rawAngle)
+          ? rawAngle
+          : 'front';
+        return {
+          product_id: targetId,
+          url: img.url,
+          alt: img.alt || `${product.name} view ${idx + 1}`,
+          angle,
+          display_order: idx,
+        };
+      });
       const { error: imgErr } = await supabase.from('product_images').insert(imageRows);
-      if (imgErr) console.warn('Supabase update images error:', imgErr.message);
+      if (imgErr) {
+        console.warn('Supabase update images batch error, retrying individually:', imgErr.message);
+        for (const row of imageRows) {
+          await supabase.from('product_images').insert(row);
+        }
+      }
     }
 
     // 3. Update product variants (delete old & insert new)

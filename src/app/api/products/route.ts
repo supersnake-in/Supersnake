@@ -48,12 +48,19 @@ export async function POST(request: Request) {
     const cleanImages: ProductImage[] = Array.isArray(images)
       ? images
           .filter((img: any) => img && (typeof img === 'string' ? isValidImageSource(img) : isValidImageSource(img.url)))
-          .map((img: any, idx: number) => ({
-            url: typeof img === 'string' ? img : img.url,
-            alt: sanitizeString(typeof img === 'string' ? `${cleanName} view` : img.alt || `${cleanName} view ${idx + 1}`),
-            isPrimary: idx === 0,
-            angle: (idx === 0 ? 'front' : idx === 1 ? 'model' : 'fabric') as any,
-          }))
+          .map((img: any, idx: number) => {
+            const url = typeof img === 'string' ? img : img.url;
+            const rawAngle = (typeof img === 'object' && img.angle ? img.angle : (idx === 0 ? 'front' : idx === 1 ? 'model' : idx === 2 ? 'fabric' : 'detail')).toLowerCase();
+            const angle = ['front', 'back', 'detail', 'model', 'fabric', 'studio', 'side'].includes(rawAngle)
+              ? rawAngle
+              : 'front';
+            return {
+              url,
+              alt: sanitizeString(typeof img === 'string' ? `${cleanName} view ${idx + 1}` : img.alt || `${cleanName} view ${idx + 1}`),
+              isPrimary: idx === 0,
+              angle: angle as any,
+            };
+          })
       : [];
 
     if (cleanImages.length === 0) {

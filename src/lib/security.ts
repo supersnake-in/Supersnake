@@ -30,18 +30,14 @@ export function sanitizeNumber(value: any, defaultValue: number = 0, max: number
 
 // Validate image URL or Base64 Data URI
 export function isValidImageSource(src: string): boolean {
-  if (!src) return false;
-  // Allow safe HTTPS URLs
-  if (src.startsWith('https://')) return true;
-  // Allow safe base64 image data URIs
-  if (src.startsWith('data:image/png;base64,') ||
-      src.startsWith('data:image/jpeg;base64,') ||
-      src.startsWith('data:image/webp;base64,') ||
-      src.startsWith('data:image/avif;base64,')) {
-    return true;
-  }
-  // Allow local public paths
-  if (src.startsWith('/')) return true;
+  if (!src || typeof src !== 'string') return false;
+  const trimmed = src.trim();
+  // Allow safe HTTPS / HTTP URLs
+  if (trimmed.startsWith('https://') || trimmed.startsWith('http://')) return true;
+  // Allow safe base64 image data URIs (jpg, jpeg, png, webp, avif, gif, svg+xml, etc. - case insensitive)
+  if (/^data:image\/[a-zA-Z0-9+.-]+;base64,/i.test(trimmed)) return true;
+  // Allow local public paths and blob URLs
+  if (trimmed.startsWith('/') || trimmed.startsWith('blob:')) return true;
   return false;
 }
 

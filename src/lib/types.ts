@@ -19,7 +19,7 @@ export interface ProductImage {
   url: string;
   alt: string;
   isPrimary?: boolean;
-  angle?: 'front' | 'back' | 'detail' | 'model' | 'fabric';
+  angle?: 'front' | 'back' | 'detail' | 'model' | 'fabric' | 'studio' | 'side';
 }
 
 export interface HomepageConfig {
