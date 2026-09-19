@@ -17,6 +17,10 @@ import {
   Ruler,
   ArrowRight,
   Maximize2,
+  Minimize2,
+  ChevronLeft,
+  ChevronRight,
+  X,
 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { formatPrice, BRAND } from '@/lib/design-tokens';
@@ -63,6 +67,30 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
 
     return () => clearInterval(timer);
   }, [uniqueImages, activeImageIndex, lightboxOpen]);
+
+  // Keyboard navigation & body scroll lock for Lightbox
+  useEffect(() => {
+    if (!lightboxOpen) return;
+
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setLightboxOpen(false);
+      } else if (e.key === 'ArrowLeft') {
+        setActiveImageIndex((prev) => (prev > 0 ? prev - 1 : prev));
+      } else if (e.key === 'ArrowRight') {
+        setActiveImageIndex((prev) => (prev < uniqueImages.length - 1 ? prev + 1 : prev));
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [lightboxOpen, uniqueImages.length]);
 
   // Synchronize mobile carousel scroll position when activeImageIndex changes
   useEffect(() => {
@@ -599,16 +627,96 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
       {lightboxOpen && (
         <div
           onClick={() => setLightboxOpen(false)}
-          className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 cursor-zoom-out"
+          className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center p-4 sm:p-8 select-none"
         >
-          <div className="relative w-full max-w-4xl h-[85vh]">
-            <Image
-              src={activeImage.url}
-              alt={activeImage.alt}
-              fill
-              unoptimized={Boolean(activeImage.url.startsWith('data:') || activeImage.url.startsWith('blob:'))}
-              className="object-contain"
-            />
+          {/* Top Bar: Counter on Left & Dedicated Minimize Button on Right */}
+          <div className="absolute top-4 inset-x-4 sm:top-6 sm:inset-x-8 flex items-center justify-between z-50 pointer-events-none">
+            {/* Image Counter */}
+            <div className="pointer-events-auto px-3.5 py-2 bg-black/80 backdrop-blur-md border border-white/15 rounded font-mono text-[11px] text-neutral-300 tracking-widest flex items-center gap-2 shadow-xl">
+              <span className="text-snake-green font-bold">
+                {String(activeImageIndex + 1).padStart(2, '0')} / {String(uniqueImages.length).padStart(2, '0')}
+              </span>
+              {activeImage.angle && (
+                <>
+                  <span className="text-neutral-600">•</span>
+                  <span className="uppercase text-neutral-400">{activeImage.angle} VIEW</span>
+                </>
+              )}
+            </div>
+
+            {/* Dedicated Minimize / Close Button */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightboxOpen(false);
+              }}
+              className="pointer-events-auto px-4 py-2 bg-black/80 hover:bg-neutral-900 border border-white/20 hover:border-snake-green text-neutral-200 hover:text-white rounded-full transition-all flex items-center gap-2 text-xs font-mono tracking-wider backdrop-blur-md active:scale-95 shadow-2xl group cursor-pointer"
+              title="Minimize / Exit Fullscreen (Esc)"
+              aria-label="Minimize view"
+            >
+              <Minimize2 size={16} className="text-snake-green group-hover:scale-110 transition-transform" />
+              <span className="font-mono uppercase text-[11px] text-white">MINIMIZE</span>
+              <X size={15} className="text-neutral-400 group-hover:text-white" />
+            </button>
+          </div>
+
+          {/* Left Navigation Arrow (visible only if previous image is available) */}
+          {activeImageIndex > 0 && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveImageIndex((prev) => prev - 1);
+              }}
+              className="absolute left-4 sm:left-8 top-1/2 -translate-y-1/2 z-50 p-3.5 sm:p-4 bg-black/85 hover:bg-neutral-900 border border-white/20 hover:border-snake-green text-white hover:text-snake-green rounded-full transition-all shadow-2xl backdrop-blur-md active:scale-90 group cursor-pointer"
+              title="Previous image (Left Arrow)"
+              aria-label="Previous image"
+            >
+              <ChevronLeft size={28} className="group-hover:-translate-x-0.5 transition-transform" />
+            </button>
+          )}
+
+          {/* Right Navigation Arrow (visible only if next image is available) */}
+          {activeImageIndex < uniqueImages.length - 1 && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveImageIndex((prev) => prev + 1);
+              }}
+              className="absolute right-4 sm:right-8 top-1/2 -translate-y-1/2 z-50 p-3.5 sm:p-4 bg-black/85 hover:bg-neutral-900 border border-white/20 hover:border-snake-green text-white hover:text-snake-green rounded-full transition-all shadow-2xl backdrop-blur-md active:scale-90 group cursor-pointer"
+              title="Next image (Right Arrow)"
+              aria-label="Next image"
+            >
+              <ChevronRight size={28} className="group-hover:translate-x-0.5 transition-transform" />
+            </button>
+          )}
+
+          {/* Maximized Image Container */}
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-5xl h-[80vh] sm:h-[85vh] flex items-center justify-center cursor-default"
+          >
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeImageIndex}
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.98 }}
+                transition={{ duration: 0.25, ease: 'easeInOut' }}
+                className="relative w-full h-full"
+              >
+                <Image
+                  src={activeImage.url}
+                  alt={activeImage.alt}
+                  fill
+                  priority
+                  unoptimized={Boolean(activeImage.url.startsWith('data:') || activeImage.url.startsWith('blob:'))}
+                  className="object-contain"
+                />
+              </motion.div>
+            </AnimatePresence>
           </div>
         </div>
       )}
