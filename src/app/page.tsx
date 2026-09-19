@@ -4,7 +4,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
-import { ArrowRight, ArrowDown, Sparkles } from 'lucide-react';
+import { ArrowRight, ArrowDown, Sparkles, Instagram } from 'lucide-react';
 import { ProductCard } from '@/components/product/ProductCard';
 import { SuperSnakeLogo } from '@/components/brand/SuperSnakeLogo';
 import { formatPrice } from '@/lib/design-tokens';
@@ -521,12 +521,12 @@ export default function HomePage() {
           ============================================================ */}
       <section className="py-24 px-6 md:px-12 border-t border-white/[0.06] bg-[#050505]">
         <div className="max-w-7xl mx-auto space-y-10">
-          <div className="flex justify-between items-end">
-            <div className="space-y-1">
-              <span className="text-[10px] font-mono tracking-widest text-neutral-500 uppercase">
+          <div className="flex justify-between items-end gap-3 sm:gap-4">
+            <div className="space-y-1 min-w-0">
+              <span className="text-[10px] font-mono tracking-widest text-neutral-500 uppercase block">
                 COMMUNITY & EDITORIAL
               </span>
-              <h3 className="text-2xl md:text-3xl font-display font-bold tracking-wider text-white">
+              <h3 className="text-xl sm:text-2xl md:text-3xl font-display font-bold tracking-wider text-white">
                 #SUPERSNAKE
               </h3>
             </div>
@@ -534,9 +534,12 @@ export default function HomePage() {
               href="https://instagram.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs font-mono tracking-widest text-neutral-400 hover:text-snake-green transition-colors uppercase flex items-center gap-1"
+              className="text-xs font-mono tracking-widest text-neutral-400 hover:text-snake-green transition-colors uppercase flex items-center gap-1.5 shrink-0 pb-0.5"
             >
-              FOLLOW ON INSTAGRAM <ArrowRight size={12} />
+              <Instagram size={15} className="text-snake-green shrink-0" />
+              <span className="hidden sm:inline">FOLLOW ON INSTAGRAM</span>
+              <span className="sm:hidden text-[10px] tracking-wider">FOLLOW</span>
+              <ArrowRight size={12} className="shrink-0" />
             </a>
           </div>
 
