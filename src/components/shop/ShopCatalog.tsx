@@ -10,6 +10,8 @@ import { useStore } from '@/lib/store';
 interface ShopCatalogProps {
   initialGender?: Gender | 'all';
   initialIsNew?: boolean;
+  initialIsBestseller?: boolean;
+  initialFit?: FitType | 'all';
   pageTitle?: string;
   pageSubtitle?: string;
 }
@@ -17,17 +19,19 @@ interface ShopCatalogProps {
 export function ShopCatalog({
   initialGender = 'all',
   initialIsNew = false,
+  initialIsBestseller = false,
+  initialFit = 'all',
   pageTitle = 'SHOP T-SHIRTS',
   pageSubtitle = 'The hero product. Engineered from 240–300 GSM long-staple cotton.',
 }: ShopCatalogProps) {
   const { products } = useStore();
   const [selectedGender, setSelectedGender] = useState<Gender | 'all'>(initialGender);
-  const [selectedFit, setSelectedFit] = useState<FitType | 'all'>('all');
+  const [selectedFit, setSelectedFit] = useState<FitType | 'all'>(initialFit);
   const [selectedSize, setSelectedSize] = useState<Size | 'all'>('all');
   const [selectedColor, setSelectedColor] = useState<string | 'all'>('all');
   const [sortBy, setSortBy] = useState<'featured' | 'price-asc' | 'price-desc' | 'rating'>('featured');
   const [onlyNew, setOnlyNew] = useState(initialIsNew);
-  const [onlyBestsellers, setOnlyBestsellers] = useState(false);
+  const [onlyBestsellers, setOnlyBestsellers] = useState(initialIsBestseller);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
 
   // Available unique colors

@@ -1,19 +1,22 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ShieldCheck, ArrowRight, Lock, CheckCircle2, CreditCard, Smartphone, Building, Wallet } from 'lucide-react';
+import { ShieldCheck, ArrowRight, Lock, CheckCircle2, CreditCard, Smartphone, Building, Wallet, AlertCircle, RefreshCw } from 'lucide-react';
 import { useStore } from '@/lib/store';
+import { useAuth } from '@/lib/auth-context';
 import { formatPrice, BRAND } from '@/lib/design-tokens';
 import confetti from 'canvas-confetti';
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { cart, cartTotal, createOrder } = useStore();
+  const { user, profile } = useAuth();
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -27,6 +30,17 @@ export default function CheckoutPage() {
     postalCode: '',
     paymentMethod: 'upi',
   });
+
+  useEffect(() => {
+    if (profile || user) {
+      setFormData((prev) => ({
+        ...prev,
+        email: prev.email || profile?.email || user?.email || '',
+        fullName: prev.fullName || profile?.fullName || '',
+        phone: prev.phone || profile?.phone || '',
+      }));
+    }
+  }, [profile, user]);
 
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -101,9 +115,9 @@ export default function CheckoutPage() {
       } catch (e) {}
 
       router.push(`/checkout/confirmation?orderId=${newOrder.id}`);
-    } catch (err) {
+    } catch (err: any) {
       setIsProcessing(false);
-      alert('Payment processing error. Please retry.');
+      setPaymentError(err.message || 'Payment gateway connection interrupted. Please verify your payment details and retry.');
     }
   };
 
@@ -507,6 +521,47 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
+
+      {/* Payment Error Modal */}
+      {paymentError && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#0a0a0a] border border-red-800/60 p-6 md:p-8 rounded-sm max-w-md w-full space-y-5">
+            <div className="flex items-center gap-3 text-red-400">
+              <AlertCircle size={22} className="shrink-0" />
+              <h3 className="text-lg font-display font-medium text-white uppercase">
+                TRANSACTION UNRESOLVED
+              </h3>
+            </div>
+            <p className="text-xs font-mono text-neutral-300 leading-relaxed">
+              {paymentError}
+            </p>
+            <div className="pt-2 flex flex-col gap-2.5">
+              <button
+                onClick={() => {
+                  setPaymentError(null);
+                  handleCompletePayment();
+                }}
+                className="w-full py-3 bg-snake-green hover:bg-white text-black font-mono text-xs uppercase tracking-widest font-semibold transition-colors flex items-center justify-center gap-2"
+              >
+                <RefreshCw size={14} />
+                <span>RETRY TRANSACTION</span>
+              </button>
+              <button
+                onClick={() => setPaymentError(null)}
+                className="w-full py-2.5 border border-white/20 hover:border-white text-neutral-400 hover:text-white font-mono text-xs uppercase tracking-wider transition-colors"
+              >
+                MODIFY PAYMENT METHOD
+              </button>
+              <Link
+                href="/contact"
+                className="text-center text-[11px] font-mono text-neutral-500 hover:text-snake-green pt-1 uppercase"
+              >
+                CONTACT CLIENT CONCIERGE →
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

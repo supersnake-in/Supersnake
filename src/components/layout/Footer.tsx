@@ -79,6 +79,9 @@ export function Footer() {
               <li>
                 <Link href="/new-drops" className="hover:text-snake-green transition-colors">NEW DROPS</Link>
               </li>
+              <li>
+                <Link href="/bestsellers" className="hover:text-snake-green transition-colors">BESTSELLERS</Link>
+              </li>
             </ul>
           </div>
 
@@ -87,16 +90,16 @@ export function Footer() {
             <p className="text-[11px] tracking-widest text-white uppercase font-semibold">ATELIER & CRAFT</p>
             <ul className="space-y-2.5">
               <li>
-                <span className="text-neutral-500">280 GSM SUPIMA®</span>
+                <Link href="/about" className="hover:text-snake-green transition-colors">BRAND MANIFESTO</Link>
               </li>
               <li>
-                <span className="text-neutral-500">FRENCH TERRY WEAVE</span>
+                <Link href="/care-guide" className="hover:text-snake-green transition-colors">CARE & LONGEVITY</Link>
               </li>
               <li>
-                <span className="text-neutral-500">ZERO-SAG COLLAR</span>
+                <Link href="/size-guide" className="hover:text-snake-green transition-colors">SIZE & FIT GUIDE</Link>
               </li>
               <li>
-                <span className="text-neutral-500">ETHICAL MILLS</span>
+                <Link href="/collection/heavyweight" className="hover:text-snake-green transition-colors">280 GSM CAPSULE</Link>
               </li>
             </ul>
           </div>
@@ -106,16 +109,19 @@ export function Footer() {
             <p className="text-[11px] tracking-widest text-white uppercase font-semibold">CLIENT SERVICES</p>
             <ul className="space-y-2.5">
               <li>
-                <Link href="/account" className="hover:text-snake-green transition-colors">ORDER TRACKING</Link>
+                <Link href="/track-order" className="hover:text-snake-green transition-colors">TRACK SHIPMENT</Link>
               </li>
               <li>
-                <Link href="/wishlist" className="hover:text-snake-green transition-colors">SAVED FOR LATER</Link>
+                <Link href="/shipping" className="hover:text-snake-green transition-colors">SHIPPING POLICY</Link>
               </li>
               <li>
-                <span className="text-neutral-500">7-DAY RETURNS</span>
+                <Link href="/returns" className="hover:text-snake-green transition-colors">7-DAY RETURNS & EXCHANGES</Link>
               </li>
               <li>
-                <span className="text-neutral-500">{BRAND.contact.email}</span>
+                <Link href="/faq" className="hover:text-snake-green transition-colors">FREQUENTLY ASKED QUESTIONS</Link>
+              </li>
+              <li>
+                <Link href="/contact" className="hover:text-snake-green transition-colors">CONTACT CONCIERGE</Link>
               </li>
             </ul>
           </div>
@@ -124,6 +130,9 @@ export function Footer() {
           <div className="space-y-4">
             <p className="text-[11px] tracking-widest text-white uppercase font-semibold">PORTAL</p>
             <ul className="space-y-2.5">
+              <li>
+                <Link href="/account" className="hover:text-snake-green transition-colors">PATRON ACCOUNT</Link>
+              </li>
               <li>
                 <Link href="/admin" className="text-neutral-400 hover:text-snake-green transition-colors flex items-center gap-1.5">
                   <span>ADMIN DASHBOARD</span>
@@ -148,8 +157,9 @@ export function Footer() {
           </div>
 
           <div className="flex items-center gap-6">
-            <span>ALL RIGHTS RESERVED</span>
-            <span>PRIVACY & TERMS</span>
+            <Link href="/privacy" className="hover:text-neutral-400 transition-colors">PRIVACY</Link>
+            <Link href="/terms" className="hover:text-neutral-400 transition-colors">TERMS</Link>
+            <Link href="/cookies" className="hover:text-neutral-400 transition-colors">COOKIES</Link>
             <span>BENGALURU, INDIA</span>
           </div>
         </div>

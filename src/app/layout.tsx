@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { StoreProvider } from '@/lib/store';
+import { AuthProvider } from '@/lib/auth-context';
 import { SmoothScroll } from '@/components/motion/SmoothScroll';
 import { CustomCursor } from '@/components/ui/CustomCursor';
 import { BrandReveal } from '@/components/brand/BrandReveal';
@@ -63,16 +64,18 @@ export default function RootLayout({
     <html lang="en" className="dark bg-black">
       <body className="bg-black text-white antialiased selection:bg-snake-green selection:text-black">
         <StoreProvider>
-          <SmoothScroll>
-            <BrandReveal />
-            <CustomCursor />
-            <Header />
-            <main className="min-h-screen relative">{children}</main>
-            <CartDrawer />
-            <SearchOverlay />
-            <QuickViewModal />
-            <Footer />
-          </SmoothScroll>
+          <AuthProvider>
+            <SmoothScroll>
+              <BrandReveal />
+              <CustomCursor />
+              <Header />
+              <main className="min-h-screen relative">{children}</main>
+              <CartDrawer />
+              <SearchOverlay />
+              <QuickViewModal />
+              <Footer />
+            </SmoothScroll>
+          </AuthProvider>
         </StoreProvider>
       </body>
     </html>
