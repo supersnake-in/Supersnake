@@ -4,7 +4,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
-import { ArrowRight, ArrowDown, Sparkles, Instagram } from 'lucide-react';
+import { ArrowRight, ArrowDown, Sparkles, Instagram, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ProductCard } from '@/components/product/ProductCard';
 import { SuperSnakeLogo } from '@/components/brand/SuperSnakeLogo';
 import { formatPrice } from '@/lib/design-tokens';
@@ -12,10 +12,21 @@ import { useStore } from '@/lib/store';
 
 export default function HomePage() {
   const heroRef = useRef<HTMLDivElement>(null);
+  const communityScrollRef = useRef<HTMLDivElement>(null);
   const { products, homepageConfig, socialConfig } = useStore();
   const spotlightProduct = products.find((p) => p.isSpotlight) || products[0];
   const newDrops = products.filter((p) => p.isNew);
   const bestsellers = products.filter((p) => p.isBestseller).slice(0, 4);
+
+  const scrollCommunity = (direction: 'left' | 'right') => {
+    if (communityScrollRef.current) {
+      const scrollAmount = communityScrollRef.current.clientWidth * 0.75;
+      communityScrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth',
+      });
+    }
+  };
 
   // Hero Background Images & 3-second auto-scroll
   const heroImages =
@@ -532,53 +543,111 @@ export default function HomePage() {
           ============================================================ */}
       <section className="py-24 px-6 md:px-12 border-t border-white/[0.06] bg-[#050505]">
         <div className="max-w-7xl mx-auto space-y-10">
-          <div className="flex justify-between items-end gap-3 sm:gap-4">
-            <div className="space-y-1 min-w-0">
-              <span className="text-[10px] font-mono tracking-widest text-neutral-500 uppercase block">
-                COMMUNITY & EDITORIAL
-              </span>
-              <h3 className="text-xl sm:text-2xl md:text-3xl font-display font-bold tracking-wider text-white">
-                #SUPERSNAKE
-              </h3>
-            </div>
-            <a
-              href={socialConfig?.instagram || "https://instagram.com/supersnake.in"}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs font-mono tracking-widest text-neutral-400 hover:text-snake-green transition-colors uppercase flex items-center gap-1.5 shrink-0 pb-0.5"
-            >
-              <Instagram size={15} className="text-snake-green shrink-0" />
-              <span className="hidden sm:inline">FOLLOW ON INSTAGRAM</span>
-              <span className="sm:hidden text-[10px] tracking-wider">FOLLOW</span>
-              <ArrowRight size={12} className="shrink-0" />
-            </a>
-          </div>
+          {(() => {
+            const communityImgs =
+              socialConfig?.communityImages && socialConfig.communityImages.length > 0
+                ? socialConfig.communityImages
+                : [
+                    'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=600&auto=format&fit=crop',
+                    'https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&w=600&auto=format&fit=crop',
+                    'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop',
+                    'https://images.unsplash.com/photo-1503342394128-c104d54dba01?q=80&w=600&auto=format&fit=crop',
+                  ];
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {(socialConfig?.communityImages && socialConfig.communityImages.length > 0
-              ? socialConfig.communityImages
-              : [
-                  'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=600&auto=format&fit=crop',
-                  'https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&w=600&auto=format&fit=crop',
-                  'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop',
-                  'https://images.unsplash.com/photo-1503342394128-c104d54dba01?q=80&w=600&auto=format&fit=crop',
-                ]
-            ).map((imgUrl, idx) => (
-              <div key={`community-img-${idx}`} className="relative aspect-square bg-neutral-900 rounded overflow-hidden group">
-                <Image
-                  src={imgUrl}
-                  alt={`#SUPERSNAKE 0${idx + 1}`}
-                  fill
-                  sizes="(max-width: 768px) 50vw, 25vw"
-                  unoptimized={
-                    imgUrl.startsWith('data:') ||
-                    !imgUrl.includes('unsplash.com')
-                  }
-                  className="object-cover transition-transform duration-700 group-hover:scale-105 brightness-90"
-                />
-              </div>
-            ))}
-          </div>
+            const hasMoreThanFour = communityImgs.length > 4;
+
+            return (
+              <>
+                <div className="flex justify-between items-end gap-3 sm:gap-4">
+                  <div className="space-y-1 min-w-0">
+                    <span className="text-[10px] font-mono tracking-widest text-neutral-500 uppercase block">
+                      COMMUNITY & EDITORIAL
+                    </span>
+                    <h3 className="text-xl sm:text-2xl md:text-3xl font-display font-bold tracking-wider text-white">
+                      #SUPERSNAKE
+                    </h3>
+                  </div>
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    {hasMoreThanFour && (
+                      <div className="flex items-center gap-1.5 border border-white/10 p-1 rounded bg-black/40">
+                        <button
+                          onClick={() => scrollCommunity('left')}
+                          aria-label="Scroll left"
+                          className="p-1 text-neutral-400 hover:text-white hover:bg-white/10 rounded transition-colors"
+                        >
+                          <ChevronLeft size={16} />
+                        </button>
+                        <button
+                          onClick={() => scrollCommunity('right')}
+                          aria-label="Scroll right"
+                          className="p-1 text-neutral-400 hover:text-white hover:bg-white/10 rounded transition-colors"
+                        >
+                          <ChevronRight size={16} />
+                        </button>
+                      </div>
+                    )}
+                    <a
+                      href={socialConfig?.instagram || "https://instagram.com/supersnake.in"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-mono tracking-widest text-neutral-400 hover:text-snake-green transition-colors uppercase flex items-center gap-1.5 shrink-0 pb-0.5"
+                    >
+                      <Instagram size={15} className="text-snake-green shrink-0" />
+                      <span className="hidden sm:inline">FOLLOW ON INSTAGRAM</span>
+                      <span className="sm:hidden text-[10px] tracking-wider">FOLLOW</span>
+                      <ArrowRight size={12} className="shrink-0" />
+                    </a>
+                  </div>
+                </div>
+
+                {hasMoreThanFour ? (
+                  <div
+                    ref={communityScrollRef}
+                    className="overflow-x-auto pb-4 no-scrollbar -mx-6 md:-mx-12 px-6 md:px-12 scroll-smooth"
+                  >
+                    <div className="grid grid-rows-2 grid-flow-col gap-3 sm:gap-4 w-max">
+                      {communityImgs.map((imgUrl, idx) => (
+                        <div
+                          key={`community-img-${idx}`}
+                          className="relative w-[calc(50vw-28px)] xs:w-[200px] sm:w-[240px] md:w-[280px] aspect-square bg-neutral-900 rounded overflow-hidden group shrink-0"
+                        >
+                          <Image
+                            src={imgUrl}
+                            alt={`#SUPERSNAKE 0${idx + 1}`}
+                            fill
+                            sizes="(max-width: 768px) 50vw, 25vw"
+                            unoptimized={
+                              imgUrl.startsWith('data:') ||
+                              !imgUrl.includes('unsplash.com')
+                            }
+                            className="object-cover transition-transform duration-700 group-hover:scale-105 brightness-90"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {communityImgs.map((imgUrl, idx) => (
+                      <div key={`community-img-${idx}`} className="relative aspect-square bg-neutral-900 rounded overflow-hidden group">
+                        <Image
+                          src={imgUrl}
+                          alt={`#SUPERSNAKE 0${idx + 1}`}
+                          fill
+                          sizes="(max-width: 768px) 50vw, 25vw"
+                          unoptimized={
+                            imgUrl.startsWith('data:') ||
+                            !imgUrl.includes('unsplash.com')
+                          }
+                          className="object-cover transition-transform duration-700 group-hover:scale-105 brightness-90"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
       </section>
 
