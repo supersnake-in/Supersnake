@@ -2,108 +2,255 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
-import {
-  ArrowRight,
-  Check,
-  Truck,
-  Package,
-  ShieldCheck,
-  Heart,
-  Instagram,
-  Youtube,
-} from 'lucide-react';
+import { ArrowRight, Check, Plus, Minus, ShieldCheck, Truck, RotateCcw, Sparkles } from 'lucide-react';
 import { SuperSnakeLogo } from '../brand/SuperSnakeLogo';
+import { BRAND } from '@/lib/design-tokens';
 
-// Custom SVG Icons for X (Twitter) and Pinterest
-function XIcon({ className = 'w-3.5 h-3.5' }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
-      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-    </svg>
-  );
+interface NavColumn {
+  id: string;
+  number: string;
+  title: string;
+  links: { label: string; href: string; external?: boolean }[];
 }
 
-function PinterestIcon({ className = 'w-3.5 h-3.5' }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
-      <path d="M12 0C5.373 0 0 5.373 0 12c0 5.084 3.163 9.426 7.627 11.174-.105-.949-.2-2.405.042-3.441.218-.937 1.407-5.965 1.407-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738a.36.36 0 0 1 .083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.889-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.163 0 7.398 2.967 7.398 6.931 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.359-.632-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24 12 24c6.627 0 12-5.373 12-12 0-6.628-5.372-12-12-12z" />
-    </svg>
-  );
-}
+const NAV_COLUMNS: NavColumn[] = [
+  {
+    id: 'shop',
+    number: '01',
+    title: 'SHOP',
+    links: [
+      { label: 'ALL T-SHIRTS', href: '/shop' },
+      { label: 'MEN', href: '/men' },
+      { label: 'WOMEN', href: '/women' },
+      { label: 'NEW DROPS', href: '/new-drops' },
+      { label: 'BESTSELLERS', href: '/bestsellers' },
+    ],
+  },
+  {
+    id: 'support',
+    number: '02',
+    title: 'SUPPORT',
+    links: [
+      { label: 'ORDER TRACKING', href: '/track-order' },
+      { label: 'SHIPPING', href: '/shipping' },
+      { label: 'RETURNS', href: '/returns' },
+      { label: 'SIZE GUIDE', href: '/size-guide' },
+      { label: 'FAQ', href: '/faq' },
+      { label: 'CONTACT', href: '/contact' },
+    ],
+  },
+  {
+    id: 'company',
+    number: '03',
+    title: 'COMPANY',
+    links: [
+      { label: 'OUR STORY', href: '/about' },
+      { label: 'MATERIALS', href: '/collection/heavyweight' },
+      { label: 'CARE GUIDE', href: '/care-guide' },
+      { label: 'JOURNAL', href: '/about' },
+      { label: 'CONTACT', href: '/contact' },
+    ],
+  },
+  {
+    id: 'connect',
+    number: '04',
+    title: 'CONNECT',
+    links: [
+      { label: 'INSTAGRAM', href: 'https://instagram.com/supersnake.in', external: true },
+      { label: 'X', href: 'https://x.com/supersnake_in', external: true },
+      { label: 'YOUTUBE', href: 'https://youtube.com/@supersnake_in', external: true },
+      { label: 'PINTEREST', href: 'https://pinterest.com/supersnake_in', external: true },
+    ],
+  },
+];
 
 export function Footer() {
   const [email, setEmail] = useState('');
-  const [subscribed, setSubscribed] = useState(false);
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [mobileAccordion, setMobileAccordion] = useState<string | null>(null);
 
-  const handleSubscribe = (e: React.FormEvent) => {
+  const toggleAccordion = (id: string) => {
+    setMobileAccordion((prev) => (prev === id ? null : id));
+  };
+
+  const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
-    setSubscribed(true);
-    setEmail('');
+    if (!email || !email.includes('@')) {
+      setStatus('error');
+      setErrorMessage('Please enter a valid email address.');
+      return;
+    }
+
+    setStatus('loading');
+    setErrorMessage('');
+
+    try {
+      const res = await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setStatus('error');
+        setErrorMessage(data.error || 'Subscription transmission interrupted.');
+      } else {
+        setStatus('success');
+        setEmail('');
+      }
+    } catch (err: any) {
+      setStatus('error');
+      setErrorMessage('Network connection interrupted. Please retry.');
+    }
   };
 
   return (
-    <footer className="bg-[#000000] text-neutral-400 border-t border-white/[0.08] font-sans relative overflow-hidden">
-      {/* Background Snake Artwork (Right Side) */}
-      <div className="absolute right-0 top-0 bottom-24 w-1/3 max-w-[420px] pointer-events-none hidden lg:block select-none overflow-hidden opacity-90">
-        <div className="relative w-full h-full">
-          <Image
-            src="/footer-snake.png"
-            alt=""
-            fill
-            className="object-contain object-right"
-            priority={false}
+    <footer className="relative bg-[#030303] text-[#f4f4f4] border-t border-white/[0.06] overflow-hidden select-none font-sans">
+      {/* 
+        ============================================================
+        SUBTLE BACKGROUND ELEMENT (ZONE 00)
+        Abstract S-shaped snake curve & faint atmospheric green rim light.
+        Barely visible, extending beyond the right edge.
+        ============================================================
+      */}
+      <div 
+        className="absolute top-0 right-[-10%] w-[650px] lg:w-[900px] h-full pointer-events-none opacity-[0.035] overflow-hidden"
+        aria-hidden="true"
+      >
+        <svg
+          viewBox="0 0 800 1000"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="w-full h-full object-cover transform translate-x-12 -translate-y-10"
+        >
+          {/* Faint atmospheric green ambient wash */}
+          <circle cx="550" cy="400" r="320" fill="url(#snakeAtmosphereGlow)" />
+          
+          {/* Abstract S-curved serpent silhouette */}
+          <path
+            d="M580 50 C 420 120, 260 220, 310 380 C 360 540, 560 590, 510 740 C 470 860, 310 930, 200 980"
+            stroke="url(#snakeCurveGrad)"
+            strokeWidth="72"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           />
-        </div>
+          <path
+            d="M580 50 C 420 120, 260 220, 310 380 C 360 540, 560 590, 510 740 C 470 860, 310 930, 200 980"
+            stroke="#04fc21"
+            strokeWidth="2"
+            strokeOpacity="0.35"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+
+          <defs>
+            <radialGradient id="snakeAtmosphereGlow" cx="0.5" cy="0.5" r="0.5" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#04fc21" stopOpacity="0.45" />
+              <stop offset="100%" stopColor="#04fc21" stopOpacity="0" />
+            </radialGradient>
+            <linearGradient id="snakeCurveGrad" x1="200" y1="50" x2="600" y2="980" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.25" />
+              <stop offset="45%" stopColor="#04fc21" stopOpacity="0.18" />
+              <stop offset="100%" stopColor="#ffffff" stopOpacity="0.05" />
+            </linearGradient>
+          </defs>
+        </svg>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 md:px-12 pt-16 md:pt-20">
-        {/* ========================================================= */}
-        {/* TOP SECTION: MEMBERSHIP + 4 NAV COLUMNS + WEAR YOUR INSTINCT */}
-        {/* ========================================================= */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 pb-16 relative z-10">
-          {/* Left Column: Membership / Newsletter */}
-          <div className="lg:col-span-4 space-y-4 pr-0 lg:pr-6">
-            <span className="text-[10px] font-mono tracking-[0.25em] text-[#04fc21] uppercase font-semibold block">
+      <div className="relative z-10 max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-20 pt-24 lg:pt-32 pb-12 space-y-20 lg:space-y-24">
+        {/* 
+          ============================================================
+          ZONE 01: BRAND + NEWSLETTER (TOP SECTION)
+          Horizontal editorial layout: Brand & Headline on Left,
+          Minimalist Newsletter on Right.
+          ============================================================
+        */}
+        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-12 lg:gap-20">
+          {/* LEFT SIDE: Brand Identity & Monumental Editorial Headline */}
+          <div className="max-w-2xl space-y-7">
+            {/* SuperSnake Logo + Moniker */}
+            <div className="flex items-center gap-3">
+              <SuperSnakeLogo size="sm" showText={false} withGlow={false} />
+              <div className="flex flex-col">
+                <span className="font-sans font-bold text-xs tracking-[0.25em] text-white/90">
+                  SUPERSNAKE
+                </span>
+                <span className="text-[9px] font-mono tracking-[0.3em] text-neutral-500 uppercase">
+                  WEAR YOUR INSTINCT.
+                </span>
+              </div>
+            </div>
+
+            {/* Editorial Serif/Display Heading */}
+            <h2 className="text-4xl sm:text-6xl lg:text-7xl font-display font-medium text-white tracking-tight leading-[1.02]">
+              ENTER THE<br />
+              SNAKE PIT.
+            </h2>
+
+            {/* Understated Subtitle */}
+            <p className="text-[11px] font-mono tracking-[0.25em] text-neutral-400 uppercase">
+              EXCLUSIVE DROPS. EARLY ACCESS. NO NOISE.
+            </p>
+          </div>
+
+          {/* RIGHT SIDE: Minimalist Horizontal Email Input */}
+          <div className="w-full lg:max-w-md lg:pt-8 space-y-4">
+            <span className="text-[10px] font-mono tracking-[0.3em] text-snake-green uppercase block">
               MEMBERSHIP
             </span>
 
-            <h3 className="text-3xl md:text-[40px] font-serif font-normal text-white tracking-tight leading-[1.15]">
-              ENTER<br />THE SNAKE PIT.
-            </h3>
-
-            <p className="text-xs md:text-[13px] text-neutral-400 font-sans leading-relaxed max-w-sm">
-              Be the first to know about new drops, private releases, exclusive offers, and stories from inside SuperSnake.
-            </p>
-
-            {subscribed ? (
-              <div className="flex items-center gap-2 text-xs font-mono text-[#04fc21] py-3.5 px-4 bg-[#0a0a0a] border border-[#04fc21]/30 rounded-sm">
-                <Check size={16} /> YOU ARE ON THE PRIVATE ROSTER.
+            {status === 'success' ? (
+              <div className="border-b border-snake-green/40 py-4 space-y-1.5 animate-in fade-in duration-500">
+                <div className="flex items-center gap-2 text-xs font-mono text-snake-green tracking-widest uppercase font-semibold">
+                  <Check size={14} className="text-snake-green" />
+                  <span>YOU&apos;RE IN.</span>
+                </div>
+                <p className="text-xs font-mono text-neutral-400">
+                  Welcome to the Snake Pit. Check your inbox for private roster access.
+                </p>
               </div>
             ) : (
-              <form onSubmit={handleSubscribe} className="space-y-2 pt-2 max-w-md">
-                <div className="flex items-center bg-[#070707] border border-white/15 focus-within:border-[#04fc21] transition-colors rounded-sm">
+              <form onSubmit={handleSubscribe} className="space-y-2">
+                <div className="relative border-b border-white/15 focus-within:border-snake-green transition-colors duration-300 pb-3 group">
                   <input
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (status === 'error') setStatus('idle');
+                    }}
                     placeholder="Enter your email address"
+                    aria-label="Email address for newsletter"
                     required
-                    className="w-full bg-transparent px-4 py-3 text-xs font-mono text-white placeholder:text-neutral-500 focus:outline-none"
+                    disabled={status === 'loading'}
+                    className="w-full bg-transparent text-sm font-mono text-white placeholder:text-neutral-600 focus:outline-none pr-12 transition-colors disabled:opacity-50"
                   />
                   <button
                     type="submit"
-                    className="flex items-center gap-1.5 px-4 py-3 text-xs font-mono font-semibold uppercase text-white hover:text-[#04fc21] transition-colors tracking-wider shrink-0"
-                    aria-label="Join Snake Pit"
+                    disabled={status === 'loading'}
+                    aria-label="Subscribe to SuperSnake private roster"
+                    className="absolute right-0 top-1/2 -translate-y-1/2 text-neutral-400 group-hover:text-white group-focus-within:text-snake-green transition-all duration-300 p-1 flex items-center justify-center disabled:opacity-50"
                   >
-                    <span>JOIN</span>
-                    <ArrowRight size={14} className="text-[#04fc21]" />
+                    {status === 'loading' ? (
+                      <span className="w-4 h-4 border border-snake-green border-t-transparent rounded-full animate-spin inline-block" />
+                    ) : (
+                      <ArrowRight size={18} className="transform group-hover:translate-x-1.5 transition-transform duration-300" />
+                    )}
                   </button>
                 </div>
-                <p className="text-[11px] text-neutral-500 font-sans">
+
+                {status === 'error' && (
+                  <p className="text-[11px] font-mono text-red-400 tracking-wide pt-1">
+                    {errorMessage}
+                  </p>
+                )}
+
+                <p className="text-[10px] font-mono text-neutral-500 tracking-wider pt-1">
                   By subscribing, you agree to our{' '}
-                  <Link href="/privacy" className="text-neutral-400 hover:text-white underline underline-offset-2 transition-colors">
+                  <Link href="/privacy" className="text-neutral-400 hover:text-snake-green transition-colors underline underline-offset-2">
                     Privacy Policy
                   </Link>
                   .
@@ -111,291 +258,185 @@ export function Footer() {
               </form>
             )}
           </div>
+        </div>
 
-          {/* Middle Nav Columns: SHOP, ABOUT, SUPPORT, CONNECT */}
-          <div className="lg:col-span-6 grid grid-cols-2 sm:grid-cols-4 gap-8 text-xs font-sans">
-            {/* 1. SHOP */}
-            <div className="space-y-4">
-              <p className="text-xs font-mono tracking-widest text-white uppercase font-bold">
-                SHOP
-              </p>
-              <ul className="space-y-2.5 text-neutral-400 text-xs font-sans">
-                <li>
-                  <Link href="/shop" className="hover:text-white transition-colors">
-                    All T-Shirts
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/men" className="hover:text-white transition-colors">
-                    Men
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/women" className="hover:text-white transition-colors">
-                    Women
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/new-drops" className="hover:text-white transition-colors">
-                    New Drops
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/bestsellers" className="hover:text-white transition-colors">
-                    Bestsellers
-                  </Link>
-                </li>
-              </ul>
-            </div>
+        {/* 
+          ============================================================
+          ZONE 02: NAVIGATION SECTION (NUMBERED 4-COLUMN SYSTEM)
+          Desktop: 4 Columns (01 SHOP, 02 SUPPORT, 03 COMPANY, 04 CONNECT)
+          Mobile: Clean Collapsible Accordions (+ / −)
+          ============================================================
+        */}
+        <div className="pt-12 border-t border-white/[0.06]">
+          {/* Desktop Navigation (>= 768px) */}
+          <div className="hidden md:grid grid-cols-4 gap-12 text-xs font-mono">
+            {NAV_COLUMNS.map((col) => (
+              <div key={col.id} className="space-y-5">
+                <div className="space-y-1">
+                  <span className="text-[10px] tracking-[0.25em] text-neutral-600 block">
+                    {col.number}
+                  </span>
+                  <p className="text-xs font-sans font-bold tracking-[0.2em] text-white uppercase">
+                    {col.title}
+                  </p>
+                </div>
 
-            {/* 2. ABOUT */}
-            <div className="space-y-4">
-              <p className="text-xs font-mono tracking-widest text-white uppercase font-bold">
-                ABOUT
-              </p>
-              <ul className="space-y-2.5 text-neutral-400 text-xs font-sans">
-                <li>
-                  <Link href="/about" className="hover:text-white transition-colors">
-                    Our Story
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/about" className="hover:text-white transition-colors">
-                    Materials
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/about" className="hover:text-white transition-colors">
-                    Sustainability
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/collection/heavyweight" className="hover:text-white transition-colors">
-                    Journal
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/care-guide" className="hover:text-white transition-colors">
-                    Care Guide
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            {/* 3. SUPPORT */}
-            <div className="space-y-4">
-              <p className="text-xs font-mono tracking-widest text-white uppercase font-bold">
-                SUPPORT
-              </p>
-              <ul className="space-y-2.5 text-neutral-400 text-xs font-sans">
-                <li>
-                  <Link href="/track-order" className="hover:text-white transition-colors">
-                    Order Tracking
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/shipping" className="hover:text-white transition-colors">
-                    Shipping
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/returns" className="hover:text-white transition-colors">
-                    Returns & Exchanges
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/size-guide" className="hover:text-white transition-colors">
-                    Size Guide
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/faq" className="hover:text-white transition-colors">
-                    FAQ
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/contact" className="hover:text-white transition-colors">
-                    Contact Us
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            {/* 4. CONNECT */}
-            <div className="space-y-4">
-              <p className="text-xs font-mono tracking-widest text-white uppercase font-bold">
-                CONNECT
-              </p>
-              <ul className="space-y-3 text-neutral-400 text-xs font-sans">
-                <li>
-                  <a
-                    href="https://instagram.com/supersnake.in"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2.5 hover:text-white transition-colors group"
-                  >
-                    <Instagram size={15} className="text-neutral-400 group-hover:text-white transition-colors" />
-                    <span>Instagram</span>
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://x.com/supersnake"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2.5 hover:text-white transition-colors group"
-                  >
-                    <XIcon className="w-3.5 h-3.5 text-neutral-400 group-hover:text-white transition-colors" />
-                    <span>X (Twitter)</span>
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://youtube.com/@supersnake"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2.5 hover:text-white transition-colors group"
-                  >
-                    <Youtube size={15} className="text-neutral-400 group-hover:text-white transition-colors" />
-                    <span>YouTube</span>
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://pinterest.com/supersnake"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2.5 hover:text-white transition-colors group"
-                  >
-                    <PinterestIcon className="w-3.5 h-3.5 text-neutral-400 group-hover:text-white transition-colors" />
-                    <span>Pinterest</span>
-                  </a>
-                </li>
-              </ul>
-            </div>
+                <ul className="space-y-3">
+                  {col.links.map((link) => (
+                    <li key={link.label}>
+                      {link.external ? (
+                        <a
+                          href={link.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="group inline-flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors duration-200"
+                        >
+                          <span>{link.label}</span>
+                          <span className="opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 text-snake-green text-[10px]">
+                            ↗
+                          </span>
+                        </a>
+                      ) : (
+                        <Link
+                          href={link.href}
+                          className="group inline-flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors duration-200"
+                        >
+                          <span>{link.label}</span>
+                          <span className="opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 text-snake-green text-[10px]">
+                            →
+                          </span>
+                        </Link>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
 
-          {/* Far Right: Stacked Slogan beside the snake */}
-          <div className="lg:col-span-2 hidden lg:flex flex-col items-center justify-center text-center select-none pl-4">
-            <div className="space-y-1">
-              <span className="font-mono text-xs tracking-[0.35em] text-white/90 leading-loose uppercase block">
-                WEAR<br />
-                YOUR<br />
-                INSTINCT.
-              </span>
-              <div className="w-6 h-[2px] bg-[#04fc21] mx-auto mt-2" />
-            </div>
+          {/* Mobile Accordions (< 768px) */}
+          <div className="md:hidden divide-y divide-white/[0.06] text-xs font-mono">
+            {NAV_COLUMNS.map((col) => {
+              const isOpen = mobileAccordion === col.id;
+              return (
+                <div key={col.id} className="py-4">
+                  <button
+                    onClick={() => toggleAccordion(col.id)}
+                    className="w-full flex items-center justify-between text-left py-1 focus:outline-none"
+                    aria-expanded={isOpen}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-[10px] text-neutral-600 font-mono">
+                        {col.number}
+                      </span>
+                      <span className="text-xs font-sans font-bold tracking-[0.2em] text-white uppercase">
+                        {col.title}
+                      </span>
+                    </div>
+                    <span className="text-neutral-400">
+                      {isOpen ? <Minus size={14} /> : <Plus size={14} />}
+                    </span>
+                  </button>
+
+                  {isOpen && (
+                    <ul className="pt-4 pb-2 space-y-3 pl-7 animate-in fade-in slide-in-from-top-1 duration-200">
+                      {col.links.map((link) => (
+                        <li key={link.label}>
+                          {link.external ? (
+                            <a
+                              href={link.href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-neutral-400 hover:text-white transition-colors flex items-center gap-1.5"
+                            >
+                              <span>{link.label}</span>
+                              <span className="text-snake-green text-[10px]">↗</span>
+                            </a>
+                          ) : (
+                            <Link
+                              href={link.href}
+                              className="text-neutral-400 hover:text-white transition-colors flex items-center gap-1.5"
+                            >
+                              <span>{link.label}</span>
+                              <span className="text-snake-green text-[10px]">→</span>
+                            </Link>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        {/* ========================================================= */}
-        {/* MIDDLE TRUST BAR: 4 COLUMNS WITH ICONS */}
-        {/* ========================================================= */}
-        <div className="border-y border-white/[0.08] py-8 my-2">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-0 lg:divide-x lg:divide-white/[0.08]">
-            {/* 1. Reliable Delivery */}
-            <div className="flex items-center gap-4 lg:px-6">
-              <div className="text-[#04fc21] shrink-0">
-                <Truck size={24} strokeWidth={1.5} />
-              </div>
-              <div>
-                <p className="text-xs font-mono font-bold tracking-wider text-white uppercase">
-                  RELIABLE DELIVERY
-                </p>
-                <p className="text-[11px] text-neutral-400 font-sans mt-0.5">
-                  Across India
-                </p>
-              </div>
+        {/* 
+          ============================================================
+          ZONE 03: BRAND STATEMENT & RESTRAINED SERVICE STRIP
+          Quiet, editorial, confident.
+          ============================================================
+        */}
+        <div className="pt-8 border-t border-white/[0.06] flex flex-col md:flex-row md:items-center justify-between gap-6 text-[11px] font-mono text-neutral-500">
+          {/* Restrained Trust Strip */}
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[10px] tracking-widest uppercase">
+            <div className="flex items-center gap-1.5 text-neutral-400">
+              <span className="w-1 h-1 rounded-full bg-snake-green/80" />
+              <span>SECURE 256-BIT ENCRYPTION</span>
             </div>
+            <div className="flex items-center gap-1.5 text-neutral-400">
+              <span className="w-1 h-1 rounded-full bg-snake-green/80" />
+              <span>7-DAY HASSLE-FREE RETURNS</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-neutral-400">
+              <span className="w-1 h-1 rounded-full bg-snake-green/80" />
+              <span>BLUE DART AIR EXPRESS</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-neutral-400">
+              <span className="w-1 h-1 rounded-full bg-snake-green/80" />
+              <span>280 GSM SUPIMA® COTTON</span>
+            </div>
+          </div>
 
-            {/* 2. Easy Returns */}
-            <div className="flex items-center gap-4 lg:px-6">
-              <div className="text-[#04fc21] shrink-0">
-                <Package size={24} strokeWidth={1.5} />
-              </div>
-              <div>
-                <p className="text-xs font-mono font-bold tracking-wider text-white uppercase">
-                  EASY RETURNS
-                </p>
-                <p className="text-[11px] text-neutral-400 font-sans mt-0.5">
-                  Hassle-free
-                </p>
-              </div>
-            </div>
-
-            {/* 3. Secure Payments */}
-            <div className="flex items-center gap-4 lg:px-6">
-              <div className="text-[#04fc21] shrink-0">
-                <ShieldCheck size={24} strokeWidth={1.5} />
-              </div>
-              <div>
-                <p className="text-xs font-mono font-bold tracking-wider text-white uppercase">
-                  SECURE PAYMENTS
-                </p>
-                <p className="text-[11px] text-neutral-400 font-sans mt-0.5">
-                  100% Safe & Encrypted
-                </p>
-              </div>
-            </div>
-
-            {/* 4. Premium Quality */}
-            <div className="flex items-center gap-4 lg:px-6">
-              <div className="text-[#04fc21] shrink-0">
-                <Heart size={24} strokeWidth={1.5} />
-              </div>
-              <div>
-                <p className="text-xs font-mono font-bold tracking-wider text-white uppercase">
-                  PREMIUM QUALITY
-                </p>
-                <p className="text-[11px] text-neutral-400 font-sans mt-0.5">
-                  Made to Last
-                </p>
-              </div>
-            </div>
+          {/* Right-Side Editorial Statement */}
+          <div className="text-left md:text-right font-display text-xs tracking-wider text-neutral-400 uppercase">
+            <span className="text-neutral-600 mr-2">—</span>
+            <span>NOT MADE TO BLEND IN.</span>
           </div>
         </div>
 
-        {/* ========================================================= */}
-        {/* BOTTOM BAR: LOGO + PRIVACY/TERMS/COOKIES + COPYRIGHT + MADE IN INDIA */}
-        {/* ========================================================= */}
-        <div className="py-8 flex flex-col md:flex-row items-center justify-between gap-6 text-[11px] font-sans text-neutral-400">
-          {/* Logo & Slogan */}
-          <div className="flex items-center gap-3">
+        {/* 
+          ============================================================
+          ZONE 04: LEGAL & COPYRIGHT (BOTTOM BRAND ROW)
+          Understated, balanced, fine lines.
+          ============================================================
+        */}
+        <div className="pt-8 border-t border-white/[0.06] flex flex-col md:flex-row items-center justify-between gap-6 text-[10px] font-mono text-neutral-500 tracking-wider">
+          {/* Left: Compact SuperSnake Brand & Motto */}
+          <div className="flex items-center gap-3 order-2 md:order-1">
             <SuperSnakeLogo size="sm" showText={false} withLink={true} />
-            <div>
-              <span className="text-xs font-bold font-sans tracking-[0.25em] text-white uppercase block leading-none">
-                SUPERSNAKE
-              </span>
-              <span className="text-[8px] font-mono tracking-[0.25em] text-neutral-500 uppercase block mt-1">
-                WEAR YOUR INSTINCT.
-              </span>
-            </div>
+            <span className="text-neutral-400">
+              SUPERSNAKE — WEAR YOUR INSTINCT.
+            </span>
           </div>
 
-          {/* Center Links */}
-          <div className="flex items-center gap-4 text-xs font-sans text-neutral-400">
+          {/* Center: Legal Directives */}
+          <div className="flex items-center gap-6 order-1 md:order-2">
             <Link href="/privacy" className="hover:text-white transition-colors">
-              Privacy & Terms
+              PRIVACY & TERMS
             </Link>
-            <span className="text-neutral-700">|</span>
             <Link href="/cookies" className="hover:text-white transition-colors">
-              Cookie Policy
+              COOKIE POLICY
             </Link>
-            <span className="text-neutral-700">|</span>
             <Link href="/shop" className="hover:text-white transition-colors">
-              Site Map
+              SITEMAP
             </Link>
           </div>
 
-          {/* Copyright */}
-          <div className="text-xs font-sans text-neutral-500">
-            © 2026 SuperSnake. All rights reserved.
-          </div>
-
-          {/* Made in India */}
-          <div className="flex items-center gap-1.5 text-xs font-sans text-neutral-400">
-            <span>Made in India</span>
-            <span className="text-sm">🇮🇳</span>
+          {/* Right: Copyright & Made in India */}
+          <div className="flex items-center gap-4 order-3 text-neutral-600">
+            <span>© 2026 SUPERSNAKE. ALL RIGHTS RESERVED.</span>
+            <span>MADE IN INDIA 🇮🇳</span>
           </div>
         </div>
       </div>
