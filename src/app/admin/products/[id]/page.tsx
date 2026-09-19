@@ -274,7 +274,7 @@ export default function AdminEditProductPage() {
           />
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
           <div>
             <label className="block text-[10px] font-mono uppercase text-neutral-400 mb-1">
               Price (INR ₹)
@@ -318,12 +318,27 @@ export default function AdminEditProductPage() {
             <select
               value={fit}
               onChange={(e) => setFit(e.target.value as FitType)}
-              className="w-full bg-[#121212] border border-white/15 px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-snake-green"
+              className="w-full bg-[#121212] border border-white/15 px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-snake-green cursor-pointer"
             >
               <option value="Boxy">Boxy</option>
               <option value="Oversized">Oversized</option>
               <option value="Relaxed">Relaxed</option>
               <option value="Classic">Classic</option>
+              <option value="Slim">Slim</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-[10px] font-mono uppercase text-neutral-400 mb-1">
+              Collection / Gender *
+            </label>
+            <select
+              value={gender}
+              onChange={(e) => setGender(e.target.value as Gender)}
+              className="w-full bg-[#121212] border border-white/15 px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-snake-green cursor-pointer"
+            >
+              <option value="unisex">Unisex Collection</option>
+              <option value="men">Men Collection</option>
+              <option value="women">Women Collection</option>
             </select>
           </div>
         </div>

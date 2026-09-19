@@ -12,7 +12,7 @@ function SearchPageContent() {
   const { products } = useStore();
 
   const [query, setQuery] = useState(initialQuery);
-  const [selectedGender, setSelectedGender] = useState<'all' | 'men' | 'women'>('all');
+  const [selectedGender, setSelectedGender] = useState<'all' | 'men' | 'women' | 'unisex'>('all');
 
   const popularSearches = [
     '280 GSM Heavyweight',
@@ -98,7 +98,7 @@ function SearchPageContent() {
             </div>
 
             <div className="flex items-center gap-1 bg-[#0a0a0a] border border-white/10 p-1 rounded text-xs font-mono">
-              {(['all', 'men', 'women'] as const).map((g) => (
+              {(['all', 'men', 'women', 'unisex'] as const).map((g) => (
                 <button
                   key={g}
                   onClick={() => setSelectedGender(g)}

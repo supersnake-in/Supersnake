@@ -7,6 +7,13 @@ import { FolderKanban, Plus, ArrowUpRight } from 'lucide-react';
 export default function AdminCollectionsPage() {
   const collections = [
     {
+      name: 'UNISEX CAPSULE',
+      slug: 'unisex',
+      itemsCount: 5,
+      status: 'PUBLISHED',
+      heroGsm: '280 GSM SUPIMA',
+    },
+    {
       name: 'THE MONOLITH ARCHIVE',
       slug: 'the-monolith-archive',
       itemsCount: 8,

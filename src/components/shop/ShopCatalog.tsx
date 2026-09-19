@@ -102,7 +102,7 @@ export function ShopCatalog({
 
           {/* Quick Gender Filter Pills */}
           <div className="flex items-center gap-2 p-1 bg-neutral-900 border border-white/10 rounded-full">
-            {(['all', 'men', 'women'] as const).map((g) => (
+            {(['all', 'men', 'women', 'unisex'] as const).map((g) => (
               <button
                 key={g}
                 onClick={() => setSelectedGender(g)}

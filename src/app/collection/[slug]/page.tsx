@@ -3,9 +3,24 @@
 import React from 'react';
 import { useParams } from 'next/navigation';
 import { ShopCatalog } from '@/components/shop/ShopCatalog';
-import { FitType } from '@/lib/types';
+import { FitType, Gender } from '@/lib/types';
 
-const COLLECTION_MAP: Record<string, { title: string; subtitle: string; fit?: FitType; isNew?: boolean; isBestseller?: boolean }> = {
+const COLLECTION_MAP: Record<string, { title: string; subtitle: string; fit?: FitType; isNew?: boolean; isBestseller?: boolean; gender?: Gender }> = {
+  unisex: {
+    title: 'UNISEX COLLECTION',
+    subtitle: 'Architectural silhouettes and versatile heavyweight draping designed for every form.',
+    gender: 'unisex',
+  },
+  men: {
+    title: 'MEN’S COLLECTION',
+    subtitle: 'Heavyweight boxy and oversized cuts for men. Built from 260–300 GSM Supima® and French Terry.',
+    gender: 'men',
+  },
+  women: {
+    title: 'WOMEN’S COLLECTION',
+    subtitle: 'Engineered boxy crop hems and fluid Supima-silk blends for women.',
+    gender: 'women',
+  },
   oversized: {
     title: 'OVERSIZED CAPSULE',
     subtitle: 'Exaggerated dropped shoulders and heavy drape. The definitive street silhouette.',
@@ -42,6 +57,7 @@ export default function CollectionPage() {
 
   return (
     <ShopCatalog
+      initialGender={config.gender || 'all'}
       initialFit={config.fit || 'all'}
       initialIsNew={config.isNew}
       initialIsBestseller={config.isBestseller}
