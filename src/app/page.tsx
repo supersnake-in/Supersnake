@@ -82,11 +82,8 @@ export default function HomePage() {
                   heroImages[currentImageIndex]?.startsWith('data:') ||
                   !heroImages[currentImageIndex]?.includes('unsplash.com')
                 }
-                className="object-cover object-[center_35%] lg:object-center brightness-75 contrast-125"
+                className="object-cover object-[center_35%] lg:object-center"
               />
-              {/* Subtle cinematic overlays */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/30" />
-              <div className="absolute inset-0 bg-radial-gradient from-transparent via-black/20 to-black/80 pointer-events-none" />
             </motion.div>
           </AnimatePresence>
         </motion.div>
