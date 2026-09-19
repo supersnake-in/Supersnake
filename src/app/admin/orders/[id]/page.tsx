@@ -10,7 +10,10 @@ import { OrderStatus } from '@/lib/types';
 import { formatPrice } from '@/lib/design-tokens';
 
 const STATUS_OPTIONS: OrderStatus[] = [
-  'Pending',
+  'Payment Pending',
+  'Payment Failed',
+  'Paid',
+  'Verification Pending',
   'Confirmed',
   'Processing',
   'Packed',
@@ -33,6 +36,11 @@ export default function AdminOrderDetailPage() {
   const [status, setStatus] = useState<OrderStatus>(order?.status || 'Confirmed');
   const [carrier, setCarrier] = useState(order?.tracking?.carrier || 'Express Courier');
   const [waybill, setWaybill] = useState(order?.tracking?.trackingNumber || '');
+  const [phoneVerified, setPhoneVerified] = useState<boolean>(Boolean(order?.phoneVerified));
+  const [verificationStatus, setVerificationStatus] = useState<'Pending' | 'Verified' | 'Unverified'>(
+    order?.verificationStatus || 'Pending'
+  );
+  const [verificationNotes, setVerificationNotes] = useState<string>(order?.verificationNotes || '');
   const [saved, setSaved] = useState(false);
 
   if (!order) {
@@ -57,6 +65,23 @@ export default function AdminOrderDetailPage() {
       order.tracking.trackingNumber = waybill;
     }
     order.status = status;
+    order.verificationNotes = verificationNotes;
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
+  };
+
+  const handleVerifyPhone = (newVerifStatus: 'Verified' | 'Unverified') => {
+    setPhoneVerified(newVerifStatus === 'Verified');
+    setVerificationStatus(newVerifStatus);
+    order.phoneVerified = newVerifStatus === 'Verified';
+    order.verificationStatus = newVerifStatus;
+    order.verifiedAt = new Date().toISOString();
+    order.verifiedBy = 'Admin Staff';
+    order.verificationNotes = verificationNotes;
+    if (newVerifStatus === 'Verified' && order.status === 'Verification Pending') {
+      order.status = 'Confirmed';
+      setStatus('Confirmed');
+    }
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
@@ -112,6 +137,109 @@ export default function AdminOrderDetailPage() {
           <span>Order fulfillment status & tracking updated.</span>
         </div>
       )}
+
+      {/* Post-Order Phone Verification Card */}
+      <div className="bg-[#0a0a0a] border border-white/10 p-6 rounded-sm space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
+          <div>
+            <span className="text-[10px] font-mono tracking-widest text-snake-green uppercase block">
+              STORE / CLIENT CONCIERGE PROTOCOL
+            </span>
+            <h3 className="text-sm font-display font-medium text-white uppercase tracking-wider">
+              POST-ORDER PHONE VERIFICATION (CALL VERIFICATION)
+            </h3>
+          </div>
+          <div className="flex items-center gap-2">
+            <span
+              className={`px-3 py-1 text-[10px] font-mono uppercase font-bold rounded border ${
+                phoneVerified
+                  ? 'bg-snake-green/10 border-snake-green/40 text-snake-green'
+                  : verificationStatus === 'Unverified'
+                  ? 'bg-red-950/40 border-red-800/40 text-red-400'
+                  : 'bg-amber-950/40 border-amber-800/40 text-amber-400'
+              }`}
+            >
+              {phoneVerified
+                ? 'PHONE VERIFIED'
+                : verificationStatus === 'Unverified'
+                ? 'CALL FAILED / UNREACHABLE'
+                : 'VERIFICATION PENDING'}
+            </span>
+          </div>
+        </div>
+
+        {/* Security Warning Notice */}
+        <div className="p-3.5 bg-neutral-950 border border-neutral-800 text-xs font-mono rounded space-y-1">
+          <p className="text-snake-green font-bold uppercase flex items-center gap-1.5">
+            <span>🛡️</span> CRITICAL SECURITY DIRECTIVE
+          </p>
+          <p className="text-neutral-400 text-[11px] leading-relaxed">
+            The customer must <strong>NEVER</strong> be asked for OTPs, PINs, CVVs, passwords, or bank details during the verification phone call. This call is strictly to confirm the delivery address and garment sizing prior to dispatch.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start text-xs font-mono">
+          <div className="p-4 bg-neutral-950 border border-white/5 rounded space-y-1.5">
+            <span className="text-[10px] text-neutral-500 uppercase block">PATRON PHONE NUMBER</span>
+            <a
+              href={`tel:${order.customer.phone}`}
+              className="text-base font-bold text-white hover:text-snake-green transition-colors flex items-center gap-2 font-mono"
+            >
+              <Phone size={14} className="text-snake-green" />
+              {order.customer.phone || 'No phone provided'}
+            </a>
+            <p className="text-[10px] text-neutral-500">Click number to initiate phone call from device.</p>
+          </div>
+
+          <div className="p-4 bg-neutral-950 border border-white/5 rounded space-y-1.5">
+            <span className="text-[10px] text-neutral-500 uppercase block">VERIFICATION AUDIT</span>
+            {order.verifiedAt ? (
+              <div className="space-y-1 text-neutral-300 text-[11px]">
+                <p>Status: <strong className="text-white">{order.verificationStatus}</strong></p>
+                <p>Verified By: <strong className="text-white">{order.verifiedBy || 'Admin Staff'}</strong></p>
+                <p>Time: <span className="text-neutral-400">{new Date(order.verifiedAt).toLocaleString('en-IN')}</span></p>
+              </div>
+            ) : (
+              <p className="text-neutral-400 text-[11px]">No call verification record logged yet.</p>
+            )}
+          </div>
+
+          <div className="p-4 bg-neutral-950 border border-white/5 rounded space-y-2">
+            <span className="text-[10px] text-neutral-500 uppercase block">ACTIONS</span>
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => handleVerifyPhone('Verified')}
+                className="w-full py-2 bg-snake-green hover:bg-white text-black font-mono text-xs uppercase font-bold tracking-wider rounded transition-colors"
+              >
+                MARK AS PHONE VERIFIED
+              </button>
+              <button
+                type="button"
+                onClick={() => handleVerifyPhone('Unverified')}
+                className="w-full py-2 bg-neutral-900 hover:bg-red-950 text-neutral-300 hover:text-red-400 border border-white/10 hover:border-red-800 font-mono text-xs uppercase font-bold tracking-wider rounded transition-colors"
+              >
+                FLAG UNREACHABLE / INVALID
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Verification Notes */}
+        <div className="space-y-1.5 text-xs font-mono">
+          <label className="text-neutral-400 uppercase flex items-center justify-between">
+            <span>VERIFICATION CALL NOTES</span>
+            <span className="text-[10px] text-neutral-500">e.g. &quot;Customer confirmed size L and delivery landmark&quot;</span>
+          </label>
+          <textarea
+            value={verificationNotes}
+            onChange={(e) => setVerificationNotes(e.target.value)}
+            rows={2}
+            placeholder="Add internal notes from the customer verification call..."
+            className="w-full bg-[#121212] border border-white/15 px-3 py-2 text-xs font-mono text-white rounded focus:outline-none focus:border-snake-green"
+          />
+        </div>
+      </div>
 
       {/* Dispatch Controls Card */}
       <form onSubmit={handleUpdate} className="bg-[#0a0a0a] border border-white/10 p-6 rounded-sm space-y-6">

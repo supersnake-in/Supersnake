@@ -401,7 +401,6 @@ export async function createOrderInSupabase(order: Order): Promise<boolean> {
       .from('orders')
       .insert({
         order_number: order.orderNumber,
-        user_id: order.userId || null,
         status: order.status,
         subtotal: order.subtotal,
         discount: order.discount,

@@ -16,10 +16,6 @@ export interface UserProfile {
   preferredFit?: FitType;
   preferredSize?: string;
   genderInterest?: 'men' | 'women' | 'all';
-  isEmailVerified?: boolean;
-  isPhoneVerified?: boolean;
-  phone_verified?: boolean;
-  phone_verified_at?: string;
 }
 
 interface AuthContextType {
@@ -31,14 +27,13 @@ interface AuthContextType {
   signIn: (email: string, password?: string) => Promise<{ error?: string }>;
   signUp: (email: string, password: string, fullName?: string, phone?: string) => Promise<{ error?: string; requireVerification?: boolean }>;
   signInWithGoogle: (redirectTo?: string) => Promise<{ error?: string }>;
-  checkEmailExists: (email: string) => Promise<{ exists: boolean; error?: string }>;
-  sendPhoneOtp: (phone: string) => Promise<{ error?: string }>;
-  verifyPhoneOtp: (phone: string, code: string) => Promise<{ error?: string }>;
-  sendEmailOtp: (email: string) => Promise<{ error?: string }>;
-  verifyEmailOtp: (email: string, code: string) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error?: string }>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<{ error?: string }>;
+  checkEmailExists: (email: string) => Promise<{ exists: boolean; error?: string }>;
+  sendEmailOtp: (email: string) => Promise<{ success: boolean; error?: string }>;
+  verifyEmailOtp: (email: string, token: string) => Promise<{ success: boolean; error?: string }>;
+  signInWithOtp: (email: string, token: string) => Promise<{ error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -111,12 +106,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadUserProfile = async (currentUser: User) => {
     const meta = currentUser.user_metadata || {};
-    const isPhoneVerified = Boolean(
-      currentUser.phone_confirmed_at ||
-      meta.phone_verified ||
-      meta.is_phone_verified
-    );
-
     let loadedProfile: UserProfile = {
       id: currentUser.id,
       email: currentUser.email || '',
@@ -127,10 +116,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       preferredFit: meta.preferred_fit || 'Classic',
       preferredSize: meta.preferred_size || 'M',
       genderInterest: meta.gender_interest || 'all',
-      isEmailVerified: Boolean(currentUser.email_confirmed_at || meta.email_verified || meta.is_email_verified),
-      isPhoneVerified,
-      phone_verified: isPhoneVerified,
-      phone_verified_at: meta.phone_verified_at,
     };
 
     setProfile(loadedProfile);
@@ -147,20 +132,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single();
 
       if (dbProfile) {
-        const dbPhoneVerified = Boolean(
-          dbProfile.phone_verified ??
-          dbProfile.is_phone_verified ??
-          loadedProfile.isPhoneVerified
-        );
-
         loadedProfile = {
           ...loadedProfile,
           fullName: dbProfile.full_name || loadedProfile.fullName,
           phone: dbProfile.phone || loadedProfile.phone,
-          isEmailVerified: dbProfile.is_email_verified ?? loadedProfile.isEmailVerified,
-          isPhoneVerified: dbPhoneVerified,
-          phone_verified: dbPhoneVerified,
-          phone_verified_at: dbProfile.phone_verified_at || loadedProfile.phone_verified_at,
         };
         setProfile(loadedProfile);
         try {
@@ -303,114 +278,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const checkEmailExists = async (email: string): Promise<{ exists: boolean; error?: string }> => {
-    try {
-      const res = await fetch('/api/auth/lookup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-      const data = await res.json();
-      if (!res.ok) return { exists: false, error: data.error };
-      return { exists: Boolean(data.exists) };
-    } catch (err: any) {
-      return { exists: false, error: err.message };
-    }
-  };
-
-  const sendPhoneOtp = async (phone: string): Promise<{ error?: string }> => {
-    try {
-      const res = await fetch('/api/auth/phone/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone }),
-      });
-      const data = await res.json();
-      if (!res.ok) return { error: data.error || 'Failed to dispatch phone verification code' };
-      return {};
-    } catch (err: any) {
-      return { error: err.message || 'Phone verification dispatch error' };
-    }
-  };
-
-  const verifyPhoneOtp = async (phone: string, code: string): Promise<{ error?: string }> => {
-    try {
-      const res = await fetch('/api/auth/phone/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, code, userId: user?.id }),
-      });
-      const data = await res.json();
-      if (!res.ok) return { error: data.error || 'Incorrect phone verification code' };
-
-      // Update local profile and Supabase metadata
-      if (profile) {
-        const updated = {
-          ...profile,
-          isPhoneVerified: true,
-          phone_verified: true,
-          phone_verified_at: new Date().toISOString(),
-          phone,
-        };
-        setProfile(updated);
-        try {
-          localStorage.setItem('supersnake_user_profile', JSON.stringify(updated));
-        } catch (e) {}
-      }
-
-      if (user) {
-        try {
-          await supabase.auth.updateUser({
-            data: {
-              phone_verified: true,
-              is_phone_verified: true,
-              phone_verified_at: new Date().toISOString(),
-              phone,
-            },
-          });
-        } catch (e) {}
-      }
-
-      return {};
-    } catch (err: any) {
-      return { error: err.message || 'Phone verification failed' };
-    }
-  };
-
-  const sendEmailOtp = async (email: string): Promise<{ error?: string }> => {
-    try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/checkout`,
-        },
-      });
-      if (error) return { error: error.message };
-      return {};
-    } catch (err: any) {
-      return { error: err.message || 'Email verification dispatch error' };
-    }
-  };
-
-  const verifyEmailOtp = async (email: string, code: string): Promise<{ error?: string }> => {
-    try {
-      const { data, error } = await supabase.auth.verifyOtp({
-        email: email.trim(),
-        token: code.trim(),
-        type: 'email',
-      });
-      if (error) return { error: error.message };
-
-      if (data.user) {
-        setUser(data.user);
-        loadUserProfile(data.user);
-      }
-      return {};
-    } catch (err: any) {
-      return { error: err.message || 'Email verification failed' };
-    }
-  };
-
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
@@ -472,6 +339,92 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const checkEmailExists = async (email: string): Promise<{ exists: boolean; error?: string }> => {
+    try {
+      const res = await fetch('/api/auth/check-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        return { exists: false, error: data.error || 'Check failed' };
+      }
+      return { exists: !!data.exists };
+    } catch (err: any) {
+      return { exists: false, error: err.message || 'Check failed' };
+    }
+  };
+
+  const sendEmailOtp = async (email: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const res = await fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        return { success: false, error: data.error || 'Failed to send OTP' };
+      }
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Failed to send OTP' };
+    }
+  };
+
+  const verifyEmailOtp = async (email: string, token: string): Promise<{ success: boolean; error?: string }> => {
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanToken = token.trim();
+    try {
+      // 1. Try Supabase verifyOtp first
+      const { data, error } = await supabase.auth.verifyOtp({
+        email: cleanEmail,
+        token: cleanToken,
+        type: 'email',
+      });
+      if (!error && data?.user) {
+        setSession(data.session);
+        setUser(data.user);
+        loadUserProfile(data.user);
+        return { success: true };
+      }
+
+      // 2. Call server /api/auth/verify-otp
+      const res = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: cleanEmail, token: cleanToken }),
+      });
+      const resData = await res.json();
+      if (res.ok && resData.success) {
+        if (!user) {
+          const fallbackUser: any = {
+            id: 'patron-' + Date.now(),
+            email: cleanEmail,
+            user_metadata: { full_name: cleanEmail.split('@')[0] },
+            created_at: new Date().toISOString(),
+          };
+          setUser(fallbackUser);
+          loadUserProfile(fallbackUser);
+        }
+        return { success: true };
+      }
+
+      return { success: false, error: resData.error || error?.message || 'Invalid verification code' };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Verification failed' };
+    }
+  };
+
+  const signInWithOtp = async (email: string, token: string): Promise<{ error?: string }> => {
+    const res = await verifyEmailOtp(email, token);
+    if (!res.success) {
+      return { error: res.error || 'Failed to sign in with OTP' };
+    }
+    return {};
+  };
+
   const isAdmin = isAuthorizedAdmin(user?.email || profile?.email);
 
   return (
@@ -485,14 +438,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signIn,
         signUp,
         signInWithGoogle,
-        checkEmailExists,
-        sendPhoneOtp,
-        verifyPhoneOtp,
-        sendEmailOtp,
-        verifyEmailOtp,
         signOut,
         resetPassword,
         updateProfile,
+        checkEmailExists,
+        sendEmailOtp,
+        verifyEmailOtp,
+        signInWithOtp,
       }}
     >
       {children}

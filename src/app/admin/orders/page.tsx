@@ -18,7 +18,10 @@ export default function AdminOrdersPage() {
   }, [orders]);
 
   const statuses: OrderStatus[] = [
-    'Pending',
+    'Payment Pending',
+    'Payment Failed',
+    'Paid',
+    'Verification Pending',
     'Confirmed',
     'Processing',
     'Packed',
@@ -36,6 +39,37 @@ export default function AdminOrdersPage() {
     );
     if (selectedOrder && selectedOrder.id === orderId) {
       setSelectedOrder((prev) => (prev ? { ...prev, status: newStatus } : null));
+    }
+  };
+
+  const handleVerifyPhone = (orderId: string) => {
+    setOrdersList((prev) =>
+      prev.map((ord) =>
+        ord.id === orderId
+          ? {
+              ...ord,
+              phoneVerified: true,
+              verificationStatus: 'Verified',
+              verifiedAt: new Date().toISOString(),
+              verifiedBy: 'Admin Staff',
+              status: ord.status === 'Verification Pending' ? 'Confirmed' : ord.status,
+            }
+          : ord
+      )
+    );
+    if (selectedOrder && selectedOrder.id === orderId) {
+      setSelectedOrder((prev) =>
+        prev
+          ? {
+              ...prev,
+              phoneVerified: true,
+              verificationStatus: 'Verified',
+              verifiedAt: new Date().toISOString(),
+              verifiedBy: 'Admin Staff',
+              status: prev.status === 'Verification Pending' ? 'Confirmed' : prev.status,
+            }
+          : null
+      );
     }
   };
 

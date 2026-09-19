@@ -1,43 +1,18 @@
 'use client';
 
-import React, { useState, useEffect, useRef, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Script from 'next/script';
 import { useRouter, useSearchParams } from 'next/navigation';
-import {
-  ShieldCheck,
-  ArrowRight,
-  Lock,
-  CheckCircle2,
-  AlertCircle,
-  RefreshCw,
-  ShoppingBag,
-  ChevronDown,
-  ChevronUp,
-  Loader2,
-  Eye,
-  EyeOff,
-  Check,
-  Plus,
-  Home,
-  Briefcase,
-  MapPin,
-  Sparkles,
-} from 'lucide-react';
+import { ShieldCheck, ArrowRight, Lock, CheckCircle2, CreditCard, Smartphone, Building, Wallet, AlertCircle, RefreshCw, ShoppingBag, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useAuth } from '@/lib/auth-context';
 import { formatPrice, BRAND } from '@/lib/design-tokens';
 import { loadLastCheckout, loadCartFromStorageAsync, loadCartFromStorageSync } from '@/lib/storage-helper';
 import { fetchProductsFromSupabase } from '@/lib/supabase/db';
-import {
-  normalizePhoneNumber,
-  isValidPhoneNumber,
-  formatPhoneDisplay,
-  maskPhoneNumber,
-} from '@/lib/phone-utils';
-import { Address, Size } from '@/lib/types';
-import { supabase } from '@/lib/supabase/client';
+import { Size } from '@/lib/types';
+import confetti from 'canvas-confetti';
 
 const loadRazorpayScript = (): Promise<boolean> => {
   return new Promise((resolve) => {
@@ -58,165 +33,59 @@ function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { cart, cartTotal, createOrder, updateOrder, clearCart, isLoaded, products, setCart, setCartItem } = useStore();
-  const {
-    user,
-    profile,
-    signIn,
-    signUp,
-    signInWithGoogle,
-    checkEmailExists,
-    sendPhoneOtp,
-    verifyPhoneOtp,
-    sendEmailOtp,
-    verifyEmailOtp,
-    resetPassword,
-  } = useAuth();
+  const { user, profile, checkEmailExists, sendEmailOtp, verifyEmailOtp, signIn, signInWithOtp, signUp } = useAuth();
 
-  // Progress steps: 1 = Contact & Verification, 2 = Delivery & Payment
   const [step, setStep] = useState<1 | 2>(1);
-  const [showMobileSummary, setShowMobileSummary] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [showMobileSummary, setShowMobileSummary] = useState(false);
 
-  // Unauthenticated Contact Form State
-  const [contactEmail, setContactEmail] = useState('');
-  const [contactPhone, setContactPhone] = useState('');
-  const [contactError, setContactError] = useState<string | null>(null);
-  const [isCheckingAccount, setIsCheckingAccount] = useState(false);
-
-  // Inline Checkout Flow State: 'initial' | 'existing_password' | 'existing_email_otp' | 'new_verify_email' | 'new_verify_phone' | 'new_create_account'
-  const [authFlowState, setAuthFlowState] = useState<
-    'initial' | 'existing_password' | 'existing_email_otp' | 'new_verify_email' | 'new_verify_phone' | 'new_create_account'
-  >('initial');
-
-  // Existing Customer Authentication State
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [forgotPasswordSent, setForgotPasswordSent] = useState(false);
-
-  // OTP Verification States (6-digit)
-  const [emailOtp, setEmailOtp] = useState(['', '', '', '', '', '']);
-  const [phoneOtp, setPhoneOtp] = useState(['', '', '', '', '', '']);
-  const [isVerifyingEmail, setIsVerifyingEmail] = useState(false);
-  const [isVerifyingPhone, setIsVerifyingPhone] = useState(false);
-  const [isSendingPhoneOtp, setIsSendingPhoneOtp] = useState(false);
-  const [emailOtpCooldown, setEmailOtpCooldown] = useState(0);
-  const [phoneOtpCooldown, setPhoneOtpCooldown] = useState(0);
-  const [emailVerified, setEmailVerified] = useState(false);
-  const [phoneVerified, setPhoneVerified] = useState(false);
-
-  // New Customer Account Creation State
-  const [newFullName, setNewFullName] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [newConfirmPassword, setNewConfirmPassword] = useState('');
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [isCreatingAccount, setIsCreatingAccount] = useState(false);
-
-  // Saved Addresses for Logged-In User
-  const [savedAddresses, setSavedAddresses] = useState<Address[]>([]);
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
-  const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
-  const [isAddingNewAddress, setIsAddingNewAddress] = useState(false);
-
-  // Delivery Address Form State
-  const [addressData, setAddressData] = useState({
-    fullName: '',
+  // Form State
+  const [formData, setFormData] = useState({
+    email: '',
     phone: '',
+    fullName: '',
     street: '',
     landmark: '',
     city: '',
     state: '',
     postalCode: '',
     postOffice: '',
-    label: 'Home',
-    country: 'India',
+    paymentMethod: 'upi',
   });
+
+  // Step 1 Inline Authentication State
+  const [authFlow, setAuthFlow] = useState<'enter_email' | 'existing_password' | 'existing_otp' | 'new_account'>('enter_email');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authOtp, setAuthOtp] = useState('');
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [authSuccess, setAuthSuccess] = useState<string | null>(null);
+  const [isAuthProcessing, setIsAuthProcessing] = useState(false);
+  const [otpCooldown, setOtpCooldown] = useState(0);
+
+  useEffect(() => {
+    if (otpCooldown > 0) {
+      const timer = setTimeout(() => setOtpCooldown(otpCooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [otpCooldown]);
 
   const [postOffices, setPostOffices] = useState<Array<{ name: string; branchType?: string; deliveryStatus?: string }>>([]);
   const [isFetchingPincode, setIsFetchingPincode] = useState(false);
   const [pincodeMessage, setPincodeMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (profile || user) {
+      setFormData((prev) => ({
+        ...prev,
+        email: prev.email || profile?.email || user?.email || '',
+        fullName: prev.fullName || profile?.fullName || '',
+        phone: prev.phone || profile?.phone || '',
+      }));
+    }
+  }, [profile, user]);
+
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // OTP Input Refs
-  const emailInputRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const phoneInputRefs = useRef<(HTMLInputElement | null)[]>([]);
-
-  // Cooldown timers
-  useEffect(() => {
-    if (emailOtpCooldown <= 0) return;
-    const timer = setInterval(() => setEmailOtpCooldown((c) => Math.max(0, c - 1)), 1000);
-    return () => clearInterval(timer);
-  }, [emailOtpCooldown]);
-
-  useEffect(() => {
-    if (phoneOtpCooldown <= 0) return;
-    const timer = setInterval(() => setPhoneOtpCooldown((c) => Math.max(0, c - 1)), 1000);
-    return () => clearInterval(timer);
-  }, [phoneOtpCooldown]);
-
-  // Load profile data into form if authenticated
-  useEffect(() => {
-    if (user || profile) {
-      const email = profile?.email || user?.email || '';
-      const phone = profile?.phone || '';
-      const name = profile?.fullName || '';
-
-      if (email && !contactEmail) setContactEmail(email);
-      if (phone && !contactPhone) setContactPhone(phone);
-      if (name && !addressData.fullName) {
-        setAddressData((prev) => ({
-          ...prev,
-          fullName: name,
-          phone: phone || prev.phone,
-        }));
-      }
-
-      if (profile?.phone_verified || profile?.isPhoneVerified) {
-        setPhoneVerified(true);
-      }
-    }
-  }, [user, profile, contactEmail, contactPhone, addressData.fullName]);
-
-  // Fetch saved addresses from Supabase when user is authenticated
-  useEffect(() => {
-    async function loadAddresses() {
-      if (!user?.id) return;
-      setIsLoadingAddresses(true);
-      try {
-        const res = await fetch(`/api/addresses?userId=${user.id}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data.addresses) && data.addresses.length > 0) {
-            setSavedAddresses(data.addresses);
-            const defaultAddr = data.addresses.find((a: any) => a.is_default) || data.addresses[0];
-            setSelectedAddressId(defaultAddr.id || null);
-            setAddressData({
-              fullName: defaultAddr.full_name || defaultAddr.fullName,
-              phone: defaultAddr.phone,
-              street: defaultAddr.street,
-              landmark: defaultAddr.landmark || '',
-              city: defaultAddr.city,
-              state: defaultAddr.state,
-              postalCode: defaultAddr.postal_code || defaultAddr.postalCode,
-              postOffice: defaultAddr.postOffice || '',
-              label: defaultAddr.label || 'Home',
-              country: defaultAddr.country || 'India',
-            });
-          }
-        }
-      } catch (err) {
-        console.warn('Failed to load saved addresses:', err);
-      } finally {
-        setIsLoadingAddresses(false);
-      }
-    }
-
-    if (user?.id) {
-      loadAddresses();
-    }
-  }, [user?.id]);
-
-  // PIN code lookup logic
   const lookupPincode = async (code: string) => {
     const cleanCode = code.trim();
     if (!/^\d{6}$/.test(cleanCode)) {
@@ -232,9 +101,12 @@ function CheckoutContent() {
       let data: any = null;
       try {
         const res = await fetch(`/api/pincode/${cleanCode}`);
-        if (res.ok) data = await res.json();
+        if (res.ok) {
+          data = await res.json();
+        }
       } catch (err) {}
 
+      // Direct fallback if internal API route is unreachable
       if (!data || !data.success) {
         try {
           const directRes = await fetch(`https://api.postalpincode.in/pincode/${cleanCode}`);
@@ -262,6 +134,7 @@ function CheckoutContent() {
         const state = data.state || '';
         const poList = data.postOffices;
 
+        // Prioritize delivery post offices, then alphabetical
         const sortedPOs = [...poList].sort((a: any, b: any) => {
           if (a.deliveryStatus === 'Delivery' && b.deliveryStatus !== 'Delivery') return -1;
           if (a.deliveryStatus !== 'Delivery' && b.deliveryStatus === 'Delivery') return 1;
@@ -269,7 +142,9 @@ function CheckoutContent() {
         });
 
         setPostOffices(sortedPOs);
-        setAddressData((prev) => {
+
+        // Auto-fill city/district and state
+        setFormData((prev) => {
           const selectedPO =
             sortedPOs.length === 1
               ? sortedPOs[0].name
@@ -285,13 +160,13 @@ function CheckoutContent() {
         });
 
         if (poList.length > 1) {
-          setPincodeMessage(`${poList.length} post offices found in this PIN code.`);
+          setPincodeMessage(`${poList.length} post offices found. Select yours from the dropdown.`);
         } else {
           setPincodeMessage(null);
         }
       } else {
         setPostOffices([]);
-        setPincodeMessage('PIN code not found. Please enter City and State manually.');
+        setPincodeMessage('PIN code not found. You can enter City and State manually.');
       }
     } catch (error) {
       console.error('Failed to lookup PIN code:', error);
@@ -303,7 +178,7 @@ function CheckoutContent() {
 
   const handlePincodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/\D/g, '').slice(0, 6);
-    setAddressData((prev) => ({ ...prev, postalCode: val }));
+    setFormData((prev) => ({ ...prev, postalCode: val }));
     if (val.length === 6) {
       lookupPincode(val);
     } else {
@@ -312,328 +187,219 @@ function CheckoutContent() {
     }
   };
 
-  // Google OAuth button from Checkout
-  const handleGoogleCheckout = async () => {
-    setContactError(null);
-    const res = await signInWithGoogle('/checkout');
-    if (res.error) setContactError(res.error);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Step 1: Initial "CONTINUE TO DELIVERY" Click
-  const handleContactContinue = async (e: React.FormEvent) => {
+  // Step 1 inline authentication handlers
+  const handleCheckEmail = async (e: React.FormEvent) => {
     e.preventDefault();
-    setContactError(null);
+    setAuthError(null);
+    setAuthSuccess(null);
 
-    // If customer is already authenticated
-    if (user) {
-      const isPhoneVer = Boolean(profile?.phone_verified || profile?.isPhoneVerified);
-      if (!isPhoneVer) {
-        // Prompt for Twilio Phone OTP inline
-        setAuthFlowState('new_verify_phone');
-        handleSendTwilioOtp();
+    const cleanEmail = formData.email.trim().toLowerCase();
+    if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      setAuthError('Please provide a valid email address.');
+      return;
+    }
+
+    setIsAuthProcessing(true);
+    try {
+      const checkRes = await checkEmailExists(cleanEmail);
+      setIsAuthProcessing(false);
+
+      if (checkRes.exists) {
+        setAuthFlow('existing_password');
+        setAuthSuccess(`Account found for ${cleanEmail}. Enter password or sign in with OTP.`);
+      } else {
+        // Send email OTP for new account creation
+        setIsAuthProcessing(true);
+        const otpRes = await sendEmailOtp(cleanEmail);
+        setIsAuthProcessing(false);
+        if (!otpRes.success) {
+          setAuthError(otpRes.error || 'Failed to dispatch verification code.');
+          return;
+        }
+        setAuthFlow('new_account');
+        setOtpCooldown(60);
+        setAuthSuccess(`A 6-digit verification code was sent to ${cleanEmail}`);
+      }
+    } catch (err: any) {
+      setIsAuthProcessing(false);
+      setAuthError(err.message || 'Email verification encountered an issue.');
+    }
+  };
+
+  const handleExistingPasswordLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError(null);
+    if (!authPassword) {
+      setAuthError('Please enter your password.');
+      return;
+    }
+
+    setIsAuthProcessing(true);
+    const res = await signIn(formData.email.trim().toLowerCase(), authPassword);
+    setIsAuthProcessing(false);
+
+    if (res.error) {
+      setAuthError(res.error);
+    } else {
+      setStep(2);
+    }
+  };
+
+  const handleExistingOtpLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError(null);
+    if (authOtp.trim().length !== 6) {
+      setAuthError('Please enter the 6-digit verification code.');
+      return;
+    }
+
+    setIsAuthProcessing(true);
+    const res = await signInWithOtp(formData.email.trim().toLowerCase(), authOtp.trim());
+    setIsAuthProcessing(false);
+
+    if (res.error) {
+      setAuthError(res.error);
+    } else {
+      setStep(2);
+    }
+  };
+
+  const handleSwitchToExistingOtp = async () => {
+    setAuthError(null);
+    setAuthSuccess(null);
+    setIsAuthProcessing(true);
+    const res = await sendEmailOtp(formData.email.trim().toLowerCase());
+    setIsAuthProcessing(false);
+
+    if (!res.success) {
+      setAuthError(res.error || 'Failed to send login code.');
+    } else {
+      setAuthFlow('existing_otp');
+      setOtpCooldown(60);
+      setAuthSuccess(`Login code sent to ${formData.email.trim().toLowerCase()}`);
+    }
+  };
+
+  const handleCreateNewAccountInline = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError(null);
+
+    const cleanEmail = formData.email.trim().toLowerCase();
+    const cleanOtp = authOtp.trim();
+    const cleanPhone = formData.phone.trim().replace(/\D/g, '').slice(-10);
+
+    if (cleanOtp.length !== 6) {
+      setAuthError('Please enter the 6-digit email verification code.');
+      return;
+    }
+
+    if (!formData.fullName.trim()) {
+      setAuthError('Please enter your full name.');
+      return;
+    }
+
+    if (cleanPhone.length !== 10 || !/^[6-9]\d{9}$/.test(cleanPhone)) {
+      setAuthError('Please provide a valid 10-digit mobile number (e.g. 9876543210).');
+      return;
+    }
+
+    if (authPassword.length < 8 || !/(?=.*[A-Za-z])(?=.*\d)/.test(authPassword)) {
+      setAuthError('Password must be at least 8 characters with both letters and numbers.');
+      return;
+    }
+
+    setIsAuthProcessing(true);
+
+    try {
+      // 1. Verify Email OTP
+      const verifyRes = await verifyEmailOtp(cleanEmail, cleanOtp);
+      if (!verifyRes.success) {
+        setIsAuthProcessing(false);
+        setAuthError(verifyRes.error || 'Invalid or expired verification code.');
         return;
       }
-      // Proceed to Step 2
+
+      // 2. Create customer account
+      const signupRes = await signUp(cleanEmail, authPassword, formData.fullName.trim(), cleanPhone);
+      setIsAuthProcessing(false);
+
+      if (signupRes.error) {
+        setAuthError(signupRes.error);
+        return;
+      }
+
+      setFormData((prev) => ({ ...prev, phone: cleanPhone }));
       setStep(2);
-      return;
-    }
-
-    // Validate inputs
-    const cleanEmail = contactEmail.trim().toLowerCase();
-    if (!cleanEmail || !cleanEmail.includes('@') || !cleanEmail.includes('.')) {
-      setContactError('Please enter a valid email address.');
-      return;
-    }
-
-    const cleanPhone = normalizePhoneNumber(contactPhone);
-    if (!cleanPhone || !isValidPhoneNumber(cleanPhone)) {
-      setContactError('Please enter a valid phone number with country code (e.g. +91 98765 43210).');
-      return;
-    }
-
-    setIsCheckingAccount(true);
-    const { exists, error: lookupErr } = await checkEmailExists(cleanEmail);
-    setIsCheckingAccount(false);
-
-    if (lookupErr) {
-      setContactError(lookupErr);
-      return;
-    }
-
-    if (exists) {
-      // Existing customer detected -> show inline password / email OTP options
-      setAuthFlowState('existing_password');
-    } else {
-      // New customer -> start inline email & phone verification
-      setAuthFlowState('new_verify_email');
-      await sendEmailOtp(cleanEmail);
-      setEmailOtpCooldown(60);
+    } catch (err: any) {
+      setIsAuthProcessing(false);
+      setAuthError(err.message || 'Account creation encountered an issue.');
     }
   };
 
-  // Existing Customer: Password Login Inline
-  const handlePasswordLogin = async (e: React.FormEvent) => {
+  const handleResendInlineOtp = async () => {
+    if (otpCooldown > 0) return;
+    setAuthError(null);
+    setAuthSuccess(null);
+    const cleanEmail = formData.email.trim().toLowerCase();
+
+    const res = await sendEmailOtp(cleanEmail);
+    if (!res.success) {
+      setAuthError(res.error || 'Failed to resend code.');
+    } else {
+      setAuthSuccess(`New code sent to ${cleanEmail}`);
+      setOtpCooldown(60);
+    }
+  };
+
+  const handleNextStep = (e: React.FormEvent) => {
     e.preventDefault();
-    setContactError(null);
-    setIsAuthenticating(true);
-
-    const res = await signIn(contactEmail.trim().toLowerCase(), password);
-    setIsAuthenticating(false);
-
-    if (res.error) {
-      setContactError(res.error.includes('credentials') ? 'Incorrect password. Try again or use Email OTP.' : res.error);
-      return;
-    }
-
-    // Authentication succeeded!
-    setAuthFlowState('initial');
-    // If phone unverified, prompt phone OTP; otherwise advance to delivery
-    setTimeout(() => {
+    if (step === 1) {
+      if (!formData.email) return;
+      const cleanPhone = formData.phone.trim().replace(/\D/g, '').slice(-10);
+      if (cleanPhone.length !== 10 || !/^[6-9]\d{9}$/.test(cleanPhone)) {
+        setAuthError('Please provide a valid 10-digit mobile number.');
+        return;
+      }
       setStep(2);
-    }, 400);
-  };
-
-  // Existing Customer: Switch to Email OTP
-  const handleSwitchToEmailOtp = async () => {
-    setContactError(null);
-    setAuthFlowState('existing_email_otp');
-    await sendEmailOtp(contactEmail.trim().toLowerCase());
-    setEmailOtpCooldown(60);
-  };
-
-  // Existing Customer: Forgot Password
-  const handleForgotPassword = async () => {
-    setContactError(null);
-    const res = await resetPassword(contactEmail.trim().toLowerCase());
-    if (res.error) {
-      setContactError(res.error);
-    } else {
-      setForgotPasswordSent(true);
-      setTimeout(() => setForgotPasswordSent(false), 8000);
-    }
-  };
-
-  // OTP Handling (Digit by digit input)
-  const handleOtpChange = (
-    val: string,
-    idx: number,
-    type: 'email' | 'phone'
-  ) => {
-    const digit = val.replace(/\D/g, '').slice(-1);
-    const arr = type === 'email' ? [...emailOtp] : [...phoneOtp];
-    arr[idx] = digit;
-
-    if (type === 'email') {
-      setEmailOtp(arr);
-      if (digit && idx < 5) emailInputRefs.current[idx + 1]?.focus();
-      if (arr.every((d) => d.length === 1)) {
-        handleVerifyEmailOtpCode(arr.join(''));
+    } else if (step === 2) {
+      const cleanPhone = formData.phone.trim().replace(/\D/g, '').slice(-10);
+      if (!formData.fullName || !formData.street || !formData.city || !formData.postalCode) return;
+      if (cleanPhone.length !== 10 || !/^[6-9]\d{9}$/.test(cleanPhone)) {
+        setPaymentError('Please provide a valid 10-digit delivery contact number.');
+        return;
       }
-    } else {
-      setPhoneOtp(arr);
-      if (digit && idx < 5) phoneInputRefs.current[idx + 1]?.focus();
-      if (arr.every((d) => d.length === 1)) {
-        handleVerifyPhoneOtpCode(arr.join(''));
+      if (postOffices.length > 1 && !formData.postOffice) {
+        setPincodeMessage('Please select your post office from the dropdown before continuing.');
+        return;
       }
+      handleCompletePayment();
     }
   };
 
-  const handleOtpKeyDown = (
-    e: React.KeyboardEvent<HTMLInputElement>,
-    idx: number,
-    type: 'email' | 'phone'
-  ) => {
-    if (e.key === 'Backspace') {
-      const arr = type === 'email' ? [...emailOtp] : [...phoneOtp];
-      if (!arr[idx] && idx > 0) {
-        if (type === 'email') emailInputRefs.current[idx - 1]?.focus();
-        else phoneInputRefs.current[idx - 1]?.focus();
-      }
-    }
-  };
-
-  const handleOtpPaste = (e: React.ClipboardEvent<HTMLInputElement>, type: 'email' | 'phone') => {
-    e.preventDefault();
-    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
-    if (!pasted) return;
-
-    const arr = pasted.split('');
-    while (arr.length < 6) arr.push('');
-
-    if (type === 'email') {
-      setEmailOtp(arr);
-      if (pasted.length === 6) handleVerifyEmailOtpCode(pasted);
-    } else {
-      setPhoneOtp(arr);
-      if (pasted.length === 6) handleVerifyPhoneOtpCode(pasted);
-    }
-  };
-
-  // Verify Email OTP
-  const handleVerifyEmailOtpCode = async (codeString?: string) => {
-    const code = codeString || emailOtp.join('');
-    if (code.length !== 6) {
-      setContactError('Please enter all 6 digits of the email verification code.');
-      return;
-    }
-
-    setContactError(null);
-    setIsVerifyingEmail(true);
-
-    const res = await verifyEmailOtp(contactEmail.trim().toLowerCase(), code);
-    setIsVerifyingEmail(false);
-
-    if (res.error) {
-      setContactError(res.error.includes('expired') ? 'Verification code has expired. Please request a new one.' : 'Incorrect email verification code.');
-      return;
-    }
-
-    setEmailVerified(true);
-
-    // If existing customer logging in via email OTP, check phone verification status
-    if (authFlowState === 'existing_email_otp') {
-      setAuthFlowState('initial');
-      setStep(2);
-      return;
-    }
-
-    // For new customer, advance to Phone verification
-    setAuthFlowState('new_verify_phone');
-    handleSendTwilioOtp();
-  };
-
-  // Send Twilio Phone OTP
-  const handleSendTwilioOtp = async () => {
-    setContactError(null);
-    setIsSendingPhoneOtp(true);
-    const normalized = normalizePhoneNumber(contactPhone);
-    const res = await sendPhoneOtp(normalized);
-    setIsSendingPhoneOtp(false);
-
-    if (res.error) {
-      setContactError(res.error);
-    } else {
-      setPhoneOtpCooldown(60);
-    }
-  };
-
-  // Verify Twilio Phone OTP
-  const handleVerifyPhoneOtpCode = async (codeString?: string) => {
-    const code = codeString || phoneOtp.join('');
-    if (code.length !== 6) {
-      setContactError('Please enter all 6 digits of the SMS verification code.');
-      return;
-    }
-
-    setContactError(null);
-    setIsVerifyingPhone(true);
-    const normalized = normalizePhoneNumber(contactPhone);
-    const res = await verifyPhoneOtp(normalized, code);
-    setIsVerifyingPhone(false);
-
-    if (res.error) {
-      setContactError(res.error);
-      return;
-    }
-
-    setPhoneVerified(true);
-
-    // If user was already logged in (fixing unverified phone), advance to delivery
-    if (user) {
-      setAuthFlowState('initial');
-      setStep(2);
-      return;
-    }
-
-    // New customer: advance to account creation (password & delivery address)
-    setAuthFlowState('new_create_account');
-  };
-
-  // New Customer: Create Account & Continue to Delivery
-  const handleCreateAccountSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setContactError(null);
-
-    if (!newFullName.trim()) {
-      setContactError('Please enter your full recipient name.');
-      return;
-    }
-
-    if (newPassword.length < 8) {
-      setContactError('Password must be at least 8 characters long.');
-      return;
-    }
-
-    if (newPassword !== newConfirmPassword) {
-      setContactError('Passwords do not match. Please verify.');
-      return;
-    }
-
-    if (!addressData.street || !addressData.city || !addressData.postalCode) {
-      setContactError('Please complete your delivery address details.');
-      return;
-    }
-
-    setIsCreatingAccount(true);
-    const cleanEmail = contactEmail.trim().toLowerCase();
-    const cleanPhone = normalizePhoneNumber(contactPhone);
-
-    const signupRes = await signUp(cleanEmail, newPassword, newFullName.trim(), cleanPhone);
-    if (signupRes.error) {
-      setIsCreatingAccount(false);
-      setContactError(signupRes.error);
-      return;
-    }
-
-    // Save initial address in public.addresses
-    try {
-      const { data: userData } = await supabase.auth.getUser();
-      if (userData?.user?.id) {
-        await fetch('/api/addresses', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: userData.user.id,
-            label: addressData.label || 'Home',
-            fullName: newFullName.trim(),
-            phone: cleanPhone,
-            street: addressData.street,
-            landmark: addressData.landmark,
-            city: addressData.city,
-            state: addressData.state || 'Karnataka',
-            postalCode: addressData.postalCode,
-            country: 'India',
-            isDefault: true,
-          }),
-        });
-      }
-    } catch (e) {}
-
-    setIsCreatingAccount(false);
-    setAuthFlowState('initial');
-    setStep(2);
-  };
-
-  // Step 2: Handle Complete Payment via Razorpay
   const handleCompletePayment = async () => {
     setIsProcessing(true);
     setPaymentError(null);
 
+    const cleanPhone = formData.phone.trim().replace(/\D/g, '').slice(-10);
     const totalOrderAmount = cartTotal + (cartTotal >= BRAND.freeShippingThreshold ? 0 : 150);
     const amountInPaise = Math.round(totalOrderAmount * 100);
 
     try {
+      // 1. Ensure Razorpay Checkout SDK is loaded
       const isScriptLoaded = await loadRazorpayScript();
       if (!isScriptLoaded) {
         throw new Error(
-          'Could not load Razorpay payment gateway. Please check your connection or disable ad-blockers and try again.'
+          'Could not load Razorpay payment gateway. Please check your internet connection or disable ad-blockers and try again.'
         );
       }
 
-      // Create internal order record in store
+      // 2. Create order in store before payment
       const newOrder = createOrder({
-        userId: user?.id || undefined,
-        status: 'Confirmed',
+        status: 'Verification Pending',
         items: cart.map((c) => ({
           productId: c.product.id,
           productName: c.product.name,
@@ -649,20 +415,19 @@ function CheckoutContent() {
         tax: Math.round(cartTotal * 0.05),
         total: totalOrderAmount,
         customer: {
-          name: addressData.fullName || profile?.fullName || 'Patron',
-          email: contactEmail || profile?.email || user?.email || '',
-          phone: contactPhone || profile?.phone || '',
+          name: formData.fullName,
+          email: formData.email,
+          phone: cleanPhone,
         },
         shippingAddress: {
-          fullName: addressData.fullName,
-          phone: addressData.phone,
-          street: addressData.street,
-          landmark: addressData.landmark,
-          city: addressData.city,
-          state: addressData.state || 'Karnataka',
-          postalCode: addressData.postalCode,
-          postOffice: addressData.postOffice || undefined,
-          country: 'India',
+          fullName: formData.fullName,
+          phone: cleanPhone,
+          street: formData.street,
+          landmark: formData.landmark,
+          city: formData.city,
+          state: formData.state || 'Karnataka',
+          postalCode: formData.postalCode,
+          postOffice: formData.postOffice || undefined,
         },
         payment: {
           method: 'razorpay',
@@ -670,20 +435,46 @@ function CheckoutContent() {
           status: 'pending',
           paidAt: '',
         },
+        verificationStatus: 'Pending',
+        phoneVerified: false,
+        customerId: user?.id,
       });
 
-      // Call backend to create Razorpay Order
+      // 3. Call backend to create Razorpay Order with authoritative items & customer
       const orderRes = await fetch('/api/create-order', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           amount: amountInPaise,
           currency: 'INR',
           customer: {
-            name: addressData.fullName,
-            email: contactEmail,
-            phone: contactPhone,
+            name: formData.fullName,
+            email: formData.email,
+            phone: cleanPhone,
           },
+          shippingAddress: {
+            fullName: formData.fullName,
+            phone: cleanPhone,
+            street: formData.street,
+            landmark: formData.landmark,
+            city: formData.city,
+            state: formData.state || 'Karnataka',
+            postalCode: formData.postalCode,
+            postOffice: formData.postOffice || undefined,
+            country: 'India',
+          },
+          items: cart.map((c) => ({
+            productId: c.product.id,
+            productName: c.product.name,
+            color: c.selectedColor.name,
+            size: c.selectedSize,
+            quantity: c.quantity,
+            price: c.price,
+            imageUrl: c.product.images[0]?.url || '',
+          })),
+          customerId: user?.id,
           orderId: newOrder.id,
         }),
       });
@@ -698,7 +489,7 @@ function CheckoutContent() {
         throw new Error('Order ID was not returned by payment gateway.');
       }
 
-      // Open Razorpay Standard Checkout
+      // 4. Open Razorpay Standard Checkout
       const options = {
         key: orderData.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TdtCpOjDeqd3Mg',
         amount: orderData.amount,
@@ -707,9 +498,9 @@ function CheckoutContent() {
         description: `Order #${newOrder.orderNumber}`,
         order_id: orderData.order_id,
         prefill: {
-          name: addressData.fullName,
-          email: contactEmail,
-          contact: contactPhone,
+          name: formData.fullName,
+          email: formData.email,
+          contact: cleanPhone,
         },
         theme: {
           color: '#04fc21',
@@ -717,20 +508,38 @@ function CheckoutContent() {
         },
         handler: async function (response: any) {
           try {
+            // Verify payment signature & idempotently record order on server
             const verifyRes = await fetch('/api/verify-payment', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: {
+                'Content-Type': 'application/json',
+              },
               body: JSON.stringify({
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
+                orderData: {
+                  orderId: newOrder.id,
+                  orderNumber: newOrder.orderNumber,
+                  items: newOrder.items,
+                  subtotal: newOrder.subtotal,
+                  discount: newOrder.discount,
+                  shipping: newOrder.shipping,
+                  tax: newOrder.tax,
+                  total: newOrder.total,
+                  customer: newOrder.customer,
+                  shippingAddress: newOrder.shippingAddress,
+                  customerId: user?.id,
+                },
               }),
             });
 
             const verifyData = await verifyRes.json();
             if (verifyData.success) {
               updateOrder(newOrder.id, {
-                status: 'Confirmed',
+                status: 'Verification Pending',
+                verificationStatus: 'Pending',
+                phoneVerified: false,
                 payment: {
                   method: 'razorpay',
                   transactionId: response.razorpay_payment_id,
@@ -768,7 +577,7 @@ function CheckoutContent() {
     }
   };
 
-  // Cart Recovery Handler
+  // Recovery effect: If cart is empty, recover from URL params, storage helper, or last checkout item
   const [isRecovering, setIsRecovering] = useState(false);
   const [hasAttemptedRecovery, setHasAttemptedRecovery] = useState(false);
 
@@ -778,6 +587,7 @@ function CheckoutContent() {
     const attemptRecovery = async () => {
       setIsRecovering(true);
 
+      // 1. Check synchronous storage first - if items exist, hydrate directly without incrementing
       const syncCart = loadCartFromStorageSync();
       if (syncCart.length > 0) {
         setCart(syncCart);
@@ -786,6 +596,7 @@ function CheckoutContent() {
         return;
       }
 
+      // 2. Check asynchronous storage (IndexedDB)
       const asyncCart = await loadCartFromStorageAsync();
       if (asyncCart.length > 0) {
         setCart(asyncCart);
@@ -794,6 +605,7 @@ function CheckoutContent() {
         return;
       }
 
+      // 3. Check URL search parameters (e.g. from "BUY NOW DIRECT" or "quick buy")
       const paramSlug = searchParams.get('slug');
       const paramProductId = searchParams.get('productId');
       const paramSize = searchParams.get('size') as Size | null;
@@ -806,13 +618,14 @@ function CheckoutContent() {
         if (!found) {
           try {
             const fetched = await fetchProductsFromSupabase();
-            if (fetched) found = fetched.find((p) => p.slug === paramSlug || p.id === paramProductId);
+            if (fetched) {
+              found = fetched.find((p) => p.slug === paramSlug || p.id === paramProductId);
+            }
           } catch (e) {}
         }
 
         if (found) {
-          const color =
-            found.colors.find((c) => c.name.toLowerCase() === (paramColorName || '').toLowerCase()) ||
+          const color = found.colors.find((c) => c.name.toLowerCase() === (paramColorName || '').toLowerCase()) || 
             (paramColorName ? { name: paramColorName, hex: paramColorHex || '#0a0a0a' } : found.colors[0]);
           const size = paramSize || found.sizes[2] || found.sizes[0] || 'L';
           setCartItem(found, size, color, isNaN(paramQty) ? 1 : paramQty);
@@ -822,13 +635,16 @@ function CheckoutContent() {
         }
       }
 
+      // 4. Check last checkout item from sessionStorage / localStorage / IndexedDB
       const lastCheckout = loadLastCheckout();
       if (lastCheckout && (lastCheckout.slug || lastCheckout.productId)) {
         let found = products.find((p) => p.slug === lastCheckout.slug || p.id === lastCheckout.productId) || lastCheckout.product;
         if (!found) {
           try {
             const fetched = await fetchProductsFromSupabase();
-            if (fetched) found = fetched.find((p) => p.slug === lastCheckout.slug || p.id === lastCheckout.productId);
+            if (fetched) {
+              found = fetched.find((p) => p.slug === lastCheckout.slug || p.id === lastCheckout.productId);
+            }
           } catch (e) {}
         }
 
@@ -864,7 +680,7 @@ function CheckoutContent() {
         <p className="text-xs font-mono text-neutral-400">Add garments to your bag before proceeding to checkout.</p>
         <Link
           href="/shop"
-          className="px-8 py-3.5 bg-snake-green text-black font-mono text-xs tracking-widest font-bold uppercase hover:bg-white transition-colors"
+          className="px-8 py-3.5 bg-snake-green text-black font-mono text-xs tracking-widest font-bold uppercase"
         >
           SHOP T-SHIRTS
         </Link>
@@ -873,9 +689,9 @@ function CheckoutContent() {
   }
 
   return (
-    <div className="bg-black text-white min-h-screen pt-28 pb-24 px-4 sm:px-6 md:px-12 font-sans">
+    <div className="bg-black text-white min-h-screen pt-28 pb-24 px-4 sm:px-6 md:px-12">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
+        {/* Checkout Header */}
         <div className="border-b border-white/10 pb-6 mb-8 md:mb-10 flex items-center justify-between">
           <div>
             <span className="text-[10px] font-mono tracking-mega text-snake-green uppercase">
@@ -893,7 +709,7 @@ function CheckoutContent() {
         </div>
 
         {/* Mobile Collapsible Order Summary */}
-        <div className="lg:hidden mb-6 bg-[#0c0c0c] border border-white/10 rounded overflow-hidden">
+        <div className="lg:hidden mb-6 bg-[#0c0c0c] border border-white/10 rounded-lg overflow-hidden">
           <button
             type="button"
             onClick={() => setShowMobileSummary(!showMobileSummary)}
@@ -977,7 +793,7 @@ function CheckoutContent() {
               step >= 1 ? 'border-snake-green text-white font-semibold' : 'border-neutral-800 text-neutral-600'
             }`}
           >
-            01. CONTACT &amp; VERIFICATION
+            01. CONTACT
           </div>
           <div
             className={`pb-2 border-b-2 transition-colors ${
@@ -991,677 +807,392 @@ function CheckoutContent() {
         {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
           {/* Left Form (Steps) */}
-          <div className="lg:col-span-7 bg-[#0c0c0c] border border-white/10 rounded p-5 sm:p-8 space-y-8">
-            {/* Global Error Banner */}
-            {contactError && (
-              <div className="p-3.5 bg-red-950/40 border border-red-800/50 text-red-400 text-xs font-mono flex items-start gap-2 rounded">
-                <AlertCircle size={16} className="shrink-0 mt-0.5" />
-                <span>{contactError}</span>
-              </div>
-            )}
-
-            {/* ========================================================= */}
-            {/* STEP 1: CONTACT & INLINE AUTH / VERIFICATION              */}
-            {/* ========================================================= */}
+          <div className="lg:col-span-7 bg-[#0c0c0c] border border-white/10 rounded-lg p-5 sm:p-8 space-y-8">
+            {/* Step 1: Contact & Account Detection */}
             {step === 1 && (
               <div className="space-y-6">
-                {/* 1. Logged In Customer State */}
+                <div className="border-b border-white/10 pb-3 flex justify-between items-start">
+                  <div>
+                    <h3 className="text-sm font-mono tracking-widest text-white uppercase font-bold">
+                      {user ? 'AUTHENTICATED PATRON' : 'PATRON IDENTIFICATION'}
+                    </h3>
+                    <p className="text-[11px] font-mono text-neutral-500 mt-1">
+                      {user
+                        ? 'Your order will be linked to your verified patron profile.'
+                        : 'Enter your email. Existing patrons sign in; new patrons verify email inline.'}
+                    </p>
+                  </div>
+                  {user && (
+                    <span className="px-2.5 py-1 bg-snake-green/10 border border-snake-green/40 text-snake-green text-[10px] font-mono uppercase tracking-wider font-semibold rounded flex items-center gap-1.5">
+                      <CheckCircle2 size={12} />
+                      VERIFIED
+                    </span>
+                  )}
+                </div>
+
+                {authError && (
+                  <div className="p-3 bg-red-950/40 border border-red-800/50 text-red-400 text-xs font-mono flex items-center gap-2">
+                    <AlertCircle size={15} className="shrink-0" />
+                    <span>{authError}</span>
+                  </div>
+                )}
+
+                {authSuccess && (
+                  <div className="p-3 bg-snake-green/10 border border-snake-green/30 text-snake-green text-xs font-mono flex items-center gap-2">
+                    <CheckCircle2 size={15} className="shrink-0" />
+                    <span>{authSuccess}</span>
+                  </div>
+                )}
+
+                {/* Case 1: Already Authenticated User */}
                 {user ? (
-                  <div className="space-y-6">
-                    <div className="border-b border-white/10 pb-4 flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] font-mono text-snake-green uppercase tracking-widest">
-                          AUTHENTICATED PATRON
-                        </span>
-                        <h3 className="text-base font-display font-medium text-white">
-                          {profile?.fullName?.toUpperCase() || 'REGISTERED PATRON'}
-                        </h3>
-                        <p className="text-xs font-mono text-neutral-400">{profile?.email || user.email}</p>
+                  <form onSubmit={handleNextStep} className="space-y-5">
+                    <div className="p-4 bg-neutral-950 border border-white/10 rounded space-y-3 text-xs font-mono">
+                      <div className="flex justify-between items-center">
+                        <span className="text-neutral-500 uppercase text-[10px]">PATRON ACCOUNT</span>
+                        <span className="text-snake-green text-[10px] uppercase font-bold">ACTIVE SESSION</span>
                       </div>
-                      <div className="text-right">
-                        <span className="inline-flex items-center gap-1 text-[10px] font-mono text-snake-green bg-snake-green/10 border border-snake-green/30 px-2 py-0.5 rounded">
-                          <Check size={12} />
-                          SESSION ACTIVE
-                        </span>
-                      </div>
+                      <p className="text-white font-semibold text-sm">
+                        {formData.fullName || profile?.fullName || user.user_metadata?.full_name || 'Patron'}
+                      </p>
+                      <p className="text-neutral-400 flex items-center gap-1.5">
+                        <Lock size={12} className="text-snake-green" />
+                        {user.email}
+                      </p>
                     </div>
 
-                    {/* Phone verification check for logged in user */}
-                    <div className="p-4 bg-[#111] border border-white/10 rounded space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-mono text-neutral-400 uppercase">MOBILE PHONE NUMBER</span>
-                        {phoneVerified || profile?.phone_verified ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-mono text-snake-green font-semibold">
-                            <Check size={12} /> VERIFIED
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-mono text-amber-400">
-                            UNVERIFIED
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm font-mono text-white">
-                        {formatPhoneDisplay(profile?.phone || contactPhone) || 'Not provided'}
+                    <div className="space-y-1.5 text-xs font-mono">
+                      <label className="text-neutral-400 uppercase flex items-center justify-between">
+                        <span>DELIVERY CONTACT NUMBER *</span>
+                        <span className="text-[10px] text-neutral-500 font-mono">10 DIGITS (SMS UPDATES)</span>
+                      </label>
+                      <input
+                        type="tel"
+                        name="phone"
+                        required
+                        autoComplete="tel"
+                        inputMode="tel"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        placeholder="9876543210"
+                        maxLength={15}
+                        className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green font-mono"
+                      />
+                      <p className="text-[10px] font-mono text-neutral-500">
+                        Mandatory for courier tracking. No phone OTP required before prepaid order.
                       </p>
-
-                      {/* If unverified, prompt inline Twilio SMS OTP */}
-                      {(!phoneVerified && !profile?.phone_verified) && (
-                        <div className="pt-2 border-t border-white/10 space-y-3">
-                          <p className="text-xs font-mono text-neutral-400">
-                            Please verify your phone number via SMS to complete your order.
-                          </p>
-                          <div className="flex gap-2">
-                            <button
-                              type="button"
-                              onClick={handleSendTwilioOtp}
-                              disabled={isSendingPhoneOtp || phoneOtpCooldown > 0}
-                              className="px-4 py-2 bg-white hover:bg-snake-green text-black font-mono text-xs uppercase font-semibold disabled:opacity-50 transition-colors"
-                            >
-                              {isSendingPhoneOtp
-                                ? 'SENDING...'
-                                : phoneOtpCooldown > 0
-                                ? `RESEND IN ${phoneOtpCooldown}S`
-                                : 'SEND SMS OTP'}
-                            </button>
-                          </div>
-
-                          {/* OTP Input */}
-                          <div className="space-y-2 pt-2">
-                            <label className="text-[10px] font-mono uppercase text-neutral-400">
-                              ENTER 6-DIGIT SMS CODE
-                            </label>
-                            <div className="flex gap-2">
-                              {phoneOtp.map((digit, idx) => (
-                                <input
-                                  key={idx}
-                                  ref={(el) => {
-                                    phoneInputRefs.current[idx] = el;
-                                  }}
-                                  type="text"
-                                  inputMode="numeric"
-                                  maxLength={1}
-                                  value={digit}
-                                  onChange={(e) => handleOtpChange(e.target.value, idx, 'phone')}
-                                  onKeyDown={(e) => handleOtpKeyDown(e, idx, 'phone')}
-                                  onPaste={(e) => handleOtpPaste(e, 'phone')}
-                                  className="w-10 h-12 bg-black border border-white/20 text-center font-mono text-lg text-white focus:outline-none focus:border-snake-green rounded"
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      )}
                     </div>
 
                     <button
-                      type="button"
-                      onClick={() => setStep(2)}
+                      type="submit"
                       className="w-full min-h-[48px] py-4 bg-snake-green text-black font-mono text-xs tracking-widest font-bold uppercase hover:bg-white active:scale-[0.99] transition-all flex items-center justify-center gap-2"
                     >
-                      CONTINUE TO DELIVERY <ArrowRight size={14} />
+                      CONTINUE TO DELIVERY ADDRESS <ArrowRight size={14} />
                     </button>
-                  </div>
+                  </form>
                 ) : (
-                  /* 2. Unauthenticated Flow */
+                  /* Case 2: Unauthenticated Customer */
                   <div className="space-y-6">
-                    {/* Google OAuth Option */}
-                    {authFlowState === 'initial' && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={handleGoogleCheckout}
-                          className="w-full bg-[#121212] hover:bg-white hover:text-black border border-white/20 hover:border-white text-white font-mono text-xs uppercase tracking-widest py-3.5 px-6 font-semibold transition-all duration-300 flex items-center justify-center gap-3 active:scale-[0.99]"
-                        >
-                          <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-                            <path
-                              fill="#4285F4"
-                              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                            />
-                            <path
-                              fill="#34A853"
-                              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                            />
-                            <path
-                              fill="#FBBC05"
-                              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                            />
-                            <path
-                              fill="#EA4335"
-                              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                            />
-                          </svg>
-                          <span>CONTINUE WITH GOOGLE</span>
-                        </button>
-
-                        <div className="relative my-4">
-                          <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-white/10" />
-                          </div>
-                          <div className="relative flex justify-center text-[10px] uppercase font-mono">
-                            <span className="bg-[#0c0c0c] px-3 text-neutral-500">OR ENTER DETAILS</span>
-                          </div>
-                        </div>
-                      </>
-                    )}
-
-                    {/* Initial Contact Inputs */}
-                    {authFlowState === 'initial' && (
-                      <form onSubmit={handleContactContinue} className="space-y-4 text-xs font-mono">
-                        <div className="space-y-1.5">
+                    {/* Sub-case 2A: Enter Email to Detect Account */}
+                    {authFlow === 'enter_email' && (
+                      <form onSubmit={handleCheckEmail} className="space-y-5">
+                        <div className="space-y-1.5 text-xs font-mono">
                           <label className="text-neutral-400 uppercase">EMAIL ADDRESS *</label>
                           <input
                             type="email"
+                            name="email"
                             required
                             autoComplete="email"
                             inputMode="email"
-                            value={contactEmail}
-                            onChange={(e) => setContactEmail(e.target.value)}
+                            value={formData.email}
+                            onChange={handleChange}
                             placeholder="e.g. aditya@example.com"
                             className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green"
                           />
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <label className="text-neutral-400 uppercase">PHONE NUMBER (FOR SMS TRACKING) *</label>
-                          <input
-                            type="tel"
-                            required
-                            autoComplete="tel"
-                            inputMode="tel"
-                            value={contactPhone}
-                            onChange={(e) => setContactPhone(e.target.value)}
-                            placeholder="+91 98765 43210"
-                            className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green"
-                          />
+                          <p className="text-[10px] font-mono text-neutral-500">
+                            We will check if you have an existing patron profile or guide you through instant verification.
+                          </p>
                         </div>
 
                         <button
                           type="submit"
-                          disabled={isCheckingAccount}
-                          className="w-full min-h-[48px] py-4 bg-snake-green text-black font-mono text-xs tracking-widest font-bold uppercase hover:bg-white active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50 mt-2"
+                          disabled={isAuthProcessing || !formData.email}
+                          className="w-full min-h-[48px] py-4 bg-snake-green text-black font-mono text-xs tracking-widest font-bold uppercase hover:bg-white active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                         >
-                          {isCheckingAccount ? (
+                          {isAuthProcessing ? (
                             <>
                               <Loader2 size={14} className="animate-spin" />
-                              VERIFYING ACCOUNT...
+                              CHECKING PATRON PROFILE...
                             </>
                           ) : (
                             <>
-                              CONTINUE TO DELIVERY <ArrowRight size={14} />
+                              CONTINUE <ArrowRight size={14} />
                             </>
                           )}
                         </button>
                       </form>
                     )}
 
-                    {/* CASE A: Existing Customer Password Login Inline */}
-                    {authFlowState === 'existing_password' && (
-                      <div className="space-y-5 bg-[#111] p-5 sm:p-6 border border-white/15 rounded">
-                        <div className="border-b border-white/10 pb-3">
-                          <span className="text-[10px] font-mono text-snake-green uppercase tracking-widest">
-                            WELCOME BACK
-                          </span>
-                          <h4 className="text-lg font-display font-medium text-white">
-                            SIGN IN TO YOUR ACCOUNT
-                          </h4>
-                          <p className="text-xs font-mono text-neutral-400 mt-1">
-                            We found an existing SuperSnake account for <span className="text-white">{contactEmail}</span>.
-                          </p>
+                    {/* Sub-case 2B: Existing Account - Password Login */}
+                    {authFlow === 'existing_password' && (
+                      <form onSubmit={handleExistingPasswordLogin} className="space-y-5 animate-fadeIn">
+                        <div className="p-3.5 bg-neutral-950 border border-white/10 rounded flex justify-between items-center text-xs font-mono">
+                          <div>
+                            <span className="text-[10px] text-neutral-500 uppercase block">PATRON EMAIL</span>
+                            <span className="text-white font-semibold">{formData.email}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAuthFlow('enter_email');
+                              setAuthError(null);
+                              setAuthSuccess(null);
+                            }}
+                            className="text-[10px] font-mono text-snake-green hover:underline uppercase"
+                          >
+                            CHANGE EMAIL
+                          </button>
                         </div>
 
-                        {forgotPasswordSent && (
-                          <div className="p-3 bg-snake-green/10 border border-snake-green/30 text-snake-green text-xs font-mono">
-                            Password reset link sent to your email.
+                        <div className="space-y-1.5 text-xs font-mono">
+                          <div className="flex justify-between items-center">
+                            <label className="text-neutral-400 uppercase">PASSWORD *</label>
+                            <Link
+                              href="/forgot-password"
+                              className="text-[10px] font-mono text-neutral-400 hover:text-snake-green uppercase"
+                            >
+                              FORGOT?
+                            </Link>
                           </div>
-                        )}
+                          <input
+                            type="password"
+                            value={authPassword}
+                            onChange={(e) => setAuthPassword(e.target.value)}
+                            required
+                            placeholder="••••••••••••"
+                            className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green"
+                          />
+                        </div>
 
-                        <form onSubmit={handlePasswordLogin} className="space-y-4">
-                          <div className="space-y-1.5">
-                            <label className="text-neutral-400 text-xs font-mono uppercase">PASSWORD</label>
-                            <div className="relative">
-                              <input
-                                type={showPassword ? 'text' : 'password'}
-                                required
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                placeholder="Enter your password"
-                                className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-sm font-mono text-white rounded focus:outline-none focus:border-snake-green pr-11"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white"
-                              >
-                                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                              </button>
-                            </div>
-                          </div>
-
-                          <button
-                            type="submit"
-                            disabled={isAuthenticating}
-                            className="w-full py-3.5 bg-white hover:bg-snake-green text-black font-mono text-xs uppercase font-bold tracking-widest transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                          >
-                            {isAuthenticating ? 'AUTHENTICATING...' : 'CONTINUE'}
-                          </button>
-                        </form>
-
-                        <div className="flex flex-col sm:flex-row justify-between gap-3 pt-2 text-[11px] font-mono text-neutral-400 border-t border-white/10">
+                        <div className="flex items-center justify-between text-xs font-mono">
                           <button
                             type="button"
-                            onClick={handleSwitchToEmailOtp}
-                            className="text-snake-green hover:underline text-left"
+                            onClick={handleSwitchToExistingOtp}
+                            disabled={isAuthProcessing}
+                            className="text-neutral-400 hover:text-white underline text-[11px]"
                           >
-                            USE EMAIL OTP INSTEAD →
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleForgotPassword}
-                            className="hover:text-white text-left"
-                          >
-                            Forgot Password?
+                            Sign in with Email OTP instead
                           </button>
                         </div>
 
                         <button
-                          type="button"
-                          onClick={() => setAuthFlowState('initial')}
-                          className="text-[10px] font-mono text-neutral-500 hover:text-white underline block"
+                          type="submit"
+                          disabled={isAuthProcessing || !authPassword}
+                          className="w-full min-h-[48px] py-4 bg-snake-green text-black font-mono text-xs tracking-widest font-bold uppercase hover:bg-white active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                         >
-                          Use a different email address
+                          {isAuthProcessing ? (
+                            <>
+                              <Loader2 size={14} className="animate-spin" />
+                              SIGNING IN...
+                            </>
+                          ) : (
+                            <>
+                              SIGN IN &amp; CONTINUE <ArrowRight size={14} />
+                            </>
+                          )}
                         </button>
-                      </div>
+                      </form>
                     )}
 
-                    {/* CASE B: Existing Customer Email OTP Login Inline */}
-                    {authFlowState === 'existing_email_otp' && (
-                      <div className="space-y-5 bg-[#111] p-5 sm:p-6 border border-white/15 rounded">
-                        <div className="border-b border-white/10 pb-3">
-                          <span className="text-[10px] font-mono text-snake-green uppercase tracking-widest">
-                            VERIFY YOUR EMAIL
-                          </span>
-                          <h4 className="text-lg font-display font-medium text-white">
-                            ENTER 6-DIGIT CODE
-                          </h4>
-                          <p className="text-xs font-mono text-neutral-400 mt-1">
-                            We've sent a 6-digit confirmation code to <span className="text-white">{contactEmail}</span>.
-                          </p>
-                        </div>
-
-                        <div className="space-y-3">
-                          <div className="flex gap-2 justify-center py-2">
-                            {emailOtp.map((digit, idx) => (
-                              <input
-                                key={idx}
-                                ref={(el) => {
-                                  emailInputRefs.current[idx] = el;
-                                }}
-                                type="text"
-                                inputMode="numeric"
-                                maxLength={1}
-                                value={digit}
-                                onChange={(e) => handleOtpChange(e.target.value, idx, 'email')}
-                                onKeyDown={(e) => handleOtpKeyDown(e, idx, 'email')}
-                                onPaste={(e) => handleOtpPaste(e, 'email')}
-                                className="w-11 h-14 bg-black border border-white/20 text-center font-mono text-xl text-white focus:outline-none focus:border-snake-green rounded"
-                              />
-                            ))}
+                    {/* Sub-case 2C: Existing Account - Email OTP Login */}
+                    {authFlow === 'existing_otp' && (
+                      <form onSubmit={handleExistingOtpLogin} className="space-y-5 animate-fadeIn">
+                        <div className="p-3.5 bg-neutral-950 border border-white/10 rounded flex justify-between items-center text-xs font-mono">
+                          <div>
+                            <span className="text-[10px] text-neutral-500 uppercase block">PATRON EMAIL</span>
+                            <span className="text-white font-semibold">{formData.email}</span>
                           </div>
-
                           <button
                             type="button"
-                            onClick={() => handleVerifyEmailOtpCode()}
-                            disabled={isVerifyingEmail || emailOtp.some((d) => !d)}
-                            className="w-full py-3.5 bg-snake-green text-black font-mono text-xs uppercase font-bold tracking-widest hover:bg-white transition-colors disabled:opacity-50"
+                            onClick={() => {
+                              setAuthFlow('enter_email');
+                              setAuthError(null);
+                              setAuthSuccess(null);
+                            }}
+                            className="text-[10px] font-mono text-snake-green hover:underline uppercase"
                           >
-                            {isVerifyingEmail ? 'VERIFYING...' : 'VERIFY EMAIL'}
+                            CHANGE EMAIL
+                          </button>
+                        </div>
+
+                        <div className="space-y-1.5 text-xs font-mono">
+                          <label className="text-neutral-400 uppercase">6-DIGIT LOGIN CODE *</label>
+                          <input
+                            type="text"
+                            value={authOtp}
+                            onChange={(e) => setAuthOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                            required
+                            placeholder="123456"
+                            maxLength={6}
+                            autoFocus
+                            className="w-full min-h-[48px] bg-black border border-white/20 text-center tracking-[0.5em] text-xl font-mono text-white rounded focus:outline-none focus:border-snake-green"
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between text-xs font-mono text-neutral-400">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAuthFlow('existing_password');
+                              setAuthError(null);
+                            }}
+                            className="text-neutral-400 hover:text-white underline text-[11px]"
+                          >
+                            Sign in with Password instead
                           </button>
 
-                          <div className="flex items-center justify-between text-[11px] font-mono text-neutral-400 pt-2 border-t border-white/10">
-                            <span>Didn't receive it?</span>
+                          {otpCooldown > 0 ? (
+                            <span className="text-[11px] text-neutral-500">Resend in {otpCooldown}s</span>
+                          ) : (
                             <button
                               type="button"
-                              onClick={() => {
-                                sendEmailOtp(contactEmail);
-                                setEmailOtpCooldown(60);
-                              }}
-                              disabled={emailOtpCooldown > 0}
-                              className="text-snake-green hover:underline disabled:opacity-50"
+                              onClick={handleResendInlineOtp}
+                              className="text-snake-green hover:underline text-[11px] uppercase font-semibold"
                             >
-                              {emailOtpCooldown > 0 ? `RESEND IN ${emailOtpCooldown}S` : 'RESEND CODE'}
+                              Resend Code
                             </button>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => setAuthFlowState('existing_password')}
-                            className="text-[10px] font-mono text-neutral-500 hover:text-white underline block"
-                          >
-                            Use password instead
-                          </button>
+                          )}
                         </div>
-                      </div>
+
+                        <button
+                          type="submit"
+                          disabled={isAuthProcessing || authOtp.length !== 6}
+                          className="w-full min-h-[48px] py-4 bg-snake-green text-black font-mono text-xs tracking-widest font-bold uppercase hover:bg-white active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                        >
+                          {isAuthProcessing ? (
+                            <>
+                              <Loader2 size={14} className="animate-spin" />
+                              VERIFYING...
+                            </>
+                          ) : (
+                            <>
+                              VERIFY &amp; CONTINUE <ArrowRight size={14} />
+                            </>
+                          )}
+                        </button>
+                      </form>
                     )}
 
-                    {/* CASE C: New Customer Email Verification */}
-                    {authFlowState === 'new_verify_email' && (
-                      <div className="space-y-5 bg-[#111] p-5 sm:p-6 border border-white/15 rounded">
-                        <div className="border-b border-white/10 pb-3">
-                          <span className="text-[10px] font-mono text-snake-green uppercase tracking-widest">
-                            STEP 1 OF 3 • EMAIL VERIFICATION
-                          </span>
-                          <h4 className="text-lg font-display font-medium text-white">
-                            VERIFY YOUR EMAIL ADDRESS
-                          </h4>
-                          <p className="text-xs font-mono text-neutral-400 mt-1">
-                            We've sent a 6-digit confirmation code to <span className="text-white">{contactEmail}</span>.
-                          </p>
-                        </div>
-
-                        <div className="space-y-3">
-                          <div className="flex gap-2 justify-center py-2">
-                            {emailOtp.map((digit, idx) => (
-                              <input
-                                key={idx}
-                                ref={(el) => {
-                                  emailInputRefs.current[idx] = el;
-                                }}
-                                type="text"
-                                inputMode="numeric"
-                                maxLength={1}
-                                value={digit}
-                                onChange={(e) => handleOtpChange(e.target.value, idx, 'email')}
-                                onKeyDown={(e) => handleOtpKeyDown(e, idx, 'email')}
-                                onPaste={(e) => handleOtpPaste(e, 'email')}
-                                className="w-11 h-14 bg-black border border-white/20 text-center font-mono text-xl text-white focus:outline-none focus:border-snake-green rounded"
-                              />
-                            ))}
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => handleVerifyEmailOtpCode()}
-                            disabled={isVerifyingEmail || emailOtp.some((d) => !d)}
-                            className="w-full py-3.5 bg-snake-green text-black font-mono text-xs uppercase font-bold tracking-widest hover:bg-white transition-colors disabled:opacity-50"
-                          >
-                            {isVerifyingEmail ? 'VERIFYING...' : 'VERIFY EMAIL'}
-                          </button>
-
-                          <div className="flex items-center justify-between text-[11px] font-mono text-neutral-400 pt-2 border-t border-white/10">
-                            <span>Didn't receive it?</span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                sendEmailOtp(contactEmail);
-                                setEmailOtpCooldown(60);
-                              }}
-                              disabled={emailOtpCooldown > 0}
-                              className="text-snake-green hover:underline disabled:opacity-50"
-                            >
-                              {emailOtpCooldown > 0 ? `RESEND IN ${emailOtpCooldown}S` : 'RESEND CODE'}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* CASE D: New Customer Phone Verification */}
-                    {authFlowState === 'new_verify_phone' && (
-                      <div className="space-y-5 bg-[#111] p-5 sm:p-6 border border-white/15 rounded">
-                        <div className="border-b border-white/10 pb-3">
-                          <span className="text-[10px] font-mono text-snake-green uppercase tracking-widest">
-                            STEP 2 OF 3 • PHONE VERIFICATION
-                          </span>
-                          <h4 className="text-lg font-display font-medium text-white">
-                            VERIFY YOUR MOBILE NUMBER
-                          </h4>
-                          <p className="text-xs font-mono text-neutral-400 mt-1">
-                            We've sent a 6-digit SMS verification code to{' '}
-                            <span className="text-white">{maskPhoneNumber(contactPhone)}</span>.
-                          </p>
-                        </div>
-
-                        <div className="space-y-3">
-                          <div className="flex gap-2 justify-center py-2">
-                            {phoneOtp.map((digit, idx) => (
-                              <input
-                                key={idx}
-                                ref={(el) => {
-                                  phoneInputRefs.current[idx] = el;
-                                }}
-                                type="text"
-                                inputMode="numeric"
-                                maxLength={1}
-                                value={digit}
-                                onChange={(e) => handleOtpChange(e.target.value, idx, 'phone')}
-                                onKeyDown={(e) => handleOtpKeyDown(e, idx, 'phone')}
-                                onPaste={(e) => handleOtpPaste(e, 'phone')}
-                                className="w-11 h-14 bg-black border border-white/20 text-center font-mono text-xl text-white focus:outline-none focus:border-snake-green rounded"
-                              />
-                            ))}
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => handleVerifyPhoneOtpCode()}
-                            disabled={isVerifyingPhone || phoneOtp.some((d) => !d)}
-                            className="w-full py-3.5 bg-snake-green text-black font-mono text-xs uppercase font-bold tracking-widest hover:bg-white transition-colors disabled:opacity-50"
-                          >
-                            {isVerifyingPhone ? 'VERIFYING...' : 'VERIFY PHONE'}
-                          </button>
-
-                          <div className="flex items-center justify-between text-[11px] font-mono text-neutral-400 pt-2 border-t border-white/10">
-                            <span>Didn't receive code?</span>
-                            <button
-                              type="button"
-                              onClick={handleSendTwilioOtp}
-                              disabled={phoneOtpCooldown > 0 || isSendingPhoneOtp}
-                              className="text-snake-green hover:underline disabled:opacity-50"
-                            >
-                              {phoneOtpCooldown > 0 ? `RESEND IN ${phoneOtpCooldown}S` : 'RESEND SMS'}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* CASE E: New Customer Account Creation & Delivery Address */}
-                    {authFlowState === 'new_create_account' && (
-                      <form onSubmit={handleCreateAccountSubmit} className="space-y-6">
-                        <div className="border-b border-white/10 pb-3">
-                          <span className="text-[10px] font-mono text-snake-green uppercase tracking-widest">
-                            STEP 3 OF 3 • ACCOUNT CREATION &amp; DELIVERY
-                          </span>
-                          <h4 className="text-lg font-display font-medium text-white">
-                            CREATE YOUR SUPERSNAKE ACCOUNT
-                          </h4>
-                          <p className="text-xs font-mono text-neutral-400 mt-1">
-                            Set your patron password and delivery destination to complete checkout.
-                          </p>
-                        </div>
-
-                        {/* Verified badges */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">
-                          <div className="p-3 bg-black border border-snake-green/40 rounded flex items-center justify-between">
-                            <span className="text-neutral-400">EMAIL</span>
-                            <span className="text-snake-green font-semibold flex items-center gap-1">
-                              <Check size={12} /> {contactEmail}
+                    {/* Sub-case 2D: New Customer - Inline Email OTP & Account Creation */}
+                    {authFlow === 'new_account' && (
+                      <form onSubmit={handleCreateNewAccountInline} className="space-y-5 animate-fadeIn">
+                        <div className="p-3.5 bg-neutral-950 border border-white/10 rounded flex justify-between items-center text-xs font-mono">
+                          <div>
+                            <span className="text-[10px] text-snake-green uppercase font-bold block">
+                              NEW PATRON VERIFICATION
                             </span>
+                            <span className="text-white font-semibold">{formData.email}</span>
                           </div>
-                          <div className="p-3 bg-black border border-snake-green/40 rounded flex items-center justify-between">
-                            <span className="text-neutral-400">PHONE</span>
-                            <span className="text-snake-green font-semibold flex items-center gap-1">
-                              <Check size={12} /> {formatPhoneDisplay(contactPhone)}
-                            </span>
-                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAuthFlow('enter_email');
+                              setAuthError(null);
+                              setAuthSuccess(null);
+                            }}
+                            className="text-[10px] font-mono text-neutral-400 hover:text-white underline uppercase"
+                          >
+                            CHANGE EMAIL
+                          </button>
                         </div>
 
                         <div className="space-y-4 text-xs font-mono">
-                          <div>
-                            <label className="text-neutral-400 uppercase block mb-1">FULL LEGAL NAME *</label>
+                          <div className="space-y-1.5">
+                            <label className="text-neutral-400 uppercase flex items-center justify-between">
+                              <span className="text-white font-semibold">6-DIGIT EMAIL VERIFICATION CODE *</span>
+                              {otpCooldown > 0 ? (
+                                <span className="text-[10px] text-neutral-500">Resend in {otpCooldown}s</span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={handleResendInlineOtp}
+                                  className="text-snake-green hover:underline text-[10px] uppercase font-semibold"
+                                >
+                                  Resend Code
+                                </button>
+                              )}
+                            </label>
                             <input
                               type="text"
+                              value={authOtp}
+                              onChange={(e) => setAuthOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                               required
-                              value={newFullName}
-                              onChange={(e) => setNewFullName(e.target.value)}
+                              placeholder="123456"
+                              maxLength={6}
+                              autoFocus
+                              className="w-full min-h-[48px] bg-black border border-white/20 text-center tracking-[0.5em] text-xl font-mono text-white rounded focus:outline-none focus:border-snake-green"
+                            />
+                            <p className="text-[10px] font-mono text-neutral-500">
+                              Mandatory email verification code dispatched to your inbox.
+                            </p>
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <label className="text-neutral-400 uppercase">FULL NAME *</label>
+                            <input
+                              type="text"
+                              name="fullName"
+                              required
+                              value={formData.fullName}
+                              onChange={handleChange}
                               placeholder="Aditya Sharma"
-                              className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-white rounded focus:outline-none focus:border-snake-green"
+                              className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green"
                             />
                           </div>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                              <label className="text-neutral-400 uppercase block mb-1">PASSWORD *</label>
-                              <div className="relative">
-                                <input
-                                  type={showNewPassword ? 'text' : 'password'}
-                                  required
-                                  value={newPassword}
-                                  onChange={(e) => setNewPassword(e.target.value)}
-                                  placeholder="Min. 8 characters"
-                                  className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-white rounded focus:outline-none focus:border-snake-green pr-10"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => setShowNewPassword(!showNewPassword)}
-                                  className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white"
-                                >
-                                  {showNewPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                                </button>
-                              </div>
-                            </div>
-
-                            <div>
-                              <label className="text-neutral-400 uppercase block mb-1">CONFIRM PASSWORD *</label>
-                              <input
-                                type={showNewPassword ? 'text' : 'password'}
-                                required
-                                value={newConfirmPassword}
-                                onChange={(e) => setNewConfirmPassword(e.target.value)}
-                                placeholder="Re-enter password"
-                                className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-white rounded focus:outline-none focus:border-snake-green"
-                              />
-                            </div>
+                          <div className="space-y-1.5">
+                            <label className="text-neutral-400 uppercase flex items-center justify-between">
+                              <span>MOBILE NUMBER *</span>
+                              <span className="text-[10px] text-neutral-500 font-mono">10 DIGITS (NO PHONE OTP)</span>
+                            </label>
+                            <input
+                              type="tel"
+                              name="phone"
+                              required
+                              value={formData.phone}
+                              onChange={handleChange}
+                              placeholder="9876543210"
+                              maxLength={15}
+                              className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green font-mono"
+                            />
                           </div>
 
-                          <div className="pt-2 border-t border-white/10 space-y-4">
-                            <h5 className="text-xs font-mono text-neutral-300 uppercase tracking-wider font-semibold">
-                              DELIVERY DESTINATION
-                            </h5>
-
-                            <div>
-                              <label className="text-neutral-400 uppercase block mb-1">STREET ADDRESS &amp; FLAT *</label>
-                              <input
-                                type="text"
-                                required
-                                value={addressData.street}
-                                onChange={(e) => setAddressData({ ...addressData, street: e.target.value })}
-                                placeholder="House / Flat / Street details"
-                                className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-white rounded focus:outline-none focus:border-snake-green"
-                              />
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              <div>
-                                <label className="text-neutral-400 uppercase block mb-1">LANDMARK (OPTIONAL)</label>
-                                <input
-                                  type="text"
-                                  value={addressData.landmark}
-                                  onChange={(e) => setAddressData({ ...addressData, landmark: e.target.value })}
-                                  placeholder="Near Metro Station"
-                                  className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-white rounded focus:outline-none focus:border-snake-green"
-                                />
-                              </div>
-
-                              <div>
-                                <label className="text-neutral-400 uppercase flex items-center justify-between mb-1">
-                                  <span>PINCODE *</span>
-                                  {isFetchingPincode && (
-                                    <span className="text-[10px] text-snake-green font-mono flex items-center gap-1">
-                                      <Loader2 size={11} className="animate-spin" />
-                                      DETECTING...
-                                    </span>
-                                  )}
-                                </label>
-                                <input
-                                  type="text"
-                                  required
-                                  inputMode="numeric"
-                                  maxLength={6}
-                                  value={addressData.postalCode}
-                                  onChange={handlePincodeChange}
-                                  placeholder="e.g. 560001"
-                                  className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-white rounded focus:outline-none focus:border-snake-green"
-                                />
-                                {pincodeMessage && (
-                                  <p className="text-[10px] text-snake-green mt-1">{pincodeMessage}</p>
-                                )}
-                              </div>
-                            </div>
-
-                            {postOffices.length > 1 && (
-                              <div>
-                                <label className="text-neutral-400 uppercase block mb-1">SELECT POST OFFICE *</label>
-                                <div className="relative">
-                                  <select
-                                    required
-                                    value={addressData.postOffice}
-                                    onChange={(e) => setAddressData({ ...addressData, postOffice: e.target.value })}
-                                    className="w-full min-h-[48px] bg-[#111] border border-snake-green/60 px-4 py-3 text-white rounded focus:outline-none focus:border-snake-green appearance-none pr-10 cursor-pointer font-mono"
-                                  >
-                                    <option value="" disabled>-- SELECT POST OFFICE --</option>
-                                    {postOffices.map((po) => (
-                                      <option key={po.name} value={po.name} className="bg-neutral-900">
-                                        {po.name}
-                                      </option>
-                                    ))}
-                                  </select>
-                                  <ChevronDown size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-snake-green pointer-events-none" />
-                                </div>
-                              </div>
-                            )}
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              <div>
-                                <label className="text-neutral-400 uppercase block mb-1">CITY / DISTRICT *</label>
-                                <input
-                                  type="text"
-                                  required
-                                  value={addressData.city}
-                                  onChange={(e) => setAddressData({ ...addressData, city: e.target.value })}
-                                  placeholder="Bengaluru"
-                                  className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-white rounded focus:outline-none focus:border-snake-green"
-                                />
-                              </div>
-
-                              <div>
-                                <label className="text-neutral-400 uppercase block mb-1">STATE *</label>
-                                <input
-                                  type="text"
-                                  required
-                                  value={addressData.state}
-                                  onChange={(e) => setAddressData({ ...addressData, state: e.target.value })}
-                                  placeholder="Karnataka"
-                                  className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-white rounded focus:outline-none focus:border-snake-green"
-                                />
-                              </div>
-                            </div>
+                          <div className="space-y-1.5">
+                            <label className="text-neutral-400 uppercase">CREATE PASSWORD *</label>
+                            <input
+                              type="password"
+                              value={authPassword}
+                              onChange={(e) => setAuthPassword(e.target.value)}
+                              required
+                              placeholder="Min 8 characters with letters & numbers"
+                              className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green"
+                            />
                           </div>
                         </div>
 
                         <button
                           type="submit"
-                          disabled={isCreatingAccount}
+                          disabled={isAuthProcessing || authOtp.length !== 6}
                           className="w-full min-h-[48px] py-4 bg-snake-green text-black font-mono text-xs tracking-widest font-bold uppercase hover:bg-white active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                         >
-                          {isCreatingAccount ? (
+                          {isAuthProcessing ? (
                             <>
                               <Loader2 size={14} className="animate-spin" />
-                              CREATING ACCOUNT &amp; CONTINUING...
+                              VERIFYING &amp; CREATING PROFILE...
                             </>
                           ) : (
                             <>
-                              CONTINUE TO DELIVERY <ArrowRight size={14} />
+                              VERIFY &amp; PROCEED TO DELIVERY <ArrowRight size={14} />
                             </>
                           )}
                         </button>
@@ -1672,11 +1203,9 @@ function CheckoutContent() {
               </div>
             )}
 
-            {/* ========================================================= */}
-            {/* STEP 2: DELIVERY ADDRESS SELECTION & PAYMENT               */}
-            {/* ========================================================= */}
+            {/* Step 2: Delivery */}
             {step === 2 && (
-              <div className="space-y-6">
+              <form onSubmit={handleNextStep} className="space-y-6">
                 <div className="border-b border-white/10 pb-3 flex justify-between items-center">
                   <div>
                     <h3 className="text-sm font-mono tracking-widest text-white uppercase font-bold">
@@ -1695,220 +1224,203 @@ function CheckoutContent() {
                   </button>
                 </div>
 
-                {/* Saved Address Cards for Authenticated Customers */}
-                {user && savedAddresses.length > 0 && !isAddingNewAddress && (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-mono text-neutral-400 uppercase">SAVED DESTINATIONS</span>
-                      <button
-                        type="button"
-                        onClick={() => setIsAddingNewAddress(true)}
-                        className="text-xs font-mono text-snake-green hover:underline flex items-center gap-1"
-                      >
-                        <Plus size={13} />
-                        <span>ADD NEW ADDRESS</span>
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {savedAddresses.map((addr) => {
-                        const isSelected = selectedAddressId === addr.id;
-                        return (
-                          <div
-                            key={addr.id}
-                            onClick={() => {
-                              setSelectedAddressId(addr.id || null);
-                              setAddressData({
-                                fullName: addr.full_name || addr.fullName,
-                                phone: addr.phone,
-                                street: addr.street,
-                                landmark: addr.landmark || '',
-                                city: addr.city,
-                                state: addr.state,
-                                postalCode: addr.postal_code || addr.postalCode,
-                                postOffice: addr.postOffice || '',
-                                label: addr.label || 'Home',
-                                country: addr.country || 'India',
-                              });
-                            }}
-                            className={`p-4 border rounded cursor-pointer transition-all ${
-                              isSelected
-                                ? 'bg-[#141414] border-snake-green shadow-[0_0_15px_rgba(4,252,33,0.15)]'
-                                : 'bg-[#0a0a0a] border-white/10 hover:border-white/20'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-[10px] font-mono px-2 py-0.5 bg-white/5 text-neutral-300 uppercase rounded flex items-center gap-1">
-                                {addr.label === 'Work' ? <Briefcase size={10} /> : <Home size={10} />}
-                                {addr.label || 'Home'}
-                              </span>
-                              {isSelected && (
-                                <span className="text-[10px] font-mono text-snake-green font-bold flex items-center gap-1">
-                                  <Check size={12} /> SELECTED
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-xs font-display font-medium text-white mb-1">
-                              {addr.full_name || addr.fullName}
-                            </p>
-                            <p className="text-[11px] font-mono text-neutral-400 leading-relaxed">
-                              {addr.street}
-                              {addr.landmark ? `, ${addr.landmark}` : ''}
-                              <br />
-                              {addr.city}, {addr.state} - {addr.postal_code || addr.postalCode}
-                            </p>
-                            <p className="text-[10px] font-mono text-neutral-500 mt-2">
-                              Phone: {formatPhoneDisplay(addr.phone)}
-                            </p>
-                          </div>
-                        );
-                      })}
-                    </div>
+                <div className="space-y-4 text-xs font-mono">
+                  <div className="space-y-1.5">
+                    <label className="text-neutral-400 uppercase">FULL RECIPIENT NAME *</label>
+                    <input
+                      type="text"
+                      name="fullName"
+                      required
+                      autoComplete="name"
+                      value={formData.fullName}
+                      onChange={handleChange}
+                      placeholder="Full recipient name"
+                      className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green"
+                    />
                   </div>
-                )}
 
-                {/* Form to Add New Address or manual address for new customer */}
-                {(isAddingNewAddress || (!user && authFlowState === 'initial') || (user && savedAddresses.length === 0)) && (
-                  <div className="space-y-4 text-xs font-mono">
-                    {user && isAddingNewAddress && (
-                      <div className="flex justify-between items-center pb-2 border-b border-white/10">
-                        <span className="text-white font-semibold uppercase">NEW ADDRESS DETAILS</span>
-                        <button
-                          type="button"
-                          onClick={() => setIsAddingNewAddress(false)}
-                          className="text-neutral-400 hover:text-white underline"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    )}
+                  <div className="space-y-1.5">
+                    <label className="text-neutral-400 uppercase">STREET ADDRESS & APARTMENT *</label>
+                    <input
+                      type="text"
+                      name="street"
+                      required
+                      autoComplete="street-address"
+                      value={formData.street}
+                      onChange={handleChange}
+                      placeholder="Building, flat, and street details"
+                      className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green"
+                    />
+                  </div>
 
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-neutral-400 uppercase">FULL RECIPIENT NAME *</label>
+                      <label className="text-neutral-400 uppercase">LANDMARK (OPTIONAL)</label>
                       <input
                         type="text"
-                        required
-                        value={addressData.fullName}
-                        onChange={(e) => setAddressData({ ...addressData, fullName: e.target.value })}
-                        placeholder="Full recipient name"
+                        name="landmark"
+                        value={formData.landmark}
+                        onChange={handleChange}
+                        placeholder="Near Metro Station"
                         className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green"
                       />
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-neutral-400 uppercase">STREET ADDRESS &amp; APARTMENT *</label>
-                      <input
-                        type="text"
-                        required
-                        value={addressData.street}
-                        onChange={(e) => setAddressData({ ...addressData, street: e.target.value })}
-                        placeholder="Building, flat, and street details"
-                        className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="text-neutral-400 uppercase">LANDMARK (OPTIONAL)</label>
-                        <input
-                          type="text"
-                          value={addressData.landmark}
-                          onChange={(e) => setAddressData({ ...addressData, landmark: e.target.value })}
-                          placeholder="Near Metro Station"
-                          className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="text-neutral-400 uppercase flex items-center justify-between">
-                          <span>PINCODE *</span>
-                          {isFetchingPincode && (
-                            <span className="text-[10px] text-snake-green font-mono flex items-center gap-1">
-                              <Loader2 size={11} className="animate-spin" />
-                              DETECTING...
-                            </span>
-                          )}
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          inputMode="numeric"
-                          maxLength={6}
-                          value={addressData.postalCode}
-                          onChange={handlePincodeChange}
-                          placeholder="e.g. 560001"
-                          className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green font-mono"
-                        />
-                        {pincodeMessage && (
-                          <p className="text-[10px] text-snake-green font-mono">{pincodeMessage}</p>
+                      <label className="text-neutral-400 uppercase flex items-center justify-between">
+                        <span>PINCODE *</span>
+                        {isFetchingPincode && (
+                          <span className="text-[10px] text-snake-green font-mono flex items-center gap-1">
+                            <Loader2 size={11} className="animate-spin" />
+                            DETECTING...
+                          </span>
                         )}
-                      </div>
-                    </div>
-
-                    {postOffices.length > 1 && (
-                      <div className="space-y-1.5">
-                        <label className="text-neutral-400 uppercase block">SELECT POST OFFICE / AREA *</label>
-                        <div className="relative">
-                          <select
-                            required
-                            value={addressData.postOffice}
-                            onChange={(e) => setAddressData({ ...addressData, postOffice: e.target.value })}
-                            className="w-full min-h-[48px] bg-[#111] border border-snake-green/60 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green appearance-none pr-10 cursor-pointer font-mono"
-                          >
-                            <option value="" disabled>-- SELECT POST OFFICE --</option>
-                            {postOffices.map((po) => (
-                              <option key={po.name} value={po.name} className="bg-neutral-900 text-white">
-                                {po.name}
-                              </option>
-                            ))}
-                          </select>
-                          <ChevronDown size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-snake-green pointer-events-none" />
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="text-neutral-400 uppercase">CITY / DISTRICT *</label>
-                        <input
-                          type="text"
-                          required
-                          value={addressData.city}
-                          onChange={(e) => setAddressData({ ...addressData, city: e.target.value })}
-                          placeholder="Bengaluru"
-                          className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="text-neutral-400 uppercase">STATE *</label>
-                        <input
-                          type="text"
-                          required
-                          value={addressData.state}
-                          onChange={(e) => setAddressData({ ...addressData, state: e.target.value })}
-                          placeholder="Karnataka"
-                          className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green"
-                        />
-                      </div>
+                      </label>
+                      <input
+                        type="text"
+                        name="postalCode"
+                        required
+                        inputMode="numeric"
+                        maxLength={6}
+                        pattern="[0-9]*"
+                        autoComplete="postal-code"
+                        value={formData.postalCode}
+                        onChange={handlePincodeChange}
+                        placeholder="e.g. 560094"
+                        className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green font-mono"
+                      />
+                      {pincodeMessage && (
+                        <p className={`text-[10px] font-mono ${postOffices.length > 1 ? 'text-snake-green' : 'text-neutral-400'}`}>
+                          {pincodeMessage}
+                        </p>
+                      )}
                     </div>
                   </div>
-                )}
 
-                {/* Terms agreement */}
+                  {/* Post Office Dropdown when 2 or more exist */}
+                  {postOffices.length > 1 && (
+                    <div className="space-y-1.5 animate-fadeIn">
+                      <label className="text-neutral-400 uppercase flex items-center justify-between">
+                        <span className="text-white font-semibold">SELECT POST OFFICE / AREA *</span>
+                        <span className="text-[10px] text-snake-green font-mono">
+                          {postOffices.length} LOCATIONS IN THIS PINCODE
+                        </span>
+                      </label>
+                      <div className="relative">
+                        <select
+                          name="postOffice"
+                          required
+                          value={formData.postOffice}
+                          onChange={handleChange}
+                          className="w-full min-h-[48px] bg-[#111] border border-snake-green/60 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green appearance-none pr-10 cursor-pointer font-mono"
+                        >
+                          <option value="" disabled className="bg-black text-neutral-500">
+                            -- SELECT POST OFFICE --
+                          </option>
+                          {postOffices.map((po) => (
+                            <option key={po.name} value={po.name} className="bg-neutral-900 text-white py-1">
+                              {po.name}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-snake-green pointer-events-none" />
+                      </div>
+                      <p className="text-[10px] font-mono text-neutral-400">
+                        Selected post office will be attached to your delivery address for accurate dispatch.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Single Post Office display if exactly 1 found */}
+                  {postOffices.length === 1 && (
+                    <div className="space-y-1.5 animate-fadeIn">
+                      <label className="text-neutral-400 uppercase flex items-center justify-between">
+                        <span>POST OFFICE / AREA</span>
+                        <span className="text-[10px] text-snake-green font-mono">AUTO-DETECTED</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="postOffice"
+                        value={formData.postOffice}
+                        onChange={handleChange}
+                        className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green font-mono"
+                      />
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-neutral-400 uppercase flex items-center justify-between">
+                        <span>CITY / DISTRICT *</span>
+                        {formData.city && <span className="text-[10px] text-snake-green font-mono">AUTO-FILLED</span>}
+                      </label>
+                      <input
+                        type="text"
+                        name="city"
+                        required
+                        autoComplete="address-level2"
+                        value={formData.city}
+                        onChange={handleChange}
+                        placeholder="Bengaluru"
+                        className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-neutral-400 uppercase flex items-center justify-between">
+                        <span>STATE *</span>
+                        {formData.state && <span className="text-[10px] text-snake-green font-mono">AUTO-FILLED</span>}
+                      </label>
+                      <input
+                        type="text"
+                        name="state"
+                        required
+                        autoComplete="address-level1"
+                        value={formData.state}
+                        onChange={handleChange}
+                        placeholder="Karnataka"
+                        className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green"
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 <div className="text-[11px] font-mono text-neutral-500 leading-relaxed pt-1">
                   By completing this transaction, you agree to our{' '}
-                  <Link href="/terms" target="_blank" className="text-neutral-300 hover:text-snake-green underline">
+                  <Link
+                    href="/terms"
+                    target="_blank"
+                    className="text-neutral-300 hover:text-snake-green underline underline-offset-2"
+                  >
                     Terms &amp; Conditions
                   </Link>{' '}
                   and{' '}
-                  <Link href="/privacy" target="_blank" className="text-neutral-300 hover:text-snake-green underline">
+                  <Link
+                    href="/privacy"
+                    target="_blank"
+                    className="text-neutral-300 hover:text-snake-green underline underline-offset-2"
+                  >
                     Privacy Policy
+                  </Link>
+                  , and acknowledge our{' '}
+                  <Link
+                    href="/shipping"
+                    target="_blank"
+                    className="text-neutral-300 hover:text-snake-green underline underline-offset-2"
+                  >
+                    Shipping &amp; Delivery
+                  </Link>{' '}
+                  and{' '}
+                  <Link
+                    href="/returns"
+                    target="_blank"
+                    className="text-neutral-300 hover:text-snake-green underline underline-offset-2"
+                  >
+                    Returns &amp; Defects
                   </Link>
                   .
                 </div>
 
-                {/* Action Buttons */}
                 <div className="flex gap-4 pt-2">
                   <button
                     type="button"
@@ -1918,9 +1430,8 @@ function CheckoutContent() {
                     BACK
                   </button>
                   <button
-                    type="button"
-                    onClick={handleCompletePayment}
-                    disabled={isProcessing || !addressData.fullName || !addressData.street || !addressData.city || !addressData.postalCode}
+                    type="submit"
+                    disabled={isProcessing}
                     className="flex-1 min-h-[48px] py-4 bg-snake-green text-black font-mono text-xs tracking-widest font-bold uppercase hover:bg-white active:scale-[0.99] transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(4,252,33,0.3)] disabled:opacity-50"
                   >
                     {isProcessing ? (
@@ -1935,12 +1446,12 @@ function CheckoutContent() {
                     )}
                   </button>
                 </div>
-              </div>
+              </form>
             )}
           </div>
 
-          {/* Right: Order Summary Sidebar (Desktop) */}
-          <div className="hidden lg:block lg:col-span-5 bg-[#0d0d0d] border border-white/10 rounded p-6 space-y-6">
+          {/* Right: Order Summary Sidebar (Desktop locked) */}
+          <div className="hidden lg:block lg:col-span-5 bg-[#0d0d0d] border border-white/10 rounded-lg p-6 space-y-6">
             <h3 className="text-xs font-mono tracking-widest text-neutral-400 uppercase border-b border-white/10 pb-3">
               YOUR ORDER ({cart.length})
             </h3>
@@ -2043,7 +1554,6 @@ function CheckoutContent() {
           </div>
         </div>
       )}
-
       {/* Preload Razorpay Checkout Script */}
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
     </div>

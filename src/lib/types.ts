@@ -82,7 +82,10 @@ export interface WishlistItem {
 }
 
 export type OrderStatus =
-  | 'Pending'
+  | 'Payment Pending'
+  | 'Payment Failed'
+  | 'Paid'
+  | 'Verification Pending'
   | 'Confirmed'
   | 'Processing'
   | 'Packed'
@@ -95,20 +98,15 @@ export type OrderStatus =
 
 export interface Address {
   id?: string;
-  userId?: string;
-  label?: string;
   fullName: string;
-  full_name?: string;
   phone: string;
   street: string;
   landmark?: string;
   city: string;
   state: string;
   postalCode: string;
-  postal_code?: string;
   postOffice?: string;
   district?: string;
-  country?: string;
   isDefault?: boolean;
 }
 
@@ -125,7 +123,6 @@ export interface OrderItem {
 export interface Order {
   id: string;
   orderNumber: string;
-  userId?: string;
   createdAt: string;
   status: OrderStatus;
   items: OrderItem[];
@@ -134,6 +131,7 @@ export interface Order {
   shipping: number;
   tax: number;
   total: number;
+  customerId?: string;
   customer: {
     name: string;
     email: string;
@@ -141,11 +139,17 @@ export interface Order {
   };
   shippingAddress: Address;
   payment: {
-    method: 'razorpay' | 'upi' | 'card' | 'cod';
+    method: 'razorpay' | 'upi' | 'card';
     transactionId: string;
     status: 'paid' | 'pending' | 'failed';
     paidAt?: string;
   };
+  verificationStatus?: 'Pending' | 'Verified' | 'Unverified';
+  verifiedAt?: string;
+  verifiedBy?: string;
+  verificationNotes?: string;
+  phoneVerified?: boolean;
+  couponCode?: string;
   tracking?: {
     carrier: string;
     trackingNumber: string;
