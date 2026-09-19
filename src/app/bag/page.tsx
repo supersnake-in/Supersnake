@@ -249,15 +249,15 @@ export default function BagPage() {
               <div className="pt-4 border-t border-white/5 space-y-3 text-[11px] font-mono text-neutral-400">
                 <div className="flex items-center gap-2.5">
                   <ShieldCheck size={16} className="text-snake-green flex-shrink-0" />
-                  <span>Encrypted 256-Bit SSL Razorpay Checkout</span>
+                  <span>Encrypted 256-Bit SSL Checkout</span>
                 </div>
                 <div className="flex items-center gap-2.5">
                   <ShieldCheck size={16} className="text-snake-green flex-shrink-0" />
-                  <span>Atelier Quality Check & Defect Protection</span>
+                  <span>Atelier Quality Check &amp; Defect Protection</span>
                 </div>
                 <div className="flex items-center gap-2.5">
                   <Truck size={16} className="text-snake-green flex-shrink-0" />
-                  <span>Reliable Air Express Delivery Across India</span>
+                  <span>Tracked delivery through our authorised courier partners</span>
                 </div>
               </div>
             </div>

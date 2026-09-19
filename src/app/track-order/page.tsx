@@ -114,7 +114,7 @@ export default function TrackOrderPage() {
                     ORDER {foundOrder.orderNumber}
                   </h3>
                   <p className="text-xs font-mono text-neutral-400">
-                    Carrier: {foundOrder.tracking?.carrier || 'Blue Dart Air Express'}
+                    Carrier: {foundOrder.tracking?.carrier || 'Express Courier'}
                   </p>
                 </div>
 

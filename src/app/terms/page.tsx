@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { PolicyLayout } from '@/components/legal/PolicyLayout';
-import { LEGAL_CONFIG, getLegalValue } from '@/lib/legal-config';
+import { LEGAL_CONFIG, OFFICIAL_EMAILS, getLegalValue } from '@/lib/legal-config';
 import { ShieldCheck, AlertCircle } from 'lucide-react';
 
 const TOC = [
@@ -39,9 +39,9 @@ const TOC = [
 
 const RELATED = [
   { label: 'Privacy Policy', href: '/privacy' },
-  { label: 'Grievance Redressal', href: '/grievance' },
   { label: 'Returns & Defects', href: '/returns' },
   { label: 'Shipping & Delivery', href: '/shipping' },
+  { label: 'Contact Us', href: '/contact' },
 ];
 
 export default function TermsAndConditionsPage() {
@@ -181,10 +181,13 @@ export default function TermsAndConditionsPage() {
       {/* Section 11 */}
       <section id="sec-11" className="space-y-4 pt-4">
         <h2 className="text-base sm:text-lg font-display font-medium text-white uppercase tracking-wider border-b border-white/10 pb-2">
-          11. Payment Instruments & Gateway Tokenization
+          11. Payment Processing &amp; Instruments
         </h2>
         <p>
-          Payments are processed securely via Razorpay’s PCI-DSS Level 1 compliant gateway. We accept UPI, major credit/debit cards, Net Banking, and approved wallets. By submitting payment, you represent that you are authorized to use the chosen payment instrument.
+          Payments may be processed through authorised payment service providers using appropriate security measures. Payment information may be handled directly by the applicable payment service provider in accordance with its own terms, privacy policy, and applicable security requirements.
+        </p>
+        <p>
+          We accept UPI, major credit/debit cards, Net Banking, and approved digital payment instruments. By submitting payment, you represent that you are authorized to use the chosen payment instrument.
         </p>
       </section>
 
@@ -367,10 +370,14 @@ export default function TermsAndConditionsPage() {
       {/* Section 28 */}
       <section id="sec-28" className="space-y-4 pt-4">
         <h2 className="text-base sm:text-lg font-display font-medium text-white uppercase tracking-wider border-b border-white/10 pb-2">
-          28. Contact Information & Legal Notices
+          28. Contact Information &amp; Legal Notices
         </h2>
         <p>
-          For legal notices or official inquiries regarding these Terms, please contact our legal desk at <strong className="text-white font-normal">{supportEmail}</strong> or via our <Link href="/contact" className="text-snake-green hover:underline">Contact Us</Link> portal.
+          For legal notices or formal business correspondence regarding these Terms, please contact our office at{' '}
+          <a href={`mailto:${OFFICIAL_EMAILS.office}`} className="text-snake-green hover:underline">
+            {OFFICIAL_EMAILS.office}
+          </a>{' '}
+          or via our <Link href="/contact" className="text-snake-green hover:underline">Contact Us</Link> portal.
         </p>
       </section>
     </PolicyLayout>

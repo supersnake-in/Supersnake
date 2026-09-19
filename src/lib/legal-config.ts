@@ -1,3 +1,10 @@
+export const OFFICIAL_EMAILS = {
+  general: 'hello@supersnake.in',
+  support: 'support@supersnake.in',
+  office: 'office@supersnake.in',
+  noreply: 'noreply@supersnake.in',
+} as const;
+
 export interface LegalBusinessConfig {
   brandName: string;
   websiteUrl: string;
@@ -5,20 +12,25 @@ export interface LegalBusinessConfig {
   registeredAddress: string | null;
   jurisdiction: string | null;
   gstin: string | null;
-  supportEmail: string | null;
-  customerCareHours: string | null;
+  generalEmail: string;
+  supportEmail: string;
+  officeEmail: string;
+  noreplyEmail: string;
+  customerCareHours: string;
   grievanceOfficerName: string | null;
-  grievanceEmail: string | null;
+  grievanceDesignation: string | null;
+  grievanceEmail: string;
   grievanceAddress: string | null;
   grievancePhone: string | null;
-  shippingProvider: string | null;
+  shippingDescription: string;
   shippingProcessingTime: string | null;
   deliveryEstimate: string | null;
-  freeShippingThreshold: number | null;
-  standardShippingFee: number | null;
+  freeShippingThreshold: number;
+  standardShippingFee: number;
+  paymentDescription: string;
   refundProcessingTime: string | null;
-  policyEffectiveDate: string | null;
-  policyLastUpdated: string | null;
+  policyEffectiveDate: string;
+  policyLastUpdated: string;
   socialLinks: {
     instagram?: string | null;
     x?: string | null;
@@ -31,21 +43,26 @@ export const LEGAL_CONFIG: LegalBusinessConfig = {
   brandName: 'SUPERSNAKE',
   websiteUrl: 'https://supersnake.in',
   legalBusinessName: null, // [CONFIGURE] e.g. "SuperSnake Apparel Private Limited"
-  registeredAddress: null, // [CONFIGURE] e.g. "Indiranagar, Bengaluru, Karnataka 560038, India"
+  registeredAddress: null, // [CONFIGURE] Registered Office Address
   jurisdiction: null, // [CONFIGURE] e.g. "Bengaluru, Karnataka, India"
-  gstin: null, // [CONFIGURE] e.g. "29ABCDE1234F1Z5"
-  supportEmail: null, // [CONFIGURE] e.g. "concierge@supersnake.in"
+  gstin: null, // [CONFIGURE] Official GSTIN
+  generalEmail: OFFICIAL_EMAILS.general,
+  supportEmail: OFFICIAL_EMAILS.support,
+  officeEmail: OFFICIAL_EMAILS.office,
+  noreplyEmail: OFFICIAL_EMAILS.noreply,
   customerCareHours: 'Monday – Saturday, 10:00 AM – 7:00 PM IST',
-  grievanceOfficerName: null, // [CONFIGURE] Official Grievance Officer Name
-  grievanceEmail: null, // [CONFIGURE] Official Grievance Email
+  grievanceOfficerName: null, // [CONFIGURE] Official Grievance Officer Name (Rule 5(9) E-Commerce Rules)
+  grievanceDesignation: null, // [CONFIGURE] e.g. "Grievance Redressal Officer"
+  grievanceEmail: OFFICIAL_EMAILS.support, // Official channel for complaints & grievances
   grievanceAddress: null, // [CONFIGURE] Official Grievance Postal Address
-  grievancePhone: null, // [CONFIGURE] Official Grievance Contact Number
-  shippingProvider: null, // [CONFIGURE] e.g. "Blue Dart Air Express / Delhivery"
+  grievancePhone: null, // [CONFIGURE] Official Grievance Contact Telephone
+  shippingDescription: 'Tracked delivery through our authorised courier partners.',
   shippingProcessingTime: null, // [CONFIGURE] e.g. "1–2 Business Days"
   deliveryEstimate: null, // [CONFIGURE] e.g. "2–5 Business Days"
-  freeShippingThreshold: 1999, // Current cart threshold
-  standardShippingFee: 99, // Current below-threshold fee
-  refundProcessingTime: null, // [CONFIGURE] Time for payment provider refund credit
+  freeShippingThreshold: 1999,
+  standardShippingFee: 99,
+  paymentDescription: 'Payments are processed through authorised payment service providers using appropriate security measures.',
+  refundProcessingTime: null, // [CONFIGURE] e.g. "5–7 Business Days"
   policyEffectiveDate: '19 September 2026',
   policyLastUpdated: '19 September 2026',
   socialLinks: {

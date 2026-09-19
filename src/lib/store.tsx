@@ -254,7 +254,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       orderNumber: `SS-${new Date().getFullYear()}-${randomSuffix}`,
       createdAt: new Date().toISOString(),
       tracking: {
-        carrier: 'SuperSnake Express / Blue Dart',
+        carrier: 'SuperSnake Express',
         trackingNumber: `SS-EXP-${randomSuffix}`,
         estimatedDelivery: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', {
           day: 'numeric',

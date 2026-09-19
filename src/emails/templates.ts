@@ -80,7 +80,7 @@ export function getOrderConfirmationHtml(order: Order): string {
         </h2>
         <p style="color: #a0a0a0; font-size: 13px; line-height: 1.7;">
           Greetings ${order.customer.name},<br/><br/>
-          Your heavyweight pieces have entered tailoring inspection and packaging at our Bengaluru studio. Your parcel will be routed via priority Blue Dart Air Express.
+          Your heavyweight pieces have entered tailoring inspection and packaging at our Bengaluru studio. Your parcel will be routed for tracked delivery with our courier partner.
         </p>
       </td>
     </tr>
@@ -137,7 +137,7 @@ export function getShippedEmailHtml(order: Order): string {
           Order ${order.orderNumber} is on the Move
         </h2>
         <p style="color: #a0a0a0; font-size: 13px; line-height: 1.7;">
-          Your parcel has departed our Bengaluru fulfillment center. It is currently in transit with <strong>${order.tracking?.carrier || 'Blue Dart Air Express'}</strong>.
+          Your parcel has departed our Bengaluru fulfillment center. It is currently in transit with <strong>${order.tracking?.carrier || 'our courier partner'}</strong>.
         </p>
         <div style="background-color: #121212; border: 1px solid #222222; padding: 18px; margin: 20px 0; font-family: monospace; font-size: 12px;">
           <div style="color: #888888; font-size: 10px; margin-bottom: 4px;">WAYBILL NUMBER</div>
@@ -195,7 +195,7 @@ export function getReturnApprovedHtml({ orderNumber, customerName }: { orderNumb
         </h2>
         <p style="color: #a0a0a0; font-size: 13px; line-height: 1.7;">
           Greetings ${customerName},<br/><br/>
-          Your return/exchange request for order ${orderNumber} has been verified by our logistics team. Our courier partner Blue Dart has been scheduled for doorstep reverse pickup within 24–48 hours.
+          Your return/exchange request for order ${orderNumber} has been verified by our logistics team. Our courier partner has been scheduled for doorstep reverse pickup within 24–48 hours.
         </p>
         <div style="background-color: #121212; border: 1px solid #222222; padding: 16px; font-size: 12px; font-family: monospace; color: #cccccc; margin: 16px 0;">
           <strong style="color: #ffffff;">RETURN CHECKLIST:</strong><br/>

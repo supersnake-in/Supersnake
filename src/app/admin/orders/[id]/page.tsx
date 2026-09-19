@@ -31,7 +31,7 @@ export default function AdminOrderDetailPage() {
   const order = orders.find((o) => o.id === orderId || o.orderNumber === orderId);
 
   const [status, setStatus] = useState<OrderStatus>(order?.status || 'Confirmed');
-  const [carrier, setCarrier] = useState(order?.tracking?.carrier || 'Blue Dart Air Express');
+  const [carrier, setCarrier] = useState(order?.tracking?.carrier || 'Express Courier');
   const [waybill, setWaybill] = useState(order?.tracking?.trackingNumber || '');
   const [saved, setSaved] = useState(false);
 

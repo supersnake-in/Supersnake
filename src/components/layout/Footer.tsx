@@ -47,7 +47,6 @@ const NAV_COLUMNS: NavColumn[] = [
     links: [
       { label: 'PRIVACY POLICY', href: '/privacy' },
       { label: 'TERMS & CONDITIONS', href: '/terms' },
-      { label: 'GRIEVANCE REDRESSAL', href: '/grievance' },
     ],
   },
   {
@@ -425,9 +424,6 @@ export function Footer() {
             </Link>
             <Link href="/terms" className="hover:text-white transition-colors">
               TERMS & CONDITIONS
-            </Link>
-            <Link href="/grievance" className="hover:text-white transition-colors">
-              GRIEVANCE REDRESSAL
             </Link>
           </div>
 

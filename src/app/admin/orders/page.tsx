@@ -144,7 +144,7 @@ export default function AdminOrdersPage() {
                   <td className="py-3 px-4 text-white font-bold">{formatPrice(ord.total)}</td>
                   <td className="py-3 px-4">
                     <span className="px-2 py-0.5 bg-neutral-900 border border-neutral-700 rounded text-[9px] uppercase font-semibold text-snake-green">
-                      PAID (RAZORPAY)
+                      PAID (ONLINE)
                     </span>
                   </td>
                   <td className="py-3 px-4">

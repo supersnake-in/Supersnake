@@ -13,9 +13,10 @@ export const BRAND = {
     hashtag: '#SUPERSNAKE',
   },
   contact: {
-    email: 'concierge@supersnake.in',
-    phone: '+91 80 4961 8000',
-    address: 'SuperSnake Studio, Indiranagar, Bengaluru 560038, India',
+    email: 'support@supersnake.in',
+    support: 'support@supersnake.in',
+    general: 'hello@supersnake.in',
+    office: 'office@supersnake.in',
   },
   colors: {
     obsidian: '#000000',

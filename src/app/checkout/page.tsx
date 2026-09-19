@@ -321,7 +321,7 @@ export default function CheckoutPage() {
                       DELIVERY ADDRESS
                     </h3>
                     <p className="text-[11px] font-mono text-neutral-500 mt-1">
-                      Express air delivery via Blue Dart / Delhivery.
+                      Tracked delivery through our authorised courier partners.
                     </p>
                   </div>
                   <button
@@ -450,7 +450,7 @@ export default function CheckoutPage() {
                       PAYMENT METHOD
                     </h3>
                     <p className="text-[11px] font-mono text-neutral-500 mt-1">
-                      Powered by Razorpay. All Indian payment instruments supported.
+                      All major Indian payment instruments supported.
                     </p>
                   </div>
                   <button
@@ -524,7 +524,7 @@ export default function CheckoutPage() {
                 <div className="p-4 bg-black/60 border border-white/10 rounded text-[11px] font-mono text-neutral-400 flex items-center gap-3">
                   <ShieldCheck size={20} className="text-snake-green flex-shrink-0" />
                   <span>
-                    Your payment information is tokenized and processed via Razorpay’s PCI-DSS Level 1 compliant gateway. SuperSnake never stores raw card details.
+                    Payments are processed through authorised payment service providers using appropriate security measures. SuperSnake does not store raw payment card credentials.
                   </span>
                 </div>
 

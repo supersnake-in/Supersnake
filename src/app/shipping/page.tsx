@@ -30,7 +30,6 @@ const RELATED = [
 export default function ShippingAndDeliveryPage() {
   const processingTime = LEGAL_CONFIG.shippingProcessingTime || getLegalValue(null, 'SHIPPING_PROCESSING_TIME');
   const deliveryEstimate = LEGAL_CONFIG.deliveryEstimate || getLegalValue(null, 'DELIVERY_ESTIMATE');
-  const shippingProvider = LEGAL_CONFIG.shippingProvider || getLegalValue(null, 'SHIPPING_CARRIER');
   const freeThreshold = LEGAL_CONFIG.freeShippingThreshold;
   const standardFee = LEGAL_CONFIG.standardShippingFee;
 
@@ -59,11 +58,11 @@ export default function ShippingAndDeliveryPage() {
 
         <div className="bg-[#0a0a0a] border border-white/10 p-5 rounded-sm space-y-2">
           <div className="flex items-center justify-between text-neutral-500">
-            <span className="text-[10px] uppercase tracking-widest text-snake-green">TRANSIT PARTNER</span>
+            <span className="text-[10px] uppercase tracking-widest text-snake-green">DELIVERY METHOD</span>
             <Truck size={16} className="text-snake-green" />
           </div>
           <p className="text-sm sm:text-base font-display font-medium text-white">
-            {shippingProvider}
+            {LEGAL_CONFIG.shippingDescription}
           </p>
           <p className="text-[11px] text-neutral-400">
             Estimated Delivery: {deliveryEstimate}
@@ -90,7 +89,7 @@ export default function ShippingAndDeliveryPage() {
           2. Dispatch Protocol
         </h2>
         <p>
-          Once processed, garments are sealed in protective packaging and handed over to our appointed logistics partner (<strong className="text-white font-normal">{shippingProvider}</strong>). At the time of handover, a unique consignment tracking/waybill number is generated.
+          Once processed, garments are sealed in protective packaging and handed over to our appointed courier partner for tracked delivery. At the time of handover, a unique consignment tracking/waybill number is generated.
         </p>
         <p>
           An electronic dispatch confirmation is sent to your registered email address and contact telephone number, containing direct courier tracking links.

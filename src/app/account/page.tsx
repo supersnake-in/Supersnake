@@ -42,7 +42,7 @@ export default function AccountOverviewPage() {
             WELCOME BACK, {displayName.toUpperCase()}.
           </h2>
           <p className="text-xs font-mono text-neutral-400 max-w-xl leading-relaxed">
-            Manage your acquisitions, track live dispatches with Blue Dart, and curate your private wishlist for upcoming heavyweight drops.
+            Manage your acquisitions, track live dispatches, and curate your private wishlist for upcoming heavyweight drops.
           </p>
         </div>
       </div>

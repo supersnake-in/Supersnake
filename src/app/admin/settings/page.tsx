@@ -7,10 +7,10 @@ import { BRAND } from '@/lib/design-tokens';
 export default function AdminSettingsPage() {
   const [saved, setSaved] = useState(false);
   const [storeName, setStoreName] = useState(BRAND.name);
-  const [conciergeEmail, setConciergeEmail] = useState('concierge@supersnake.in');
+  const [supportEmail, setSupportEmail] = useState('support@supersnake.in');
   const [freeShippingThreshold, setFreeShippingThreshold] = useState(1999);
   const [deliveryDays, setDeliveryDays] = useState('2-4 Business Days');
-  const [courierPartner, setCourierPartner] = useState('Blue Dart Express / Delhivery');
+  const [courierPartner, setCourierPartner] = useState('Authorised Courier Partners');
   const [studioLocation, setStudioLocation] = useState('Bengaluru, Karnataka, India');
   const [legalBusinessName, setLegalBusinessName] = useState('');
   const [gstin, setGstin] = useState('');
@@ -55,11 +55,11 @@ export default function AdminSettingsPage() {
               />
             </div>
             <div className="space-y-1">
-              <label className="text-neutral-400 uppercase">CONCIERGE CONTACT</label>
+              <label className="text-neutral-400 uppercase">CUSTOMER SUPPORT EMAIL</label>
               <input
                 type="email"
-                value={conciergeEmail}
-                onChange={(e) => setConciergeEmail(e.target.value)}
+                value={supportEmail}
+                onChange={(e) => setSupportEmail(e.target.value)}
                 className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green"
               />
             </div>
@@ -157,7 +157,7 @@ export default function AdminSettingsPage() {
                 type="email"
                 value={grievanceEmail}
                 onChange={(e) => setGrievanceEmail(e.target.value)}
-                placeholder="grievance@supersnake.in"
+                placeholder="support@supersnake.in"
                 className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green"
               />
             </div>
@@ -202,7 +202,7 @@ export default function AdminSettingsPage() {
                 <span className="w-2 h-2 rounded-full bg-snake-green animate-pulse" />
               </div>
               <span className="text-[10px] text-neutral-500 block">
-                All API keys & secrets are isolated server-side on Vercel.
+                All API keys & secrets are isolated server-side.
               </span>
             </div>
           </div>

@@ -32,11 +32,11 @@ export default function FAQPage() {
         },
         {
           q: 'Where does SuperSnake ship?',
-          a: 'We currently fulfill domestic orders across all serviceable PIN codes in India via priority air express couriers. International fulfillment is slated for future seasonal drops.',
+          a: 'We currently fulfill domestic orders across all serviceable PIN codes in India through tracked delivery via our authorised courier partners. International fulfillment is slated for future seasonal drops.',
         },
         {
           q: 'How do I contact customer care?',
-          a: `You can reach our atelier client concierge via our Contact Us portal or by emailing ${supportEmail}. Our operating hours are Monday to Saturday, 10:00 AM – 7:00 PM IST.`,
+          a: `You can reach our client concierge via our Contact Us portal or by emailing ${supportEmail}. Our operating hours are Monday to Saturday, 10:00 AM – 7:00 PM IST.`,
         },
       ],
     },
@@ -45,7 +45,7 @@ export default function FAQPage() {
       items: [
         {
           q: 'How do I place an order?',
-          a: 'Select your preferred piece, choose your desired size and colorway, and click "ADD TO BAG". Proceed through our encrypted checkout by providing your delivery address and completing payment via Razorpay.',
+          a: 'Select your preferred piece, choose your desired size and colorway, and click "ADD TO BAG". Proceed through our encrypted checkout by providing your delivery address and completing payment through our secure checkout.',
         },
         {
           q: 'Can I modify my order after placement?',
@@ -62,7 +62,7 @@ export default function FAQPage() {
       items: [
         {
           q: 'What payment methods are supported?',
-          a: 'We support all major Indian and international payment instruments via Razorpay, including UPI (Google Pay, PhonePe, Paytm, CRED), Credit & Debit Cards (Visa, MasterCard, RuPay, Amex), Net Banking across 50+ banks, and approved digital wallets.',
+          a: 'We support all major Indian and international payment instruments, including UPI (Google Pay, PhonePe, Paytm, CRED), Credit & Debit Cards (Visa, MasterCard, RuPay, Amex), Net Banking across major banks, and approved digital wallets.',
         },
         {
           q: 'When is my payment confirmed?',
@@ -70,7 +70,7 @@ export default function FAQPage() {
         },
         {
           q: 'Is my payment information secure?',
-          a: 'Yes. All payment data is tokenized and processed via Razorpay’s PCI-DSS Level 1 compliant gateway with 256-bit encryption. SuperSnake never stores or accesses raw credit card numbers or banking passwords.',
+          a: 'Yes. Payments are processed through authorised payment service providers using appropriate security measures with 256-bit encryption. SuperSnake does not store raw credit card numbers or banking passwords.',
         },
       ],
     },

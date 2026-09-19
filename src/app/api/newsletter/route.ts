@@ -26,7 +26,7 @@ export async function POST(request: Request) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            from: 'SuperSnake Atelier <concierge@supersnake.in>',
+            from: 'SuperSnake Atelier <noreply@supersnake.in>',
             to: [email],
             subject: 'Welcome to the Snake Pit',
             html: '<p>You have been entered into the SuperSnake private roster.</p>',

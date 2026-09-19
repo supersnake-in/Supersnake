@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { PolicyLayout } from '@/components/legal/PolicyLayout';
-import { LEGAL_CONFIG, getLegalValue } from '@/lib/legal-config';
+import { LEGAL_CONFIG, OFFICIAL_EMAILS, getLegalValue } from '@/lib/legal-config';
 import { ShieldCheck, Cookie, Check, Lock, ArrowRight } from 'lucide-react';
 
 const TOC = [
@@ -21,7 +21,6 @@ const TOC = [
 
 const RELATED = [
   { label: 'Terms & Conditions', href: '/terms' },
-  { label: 'Grievance Redressal', href: '/grievance' },
   { label: 'Contact Us', href: '/contact' },
 ];
 
@@ -103,7 +102,7 @@ export default function PrivacyPolicyPage() {
             <strong className="text-white font-normal">Order & Fulfillment Data:</strong> Garments acquired, sizes, colorways, order numbers, transaction values, delivery street addresses, landmark details, and postal PIN codes.
           </li>
           <li>
-            <strong className="text-white font-normal">Payment Tokenization Data:</strong> Payment method selected (UPI, Credit/Debit Card, Net Banking), transaction reference numbers, and gateway verification timestamps via Razorpay. SuperSnake never stores raw credit or debit card numbers, CVVs, or net banking passwords on its servers.
+            <strong className="text-white font-normal">Payment Transaction Data:</strong> Payment method selected (such as UPI, Credit/Debit Card, Net Banking) and transaction reference identifiers. Payment transactions are processed through authorised payment service providers using appropriate security measures. SuperSnake does not store raw credit or debit card numbers, CVVs, or net banking passwords on its servers.
           </li>
           <li>
             <strong className="text-white font-normal">Technical & Telemetry Data:</strong> IP address, browser type and version, device operating system, session tokens, and performance metrics necessary for website security and rendering.
@@ -153,7 +152,7 @@ export default function PrivacyPolicyPage() {
             </thead>
             <tbody className="divide-y divide-white/5 text-neutral-300">
               <tr>
-                <td className="py-3 px-4 font-mono text-white text-[11px]">supabase.auth.token</td>
+                <td className="py-3 px-4 font-mono text-white text-[11px]">session_token</td>
                 <td className="py-3 px-4 text-snake-green text-[10px] uppercase font-bold">Essential</td>
                 <td className="py-3 px-4 text-neutral-400 text-[11px]">Authenticates your patron profile across sessions.</td>
               </tr>
@@ -249,31 +248,24 @@ export default function PrivacyPolicyPage() {
           5. Third-Party Service Providers
         </h2>
         <p>
-          We do not sell personal data to third parties. We engage trusted third-party service providers (acting as Data Processors) solely to operate the platform and fulfill services:
+          We do not sell personal data to third parties. We may use trusted service providers and business partners to support website operations, payment processing, order fulfilment, communications, security, customer support, analytics, and other services necessary to operate our business.
         </p>
-        <ul className="list-disc pl-5 space-y-1.5 text-neutral-400">
-          <li><strong className="text-white font-normal">Cloud Infrastructure & Hosting:</strong> Vercel for serverless edge deployment and content delivery.</li>
-          <li><strong className="text-white font-normal">Database & Authentication:</strong> Supabase for secure cloud database hosting and encrypted session authentication.</li>
-          <li><strong className="text-white font-normal">Payment Gateway:</strong> Razorpay for PCI-DSS Level 1 tokenized payment processing.</li>
-          <li><strong className="text-white font-normal">Email & Communications:</strong> Resend for transactional order confirmations and dispatch advisories.</li>
-          <li><strong className="text-white font-normal">Logistics & Air Courier Partners:</strong> Courier logistics partners (such as Blue Dart / Delhivery) for consignment routing and delivery.</li>
-        </ul>
+        <p>
+          These service providers may process information on our behalf and are required to handle information in accordance with applicable contractual, security, and legal requirements.
+        </p>
       </section>
 
       {/* Section 6: Security */}
       <section id="security-measures" className="space-y-4 pt-4">
         <h2 className="text-base sm:text-lg font-display font-medium text-white uppercase tracking-wider border-b border-white/10 pb-2">
-          6. Technical & Organizational Security Safeguards
+          6. Technical &amp; Organizational Security Safeguards
         </h2>
         <p>
-          We implement industry-standard technical and organizational security measures to protect your digital personal data against unauthorized access, loss, destruction, or alteration:
+          We implement reasonable technical and organisational safeguards designed to protect personal information against unauthorised access, misuse, alteration, disclosure, or destruction.
         </p>
-        <ul className="list-disc pl-5 space-y-1 text-neutral-400">
-          <li>End-to-end transport encryption via TLS 1.3 with 256-bit AES cipher suites;</li>
-          <li>Database-level Row Level Security (RLS) policies ensuring patrons can access only their own records;</li>
-          <li>Server-side isolation of all API keys, database secrets, and webhook tokens;</li>
-          <li>Strict administrative access controls restricted to authorized personnel.</li>
-        </ul>
+        <p>
+          These safeguards include transport-level encryption, restricted administrative access protocols, secure server configurations, and ongoing monitoring to protect the confidentiality and integrity of your data.
+        </p>
       </section>
 
       {/* Section 7: Retention */}
@@ -321,19 +313,21 @@ export default function PrivacyPolicyPage() {
       {/* Section 10: Grievance Officer */}
       <section id="grievance-officer" className="space-y-4 pt-4">
         <h2 className="text-base sm:text-lg font-display font-medium text-white uppercase tracking-wider border-b border-white/10 pb-2">
-          10. Data Protection & Grievance Contact
+          10. Data Protection &amp; Grievance Contact
         </h2>
         <p>
-          For privacy inquiries, to exercise your Data Principal rights, or to submit a data protection grievance, please contact our designated Grievance Officer:
+          For formal privacy inquiries or to exercise your Data Principal rights under the Digital Personal Data Protection Act, 2023, please contact our office at{' '}
+          <a href={`mailto:${OFFICIAL_EMAILS.office}`} className="text-snake-green hover:underline">
+            {OFFICIAL_EMAILS.office}
+          </a>
+          .
         </p>
-        <div className="p-4 bg-[#0a0a0a] border border-white/10 rounded-sm text-xs font-mono space-y-2 text-neutral-300">
-          <p><strong className="text-white">Designated Officer:</strong> {grievanceOfficer}</p>
-          <p><strong className="text-white">Official Email:</strong> {grievanceEmail}</p>
-          <p><strong className="text-white">Postal Address:</strong> {getLegalValue(LEGAL_CONFIG.grievanceAddress, 'GRIEVANCE_POSTAL_ADDRESS')}</p>
-          <p><strong className="text-white">Response Commitment:</strong> Acknowledgment within 48 hours; resolution within 30 days as prescribed by law.</p>
-        </div>
-        <p className="pt-2">
-          For full details on our consumer grievance mechanism, please consult our dedicated <Link href="/grievance" className="text-snake-green hover:underline">Grievance Redressal</Link> page.
+        <p>
+          For customer complaints and grievances under the Consumer Protection (E-Commerce) Rules, 2020, please refer to our{' '}
+          <Link href="/contact#grievance" className="text-snake-green hover:underline">
+            Customer Complaints &amp; Grievance Mechanism
+          </Link>{' '}
+          on our Contact Us page.
         </p>
       </section>
     </PolicyLayout>
