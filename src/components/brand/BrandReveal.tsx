@@ -65,6 +65,14 @@ export function BrandReveal() {
                 priority
                 className="object-contain"
               />
+
+              {/* Traveling light pulse through the snake silhouette */}
+              <motion.div
+                initial={{ top: '-30%', opacity: 0 }}
+                animate={{ top: '130%', opacity: [0, 0.9, 0] }}
+                transition={{ duration: 1.1, delay: 0.3, ease: 'easeInOut' }}
+                className="absolute inset-x-0 h-8 bg-gradient-to-b from-transparent via-snake-green/40 to-transparent blur-sm pointer-events-none"
+              />
             </motion.div>
 
             {/* Subtle Brand Name */}
