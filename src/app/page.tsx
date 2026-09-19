@@ -224,90 +224,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ============================================================
-          03 — THE TEE (MONUMENTAL EDITORIAL SECTION)
-          ============================================================ */}
-      <section className="py-20 md:py-40 px-4 sm:px-6 md:px-12 border-t border-white/[0.06] relative overflow-hidden bg-[#050505]">
-        <div className="max-w-7xl mx-auto">
-          {/* Section Header */}
-          <div className="mb-12 md:mb-24 flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6">
-            <div className="space-y-2">
-              <span className="text-[10px] font-mono tracking-mega text-snake-green uppercase">
-                THE HERO OBJECT
-              </span>
-              <h2 className="text-3xl sm:text-5xl md:text-7xl font-display font-bold uppercase tracking-tight text-white">
-                THE SUPERSNAKE TEE
-              </h2>
-            </div>
-            <p className="text-xs sm:text-sm md:text-base font-mono text-neutral-400 max-w-md italic">
-              &ldquo;Designed around the everyday. Built around you.&rdquo;
-            </p>
-          </div>
 
-          {/* Monumental Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-            {/* Left: Macro Specs */}
-            <div className="lg:col-span-4 space-y-8 lg:space-y-10 order-2 lg:order-1">
-              <div className="space-y-2 border-l-2 border-snake-green pl-4">
-                <span className="text-xs font-mono text-neutral-400">01 / WEIGHT & STABILITY</span>
-                <h4 className="text-base sm:text-lg font-mono font-semibold text-white uppercase">280 GSM SUPIMA® COTTON</h4>
-                <p className="text-xs font-mono text-neutral-400 leading-relaxed">
-                  Long-staple fibers combed to perfection. Substantial architectural drape that holds its form all day without feeling stiff.
-                </p>
-              </div>
-
-              <div className="space-y-2 border-l-2 border-neutral-700 pl-4 hover:border-snake-green transition-colors">
-                <span className="text-xs font-mono text-neutral-400">02 / STRUCTURAL INTEGRITY</span>
-                <h4 className="text-base sm:text-lg font-mono font-semibold text-white uppercase">ZERO-SAG 1-INCH COLLAR</h4>
-                <p className="text-xs font-mono text-neutral-400 leading-relaxed">
-                  Twin-needle reinforced collar band with internal cotton herringbone tape. Retains razor-sharp neck tension through 100+ washes.
-                </p>
-              </div>
-
-              <div className="space-y-2 border-l-2 border-neutral-700 pl-4 hover:border-snake-green transition-colors">
-                <span className="text-xs font-mono text-neutral-400">03 / ATELIER FINISH</span>
-                <h4 className="text-base sm:text-lg font-mono font-semibold text-white uppercase">BLIND-STITCHED HEMS</h4>
-                <p className="text-xs font-mono text-neutral-400 leading-relaxed">
-                  Seamless Japanese blind-hem technique for an uninterrupted silhouette. No curling, no puckering, zero exterior stitch noise.
-                </p>
-              </div>
-
-              <div className="pt-2 sm:pt-4">
-                <Link
-                  href="/product/the-signature-tee"
-                  className="inline-flex items-center gap-3 px-5 sm:px-6 py-3 sm:py-3.5 bg-neutral-900 border border-white/20 text-white hover:border-snake-green hover:text-snake-green font-mono text-xs tracking-widest uppercase transition-all active:scale-98"
-                >
-                  DISCOVER THE SIGNATURE TEE <ArrowRight size={14} />
-                </Link>
-              </div>
-            </div>
-
-            {/* Right: Massive Hero Product Photography */}
-            <div className="lg:col-span-8 order-1 lg:order-2">
-              <div className="relative aspect-[4/5] sm:aspect-[16/11] w-full rounded overflow-hidden bg-neutral-950 border border-white/10 group">
-                <Image
-                  src={
-                    homepageConfig?.supersnakeTeeImage ||
-                    "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=1800&auto=format&fit=crop"
-                  }
-                  alt="The SuperSnake Tee - Sculpture"
-                  fill
-                  sizes="(max-width: 1024px) 100vw, 66vw"
-                  unoptimized={
-                    homepageConfig?.supersnakeTeeImage?.startsWith('data:') ||
-                    (homepageConfig?.supersnakeTeeImage ? !homepageConfig.supersnakeTeeImage.includes('unsplash.com') : false)
-                  }
-                  className="object-cover transition-transform duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105"
-                />
-                <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 right-4 sm:right-6 p-3 sm:p-4 bg-black/70 backdrop-blur-md border border-white/10 flex justify-between items-center text-xs font-mono">
-                  <span className="text-neutral-300 tracking-wider">ARCHITECTURAL BOXY FIT</span>
-                  <span className="text-snake-green font-bold">₹1,499</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* ============================================================
           04 — MEN / WOMEN (EDITORIAL SPLIT SCREEN)
@@ -534,6 +451,91 @@ export default function HomePage() {
 
           <div className="pt-2 sm:pt-4 flex justify-center">
             <SuperSnakeLogo size="md" showText={false} withGlow={true} />
+          </div>
+        </div>
+      </section>
+
+      {/* ============================================================
+          08 — THE TEE (MONUMENTAL EDITORIAL SECTION)
+          ============================================================ */}
+      <section className="py-20 md:py-40 px-4 sm:px-6 md:px-12 border-t border-white/[0.06] relative overflow-hidden bg-[#050505]">
+        <div className="max-w-7xl mx-auto">
+          {/* Section Header */}
+          <div className="mb-12 md:mb-24 flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6">
+            <div className="space-y-2">
+              <span className="text-[10px] font-mono tracking-mega text-snake-green uppercase">
+                THE HERO OBJECT
+              </span>
+              <h2 className="text-3xl sm:text-5xl md:text-7xl font-display font-bold uppercase tracking-tight text-white">
+                THE SUPERSNAKE TEE
+              </h2>
+            </div>
+            <p className="text-xs sm:text-sm md:text-base font-mono text-neutral-400 max-w-md italic">
+              &ldquo;Designed around the everyday. Built around you.&rdquo;
+            </p>
+          </div>
+
+          {/* Monumental Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+            {/* Left: Macro Specs */}
+            <div className="lg:col-span-4 space-y-8 lg:space-y-10 order-2 lg:order-1">
+              <div className="space-y-2 border-l-2 border-snake-green pl-4">
+                <span className="text-xs font-mono text-neutral-400">01 / WEIGHT & STABILITY</span>
+                <h4 className="text-base sm:text-lg font-mono font-semibold text-white uppercase">280 GSM SUPIMA® COTTON</h4>
+                <p className="text-xs font-mono text-neutral-400 leading-relaxed">
+                  Long-staple fibers combed to perfection. Substantial architectural drape that holds its form all day without feeling stiff.
+                </p>
+              </div>
+
+              <div className="space-y-2 border-l-2 border-neutral-700 pl-4 hover:border-snake-green transition-colors">
+                <span className="text-xs font-mono text-neutral-400">02 / STRUCTURAL INTEGRITY</span>
+                <h4 className="text-base sm:text-lg font-mono font-semibold text-white uppercase">ZERO-SAG 1-INCH COLLAR</h4>
+                <p className="text-xs font-mono text-neutral-400 leading-relaxed">
+                  Twin-needle reinforced collar band with internal cotton herringbone tape. Retains razor-sharp neck tension through 100+ washes.
+                </p>
+              </div>
+
+              <div className="space-y-2 border-l-2 border-neutral-700 pl-4 hover:border-snake-green transition-colors">
+                <span className="text-xs font-mono text-neutral-400">03 / ATELIER FINISH</span>
+                <h4 className="text-base sm:text-lg font-mono font-semibold text-white uppercase">BLIND-STITCHED HEMS</h4>
+                <p className="text-xs font-mono text-neutral-400 leading-relaxed">
+                  Seamless Japanese blind-hem technique for an uninterrupted silhouette. No curling, no puckering, zero exterior stitch noise.
+                </p>
+              </div>
+
+              <div className="pt-2 sm:pt-4">
+                <Link
+                  href="/product/the-signature-tee"
+                  className="inline-flex items-center gap-3 px-5 sm:px-6 py-3 sm:py-3.5 bg-neutral-900 border border-white/20 text-white hover:border-snake-green hover:text-snake-green font-mono text-xs tracking-widest uppercase transition-all active:scale-98"
+                >
+                  DISCOVER THE SIGNATURE TEE <ArrowRight size={14} />
+                </Link>
+              </div>
+            </div>
+
+            {/* Right: Massive Hero Product Photography */}
+            <div className="lg:col-span-8 order-1 lg:order-2">
+              <div className="relative aspect-[4/5] sm:aspect-[16/11] w-full rounded overflow-hidden bg-neutral-950 border border-white/10 group">
+                <Image
+                  src={
+                    homepageConfig?.supersnakeTeeImage ||
+                    "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=1800&auto=format&fit=crop"
+                  }
+                  alt="The SuperSnake Tee - Sculpture"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 66vw"
+                  unoptimized={
+                    homepageConfig?.supersnakeTeeImage?.startsWith('data:') ||
+                    (homepageConfig?.supersnakeTeeImage ? !homepageConfig.supersnakeTeeImage.includes('unsplash.com') : false)
+                  }
+                  className="object-cover transition-transform duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105"
+                />
+                <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 right-4 sm:right-6 p-3 sm:p-4 bg-black/70 backdrop-blur-md border border-white/10 flex justify-between items-center text-xs font-mono">
+                  <span className="text-neutral-300 tracking-wider">ARCHITECTURAL BOXY FIT</span>
+                  <span className="text-snake-green font-bold">₹1,499</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
