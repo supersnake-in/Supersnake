@@ -756,10 +756,10 @@ export default function CheckoutPage() {
                 <div className="border-b border-white/10 pb-3 flex justify-between items-center">
                   <div>
                     <h3 className="text-sm font-mono tracking-widest text-white uppercase font-bold">
-                      PAYMENT METHOD
+                      PAYMENT CONFIRMATION
                     </h3>
                     <p className="text-[11px] font-mono text-neutral-500 mt-1">
-                      All major Indian payment instruments supported.
+                      Secure checkout powered by Razorpay.
                     </p>
                   </div>
                   <button
@@ -770,70 +770,52 @@ export default function CheckoutPage() {
                   </button>
                 </div>
 
-                <div className="space-y-3 text-xs font-mono">
-                  {/* UPI */}
-                  <label className="flex items-center justify-between p-4 border rounded border-snake-green bg-snake-green/5 cursor-pointer active:scale-[0.99] transition-all">
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="upi"
-                        checked={formData.paymentMethod === 'upi'}
-                        onChange={handleChange}
-                        className="accent-snake-green"
-                      />
-                      <Smartphone size={18} className="text-snake-green shrink-0" />
-                      <div>
-                        <p className="font-semibold text-white">UPI (Google Pay, PhonePe, Paytm, CRED)</p>
-                        <p className="text-[11px] text-neutral-400">Instant verification via QR code or VPA</p>
+                {/* Streamlined Razorpay Payment Banner */}
+                <div className="p-5 border border-snake-green/40 bg-gradient-to-br from-snake-green/10 via-black to-neutral-950 rounded-lg space-y-4 font-mono">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-snake-green animate-pulse" />
+                        <span className="text-xs text-white font-bold tracking-wider uppercase">
+                          RAZORPAY SECURE GATEWAY
+                        </span>
                       </div>
+                      <p className="text-[11px] text-neutral-400 max-w-md">
+                        Choose your preferred payment method directly in the secure gateway modal:
+                      </p>
                     </div>
-                    <span className="text-[10px] text-snake-green font-bold uppercase shrink-0">FASTEST</span>
-                  </label>
+                    <Lock size={16} className="text-snake-green shrink-0 mt-0.5" />
+                  </div>
 
-                  {/* Cards */}
-                  <label className="flex items-center justify-between p-4 border rounded border-white/10 hover:border-white/30 cursor-pointer active:scale-[0.99] transition-all">
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="card"
-                        checked={formData.paymentMethod === 'card'}
-                        onChange={handleChange}
-                        className="accent-snake-green"
-                      />
-                      <CreditCard size={18} className="text-neutral-400 shrink-0" />
-                      <div>
-                        <p className="font-semibold text-white">Credit / Debit Card</p>
-                        <p className="text-[11px] text-neutral-400">Visa, MasterCard, RuPay, Amex</p>
-                      </div>
+                  {/* Supported Instruments Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+                    <div className="p-2.5 bg-black/70 border border-white/10 rounded flex flex-col items-center justify-center text-center gap-1.5">
+                      <Smartphone size={16} className="text-snake-green" />
+                      <span className="text-[10px] text-neutral-300 font-semibold uppercase">UPI</span>
+                      <span className="text-[9px] text-neutral-500">GPay, PhonePe, Paytm</span>
                     </div>
-                  </label>
-
-                  {/* Net Banking */}
-                  <label className="flex items-center justify-between p-4 border rounded border-white/10 hover:border-white/30 cursor-pointer active:scale-[0.99] transition-all">
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="netbanking"
-                        checked={formData.paymentMethod === 'netbanking'}
-                        onChange={handleChange}
-                        className="accent-snake-green"
-                      />
-                      <Building size={18} className="text-neutral-400 shrink-0" />
-                      <div>
-                        <p className="font-semibold text-white">Net Banking</p>
-                        <p className="text-[11px] text-neutral-400">HDFC, ICICI, SBI, Axis & 50+ banks</p>
-                      </div>
+                    <div className="p-2.5 bg-black/70 border border-white/10 rounded flex flex-col items-center justify-center text-center gap-1.5">
+                      <CreditCard size={16} className="text-snake-green" />
+                      <span className="text-[10px] text-neutral-300 font-semibold uppercase">CARDS</span>
+                      <span className="text-[9px] text-neutral-500">Visa, Master, RuPay</span>
                     </div>
-                  </label>
+                    <div className="p-2.5 bg-black/70 border border-white/10 rounded flex flex-col items-center justify-center text-center gap-1.5">
+                      <Building size={16} className="text-snake-green" />
+                      <span className="text-[10px] text-neutral-300 font-semibold uppercase">NET BANKING</span>
+                      <span className="text-[9px] text-neutral-500">50+ Indian Banks</span>
+                    </div>
+                    <div className="p-2.5 bg-black/70 border border-white/10 rounded flex flex-col items-center justify-center text-center gap-1.5">
+                      <Wallet size={16} className="text-snake-green" />
+                      <span className="text-[10px] text-neutral-300 font-semibold uppercase">WALLETS & CRED</span>
+                      <span className="text-[9px] text-neutral-500">Instant Checkout</span>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="p-4 bg-black/60 border border-white/10 rounded text-[11px] font-mono text-neutral-400 flex items-center gap-3">
                   <ShieldCheck size={20} className="text-snake-green flex-shrink-0" />
                   <span>
-                    Payments are processed through authorised payment service providers using appropriate security measures. SuperSnake does not store raw payment card credentials.
+                    Payments are encrypted with 256-bit SSL. SuperSnake never stores your raw payment cards or banking credentials.
                   </span>
                 </div>
 
