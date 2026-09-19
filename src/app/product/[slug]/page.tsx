@@ -477,51 +477,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
                 )}
               </div>
 
-              {/* Accordion 4: Mandatory Declarations (Legal Metrology) */}
-              <div className="border border-white/10 rounded overflow-hidden">
-                <button
-                  onClick={() => toggleAccordion('declarations')}
-                  className="w-full p-4 flex justify-between items-center text-left hover:bg-white/[0.02] transition-colors"
-                >
-                  <span className="font-semibold text-white uppercase">MANDATORY DECLARATIONS (LEGAL METROLOGY)</span>
-                  <ChevronDown
-                    size={16}
-                    className={`transition-transform duration-300 ${
-                      openAccordions.declarations ? 'rotate-180 text-snake-green' : 'text-neutral-500'
-                    }`}
-                  />
-                </button>
-                {openAccordions.declarations && (
-                  <div className="p-4 pt-0 space-y-2 text-neutral-400 border-t border-white/5 text-xs font-mono">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
-                      <div>
-                        <span className="text-neutral-500 uppercase block text-[10px]">GENERIC NAME</span>
-                        <span className="text-white">Men&apos;s / Unisex Heavyweight T-Shirt</span>
-                      </div>
-                      <div>
-                        <span className="text-neutral-500 uppercase block text-[10px]">NET QUANTITY</span>
-                        <span className="text-white">1 N (1 Piece)</span>
-                      </div>
-                      <div>
-                        <span className="text-neutral-500 uppercase block text-[10px]">COUNTRY OF ORIGIN</span>
-                        <span className="text-white">India 🇮🇳</span>
-                      </div>
-                      <div>
-                        <span className="text-neutral-500 uppercase block text-[10px]">MAXIMUM RETAIL PRICE (MRP)</span>
-                        <span className="text-white">Inclusive of all taxes (GST)</span>
-                      </div>
-                      <div className="sm:col-span-2">
-                        <span className="text-neutral-500 uppercase block text-[10px]">MANUFACTURER / PACKER / IMPORTER DETAILS</span>
-                        <span className="text-neutral-400">[CONFIGURATION REQUIRED]</span>
-                      </div>
-                      <div className="sm:col-span-2">
-                        <span className="text-neutral-500 uppercase block text-[10px]">CONSUMER CARE CONTACT</span>
-                        <span className="text-neutral-400">[CONFIGURATION REQUIRED] • Refer to <Link href="/contact" className="text-snake-green hover:underline">Contact Us</Link></span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+
             </div>
           </div>
         </div>
