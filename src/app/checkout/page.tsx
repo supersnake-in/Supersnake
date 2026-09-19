@@ -230,7 +230,15 @@ export default function CheckoutPage() {
         name: 'SuperSnake',
         description: `Order for ${cart.length} item${cart.length > 1 ? 's' : ''}`,
         order_id: orderData.order_id || orderData.id,
-        one_click_checkout: false, // Prevents Magic Checkout from intercepting and failing on un-whitelisted domains
+        magic: false,
+        one_click_checkout: false,
+        config: {
+          display: {
+            preferences: {
+              show_default_blocks: true,
+            },
+          },
+        },
         prefill: {
           name: formData.fullName?.trim() || undefined,
           email: formData.email?.trim() || undefined,
