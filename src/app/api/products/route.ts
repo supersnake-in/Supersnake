@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { sanitizeString, sanitizeSlug, sanitizeNumber, isValidImageSource } from '@/lib/security';
 import { Product, ProductImage } from '@/lib/types';
-import { fetchProductsFromSupabase } from '@/lib/supabase/db';
+import { fetchProductsFromSupabase, createProductInSupabase } from '@/lib/supabase/db';
 
 export async function GET() {
   const products = await fetchProductsFromSupabase();
@@ -70,16 +70,16 @@ export async function POST(request: Request) {
       : [{ name: 'Obsidian Black', hex: '#0a0a0a' }];
 
     // Sizes
-    const allowedSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+    const allowedSizes = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL', '6XL'];
     const cleanSizes = Array.isArray(sizes) && sizes.length > 0
       ? sizes.filter((s: any) => allowedSizes.includes(s))
       : ['S', 'M', 'L', 'XL'];
 
     // Generate variant matrix
     const variants = cleanColors.flatMap((c) =>
-      cleanSizes.map((s) => ({
-        id: `v-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        sku: `SS-${cleanName.slice(0, 3).toUpperCase()}-${c.name.slice(0, 3).toUpperCase()}-${s}`,
+      cleanSizes.map((s, idx) => ({
+        id: `v-${Date.now()}-${idx}`,
+        sku: `SS-${cleanSlug.slice(0, 6).toUpperCase()}-${c.name.replace(/[^a-zA-Z0-9]/g, '').slice(0, 3).toUpperCase()}-${s}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
         colorName: c.name,
         colorHex: c.hex,
         size: s as any,
@@ -98,7 +98,7 @@ export async function POST(request: Request) {
         description || 'Constructed from premium heavyweight long-staple cotton with architectural drape.'
       ),
       gender: ['men', 'women', 'unisex'].includes(gender) ? gender : 'unisex',
-      fit: ['Boxy', 'Oversized', 'Relaxed', 'Classic'].includes(fit) ? fit : 'Boxy',
+      fit: ['Boxy', 'Oversized', 'Relaxed', 'Classic', 'Slim'].includes(fit) ? fit : 'Boxy',
       price: cleanPrice,
       mrp: cleanMrp,
       gsm: cleanGsm,
@@ -122,6 +122,13 @@ export async function POST(request: Request) {
       reviewsCount: 0,
       createdAt: new Date().toISOString(),
     };
+
+    // Background sync to Supabase
+    try {
+      await createProductInSupabase(newProduct);
+    } catch (e) {
+      console.warn('API background Supabase sync warning:', e);
+    }
 
     return NextResponse.json({
       success: true,

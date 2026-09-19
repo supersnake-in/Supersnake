@@ -66,6 +66,7 @@ export function QuickViewModal() {
               alt={quickViewProduct.name}
               fill
               sizes="(max-width: 768px) 100vw, 400px"
+              unoptimized={Boolean(quickViewProduct.images[0]?.url?.startsWith('data:') || quickViewProduct.images[0]?.url?.startsWith('blob:'))}
               className="object-cover"
               priority
             />
@@ -84,6 +85,11 @@ export function QuickViewModal() {
                 <h3 className="text-lg md:text-xl font-mono font-semibold tracking-wider text-white uppercase">
                   {quickViewProduct.name}
                 </h3>
+                {quickViewProduct.tagline && (
+                  <p className="text-[11px] font-mono text-neutral-400 mt-1 uppercase">
+                    {quickViewProduct.tagline}
+                  </p>
+                )}
                 <div className="flex items-center gap-3 mt-1.5">
                   <span className="font-mono text-base text-white font-medium">
                     {formatPrice(quickViewProduct.price)}

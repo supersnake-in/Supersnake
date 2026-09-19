@@ -94,6 +94,7 @@ export default function BagPage() {
                         alt={item.product.name}
                         fill
                         sizes="120px"
+                        unoptimized={Boolean(item.product.images[0]?.url?.startsWith('data:') || item.product.images[0]?.url?.startsWith('blob:'))}
                         className="object-cover"
                       />
                     </div>

@@ -26,10 +26,14 @@ export async function fetchProductsFromSupabase(): Promise<Product[] | null> {
 
     // Map Supabase rows to Product TypeScript interface
     return productsData.map((row: any): Product => {
-      const images: ProductImage[] = (row.images || []).map((img: any) => ({
+      const sortedImages = (row.images || []).sort(
+        (a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0)
+      );
+
+      const images: ProductImage[] = sortedImages.map((img: any) => ({
         url: img.url,
         alt: img.alt || row.name,
-        angle: img.angle,
+        angle: img.angle || 'front',
         isPrimary: img.display_order === 0,
       }));
 
@@ -44,11 +48,23 @@ export async function fetchProductsFromSupabase(): Promise<Product[] | null> {
         mrp: Number(v.mrp || row.mrp),
       }));
 
-      const colors = Array.from(
+      // Extract colors from row.colors if saved directly, otherwise derive from variants
+      const variantColors = Array.from(
         new Map(variants.map((v) => [v.colorName, { name: v.colorName, hex: v.colorHex }])).values()
       );
+      const colors = Array.isArray(row.colors) && row.colors.length > 0
+        ? row.colors
+        : variantColors.length > 0
+          ? variantColors
+          : [{ name: 'Obsidian Black', hex: '#0a0a0a' }];
 
-      const sizes = Array.from(new Set(variants.map((v) => v.size)));
+      // Extract sizes from row.sizes if saved directly, otherwise derive from variants
+      const variantSizes = Array.from(new Set(variants.map((v) => v.size)));
+      const sizes = Array.isArray(row.sizes) && row.sizes.length > 0
+        ? row.sizes
+        : variantSizes.length > 0
+          ? (variantSizes as any)
+          : ['S', 'M', 'L', 'XL'];
 
       return {
         id: row.id,
@@ -72,8 +88,8 @@ export async function fetchProductsFromSupabase(): Promise<Product[] | null> {
             angle: 'front',
           },
         ],
-        colors: colors.length > 0 ? colors : [{ name: 'Obsidian Black', hex: '#0a0a0a' }],
-        sizes: sizes.length > 0 ? (sizes as any) : ['S', 'M', 'L', 'XL'],
+        colors,
+        sizes,
         variants,
         isNew: row.is_new,
         isBestseller: row.is_bestseller,
@@ -94,63 +110,88 @@ export async function fetchProductsFromSupabase(): Promise<Product[] | null> {
  */
 export async function createProductInSupabase(product: Product): Promise<boolean> {
   try {
-    // 1. Insert product row
+    // 1. Check if product already exists by slug (idempotent / upsert behavior)
+    const { data: existing } = await supabase
+      .from('products')
+      .select('id')
+      .eq('slug', product.slug)
+      .maybeSingle();
+
+    if (existing) {
+      return await updateProductInSupabase({ ...product, id: existing.id });
+    }
+
+    // 2. Insert product row
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(product.id);
+    const insertPayload: any = {
+      name: product.name,
+      slug: product.slug,
+      tagline: product.tagline,
+      description: product.description,
+      gender: product.gender,
+      fit: product.fit,
+      price: product.price,
+      mrp: product.mrp,
+      gsm: product.gsm,
+      fabric: product.fabric,
+      care_instructions: product.careInstructions,
+      features: product.features,
+      is_spotlight: Boolean(product.isSpotlight),
+      is_bestseller: Boolean(product.isBestseller),
+      is_new: Boolean(product.isNew),
+      rating: product.rating,
+      reviews_count: product.reviewsCount,
+      colors: product.colors,
+      sizes: product.sizes,
+    };
+    if (isUuid) {
+      insertPayload.id = product.id;
+    }
+
     const { data: insertedProduct, error: productError } = await supabase
       .from('products')
-      .insert({
-        name: product.name,
-        slug: product.slug,
-        tagline: product.tagline,
-        description: product.description,
-        gender: product.gender,
-        fit: product.fit,
-        price: product.price,
-        mrp: product.mrp,
-        gsm: product.gsm,
-        fabric: product.fabric,
-        care_instructions: product.careInstructions,
-        features: product.features,
-        is_spotlight: Boolean(product.isSpotlight),
-        is_bestseller: Boolean(product.isBestseller),
-        is_new: Boolean(product.isNew),
-        rating: product.rating,
-        reviews_count: product.reviewsCount,
-      })
+      .insert(insertPayload)
       .select()
       .single();
 
     if (productError || !insertedProduct) {
-      console.warn('Supabase product insert error:', productError);
+      console.warn('Supabase product insert error:', productError?.message || productError);
       return false;
     }
 
     const productId = insertedProduct.id;
 
-    // 2. Insert images
+    // 3. Insert images
     if (product.images && product.images.length > 0) {
       const imageRows = product.images.map((img, idx) => ({
         product_id: productId,
         url: img.url,
-        alt: img.alt,
-        angle: img.angle || 'front',
+        alt: img.alt || `${product.name} view ${idx + 1}`,
+        angle: ['front', 'back', 'detail', 'model', 'fabric', 'studio', 'side'].includes(img.angle as any)
+          ? img.angle
+          : 'front',
         display_order: idx,
       }));
-      await supabase.from('product_images').insert(imageRows);
+      const { error: imgErr } = await supabase.from('product_images').insert(imageRows);
+      if (imgErr) console.warn('Supabase images insert error:', imgErr.message);
     }
 
-    // 3. Insert variants
+    // 4. Insert variants
     if (product.variants && product.variants.length > 0) {
-      const variantRows = product.variants.map((v) => ({
+      const variantRows = product.variants.map((v, idx) => ({
         product_id: productId,
-        sku: v.sku,
+        sku:
+          v.sku ||
+          `SS-${product.slug.slice(0, 6).toUpperCase()}-${v.colorName.replace(/[^a-zA-Z0-9]/g, '').slice(0, 3).toUpperCase()}-${v.size}-${idx}`,
         color_name: v.colorName,
         color_hex: v.colorHex,
         size: v.size,
-        stock: v.stock,
-        price: v.price,
-        mrp: v.mrp,
+        stock: v.stock || 25,
+        price: v.price || product.price,
+        mrp: v.mrp || product.mrp,
       }));
-      await supabase.from('product_variants').insert(variantRows);
+      const { error: varErr } = await supabase.from('product_variants').insert(variantRows);
+      if (varErr) console.warn('Supabase variants insert error:', varErr.message);
     }
 
     return true;
@@ -165,7 +206,9 @@ export async function createProductInSupabase(product: Product): Promise<boolean
  */
 export async function deleteProductFromSupabase(productId: string): Promise<boolean> {
   try {
-    const { error } = await supabase.from('products').delete().eq('id', productId);
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(productId);
+    const query = supabase.from('products').delete();
+    const { error } = isUuid ? await query.eq('id', productId) : await query.eq('slug', productId);
     return !error;
   } catch (err) {
     return false;
@@ -173,22 +216,94 @@ export async function deleteProductFromSupabase(productId: string): Promise<bool
 }
 
 /**
- * UPDATE PRODUCT IN SUPABASE (e.g. is_new status)
+ * UPDATE PRODUCT IN SUPABASE (all fields, images, variants)
  */
 export async function updateProductInSupabase(product: Product): Promise<boolean> {
   try {
-    const { error } = await supabase
-      .from('products')
-      .update({
-        is_new: Boolean(product.isNew),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', product.id);
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(product.id);
 
-    if (error) {
-      console.warn('Supabase update product error:', error.message);
-      return false;
+    // 1. Update product table row
+    const updatePayload: any = {
+      name: product.name,
+      slug: product.slug,
+      tagline: product.tagline,
+      description: product.description,
+      gender: product.gender,
+      fit: product.fit,
+      price: product.price,
+      mrp: product.mrp,
+      gsm: product.gsm,
+      fabric: product.fabric,
+      care_instructions: product.careInstructions,
+      features: product.features,
+      is_spotlight: Boolean(product.isSpotlight),
+      is_bestseller: Boolean(product.isBestseller),
+      is_new: Boolean(product.isNew),
+      rating: product.rating,
+      reviews_count: product.reviewsCount,
+      colors: product.colors,
+      sizes: product.sizes,
+      updated_at: new Date().toISOString(),
+    };
+
+    let targetId = product.id;
+
+    if (isUuid) {
+      const { error } = await supabase.from('products').update(updatePayload).eq('id', product.id);
+      if (error) console.warn('Supabase update product error by id:', error.message);
+    } else {
+      // Find product by slug
+      const { data: existing } = await supabase
+        .from('products')
+        .select('id')
+        .eq('slug', product.slug)
+        .maybeSingle();
+
+      if (existing) {
+        targetId = existing.id;
+        const { error } = await supabase.from('products').update(updatePayload).eq('id', targetId);
+        if (error) console.warn('Supabase update product error by slug:', error.message);
+      } else {
+        // If it doesn't exist, create it
+        return await createProductInSupabase(product);
+      }
     }
+
+    // 2. Update product images (delete old & insert new)
+    if (product.images && product.images.length > 0) {
+      await supabase.from('product_images').delete().eq('product_id', targetId);
+      const imageRows = product.images.map((img, idx) => ({
+        product_id: targetId,
+        url: img.url,
+        alt: img.alt || `${product.name} view ${idx + 1}`,
+        angle: ['front', 'back', 'detail', 'model', 'fabric', 'studio', 'side'].includes(img.angle as any)
+          ? img.angle
+          : 'front',
+        display_order: idx,
+      }));
+      const { error: imgErr } = await supabase.from('product_images').insert(imageRows);
+      if (imgErr) console.warn('Supabase update images error:', imgErr.message);
+    }
+
+    // 3. Update product variants (delete old & insert new)
+    if (product.variants && product.variants.length > 0) {
+      await supabase.from('product_variants').delete().eq('product_id', targetId);
+      const variantRows = product.variants.map((v, idx) => ({
+        product_id: targetId,
+        sku:
+          v.sku ||
+          `SS-${product.slug.slice(0, 6).toUpperCase()}-${v.colorName.replace(/[^a-zA-Z0-9]/g, '').slice(0, 3).toUpperCase()}-${v.size}-${idx}`,
+        color_name: v.colorName,
+        color_hex: v.colorHex,
+        size: v.size,
+        stock: v.stock || 25,
+        price: v.price || product.price,
+        mrp: v.mrp || product.mrp,
+      }));
+      const { error: varErr } = await supabase.from('product_variants').insert(variantRows);
+      if (varErr) console.warn('Supabase update variants error:', varErr.message);
+    }
+
     return true;
   } catch (err) {
     console.warn('Supabase update product failed:', err);

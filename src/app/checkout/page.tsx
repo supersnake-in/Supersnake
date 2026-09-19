@@ -337,6 +337,7 @@ export default function CheckoutPage() {
                         alt={item.product.name}
                         fill
                         sizes="50px"
+                        unoptimized={Boolean(item.product.images[0]?.url?.startsWith('data:') || item.product.images[0]?.url?.startsWith('blob:'))}
                         className="object-cover"
                       />
                     </div>
@@ -727,6 +728,7 @@ export default function CheckoutPage() {
                       alt={item.product.name}
                       fill
                       sizes="60px"
+                      unoptimized={Boolean(item.product.images[0]?.url?.startsWith('data:') || item.product.images[0]?.url?.startsWith('blob:'))}
                       className="object-cover"
                     />
                   </div>

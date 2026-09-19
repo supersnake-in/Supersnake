@@ -60,6 +60,7 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
           fill
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           priority={priority}
+          unoptimized={Boolean(primaryImage.startsWith('data:') || primaryImage.startsWith('blob:'))}
           className={`object-cover transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
             isHovered && alternateImage !== primaryImage ? 'opacity-0 scale-105' : 'opacity-100 scale-100'
           }`}
@@ -72,6 +73,7 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
             alt={`${product.name} alternate`}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            unoptimized={Boolean(alternateImage.startsWith('data:') || alternateImage.startsWith('blob:'))}
             className={`object-cover transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
               isHovered ? 'opacity-100 scale-105' : 'opacity-0 scale-100'
             }`}
@@ -136,6 +138,12 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
             {formatPrice(product.price)}
           </span>
         </div>
+
+        {product.tagline && (
+          <p className="text-[10px] font-mono text-neutral-400 truncate">
+            {product.tagline}
+          </p>
+        )}
 
         <div className="flex justify-between items-center text-[9px] sm:text-[10px] font-mono text-neutral-500">
           <span>{product.fit} Fit • {product.gender.toUpperCase()}</span>

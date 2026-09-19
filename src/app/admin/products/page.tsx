@@ -325,11 +325,11 @@ export default function AdminProductsPage() {
       .map((line) => sanitizeString(line.trim()))
       .filter(Boolean);
 
-    // Build variant matrix
+    // Build variant matrix with guaranteed unique SKUs
     const variants = selectedColors.flatMap((c) =>
-      selectedSizes.map((s) => ({
-        id: `v-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        sku: `SS-${cleanName.slice(0, 3).toUpperCase()}-${c.name.slice(0, 3).toUpperCase()}-${s}`,
+      selectedSizes.map((s, idx) => ({
+        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `v-${Date.now()}-${idx}`,
+        sku: `SS-${cleanSlug.slice(0, 6).toUpperCase()}-${c.name.replace(/[^a-zA-Z0-9]/g, '').slice(0, 3).toUpperCase()}-${s}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
         colorName: c.name,
         colorHex: c.hex,
         size: s,
@@ -342,7 +342,7 @@ export default function AdminProductsPage() {
     const existingProd = editingProductId ? products.find((p) => p.id === editingProductId) : null;
 
     const productPayload: Product = {
-      id: editingProductId || `prod-${Date.now()}`,
+      id: editingProductId || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `prod-${Date.now()}`),
       name: cleanName,
       slug: cleanSlug,
       tagline: sanitizeString(tagline || `${cleanGsm} GSM Engineered luxury garment`),
@@ -529,6 +529,7 @@ export default function AdminProductsPage() {
                         alt={prod.name}
                         fill
                         sizes="50px"
+                        unoptimized={Boolean(prod.images[0]?.url?.startsWith('data:') || prod.images[0]?.url?.startsWith('blob:'))}
                         className="object-cover"
                       />
                     </div>
@@ -734,6 +735,7 @@ export default function AdminProductsPage() {
                             alt={img.alt}
                             fill
                             sizes="150px"
+                            unoptimized={Boolean(img.url.startsWith('data:') || img.url.startsWith('blob:'))}
                             className="object-cover"
                           />
                           <div className="absolute top-1 left-1 px-1.5 py-0.5 bg-black/80 text-[9px] font-bold text-snake-green uppercase rounded">

@@ -106,6 +106,7 @@ export function CartDrawer() {
                         alt={item.product.name}
                         fill
                         sizes="80px"
+                        unoptimized={Boolean(item.product.images[0]?.url?.startsWith('data:') || item.product.images[0]?.url?.startsWith('blob:'))}
                         className="object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                     </div>

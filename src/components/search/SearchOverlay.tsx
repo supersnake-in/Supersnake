@@ -249,6 +249,7 @@ export function SearchOverlay() {
                             alt={product.name}
                             fill
                             sizes="(max-width: 640px) 50vw, (max-width: 768px) 50vw, 300px"
+                            unoptimized={Boolean(product.images[0]?.url?.startsWith('data:') || product.images[0]?.url?.startsWith('blob:'))}
                             className="object-cover transition-transform duration-700 group-hover:scale-105"
                           />
                           <div className="absolute top-2.5 left-2.5 px-2 py-0.5 bg-black/70 backdrop-blur-sm text-[8px] sm:text-[9px] font-mono tracking-widest text-white border border-white/10">

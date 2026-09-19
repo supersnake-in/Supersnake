@@ -117,6 +117,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
                       fill
                       priority={idx === 0}
                       sizes="(max-width: 1024px) 100vw, 60vw"
+                      unoptimized={Boolean(img.url.startsWith('data:') || img.url.startsWith('blob:'))}
                       className="object-cover"
                     />
                   </div>
@@ -166,6 +167,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
                   fill
                   priority
                   sizes="(max-width: 1024px) 100vw, 60vw"
+                  unoptimized={Boolean(activeImage.url.startsWith('data:') || activeImage.url.startsWith('blob:'))}
                   className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                 />
 
@@ -201,6 +203,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
                       alt={img.alt}
                       fill
                       sizes="120px"
+                      unoptimized={Boolean(img.url.startsWith('data:') || img.url.startsWith('blob:'))}
                       className="object-cover"
                     />
                   </button>
@@ -233,6 +236,12 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
               <h1 className="text-2xl sm:text-4xl font-display font-bold uppercase tracking-tight text-white">
                 {product.name}
               </h1>
+
+              {product.tagline && (
+                <p className="text-xs sm:text-sm font-mono text-neutral-400 tracking-wide uppercase">
+                  {product.tagline}
+                </p>
+              )}
 
               {/* Price & Rating */}
               <div className="flex items-baseline gap-4 pt-1">
@@ -516,6 +525,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
               src={activeImage.url}
               alt={activeImage.alt}
               fill
+              unoptimized={Boolean(activeImage.url.startsWith('data:') || activeImage.url.startsWith('blob:'))}
               className="object-contain"
             />
           </div>
