@@ -42,11 +42,16 @@ const config: Config = {
       animation: {
         "pulse-subtle": "pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
         "glow-pulse": "glowPulse 3s ease-in-out infinite alternate",
+        "marquee": "marquee 40s linear infinite",
       },
       keyframes: {
         glowPulse: {
           "0%": { filter: "drop-shadow(0 0 10px rgba(4, 252, 33, 0.2))" },
           "100%": { filter: "drop-shadow(0 0 25px rgba(4, 252, 33, 0.6))" },
+        },
+        marquee: {
+          "0%": { transform: "translateX(0%)" },
+          "100%": { transform: "translateX(-50%)" },
         },
       },
     },

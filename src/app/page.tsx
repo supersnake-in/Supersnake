@@ -178,7 +178,43 @@ export default function HomePage() {
       </section>
 
       {/* ============================================================
-          02 — THE TEE (MONUMENTAL EDITORIAL SECTION)
+          02 — NEW DROPS (4–6 CLEAN PRODUCT CARDS)
+          ============================================================ */}
+      <section className="py-20 md:py-36 px-4 sm:px-6 md:px-12 border-t border-white/[0.06] bg-[#080808]">
+        <div className="max-w-7xl mx-auto space-y-8 sm:space-y-12">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div>
+              <span className="text-[10px] font-mono tracking-widest text-snake-green uppercase">
+                FRESH ATELIER RUNS
+              </span>
+              <h2 className="text-2xl sm:text-3xl md:text-5xl font-display font-bold uppercase tracking-tight text-white">
+                NEW DROPS
+              </h2>
+            </div>
+            <Link
+              href="/new-drops"
+              className="text-xs font-mono tracking-widest text-neutral-400 hover:text-white uppercase flex items-center gap-1.5"
+            >
+              VIEW ALL NEW DROPS <ArrowRight size={13} />
+            </Link>
+          </div>
+
+          {newDrops.length === 0 ? (
+            <div className="py-12 text-center text-xs font-mono text-neutral-500">
+              No new drops currently available. Check back soon for the next atelier run.
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-8">
+              {newDrops.map((product, idx) => (
+                <ProductCard key={product.id} product={product} priority={idx < 2} />
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ============================================================
+          03 — THE TEE (MONUMENTAL EDITORIAL SECTION)
           ============================================================ */}
       <section className="py-20 md:py-40 px-4 sm:px-6 md:px-12 border-t border-white/[0.06] relative overflow-hidden bg-[#050505]">
         <div className="max-w-7xl mx-auto">
@@ -256,7 +292,7 @@ export default function HomePage() {
       </section>
 
       {/* ============================================================
-          03 — MEN / WOMEN (EDITORIAL SPLIT SCREEN)
+          04 — MEN / WOMEN (EDITORIAL SPLIT SCREEN)
           ============================================================ */}
       <section className="relative w-full border-t border-white/[0.06] bg-black">
         <div className="grid grid-cols-1 md:grid-cols-2 min-h-[500px] md:min-h-[800px]">
@@ -333,42 +369,6 @@ export default function HomePage() {
       </section>
 
       {/* ============================================================
-          04 — NEW DROPS (4–6 CLEAN PRODUCT CARDS)
-          ============================================================ */}
-      <section className="py-20 md:py-36 px-4 sm:px-6 md:px-12 border-t border-white/[0.06] bg-[#080808]">
-        <div className="max-w-7xl mx-auto space-y-8 sm:space-y-12">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-            <div>
-              <span className="text-[10px] font-mono tracking-widest text-snake-green uppercase">
-                FRESH ATELIER RUNS
-              </span>
-              <h2 className="text-2xl sm:text-3xl md:text-5xl font-display font-bold uppercase tracking-tight text-white">
-                NEW DROPS
-              </h2>
-            </div>
-            <Link
-              href="/new-drops"
-              className="text-xs font-mono tracking-widest text-neutral-400 hover:text-white uppercase flex items-center gap-1.5"
-            >
-              VIEW ALL NEW DROPS <ArrowRight size={13} />
-            </Link>
-          </div>
-
-          {newDrops.length === 0 ? (
-            <div className="py-12 text-center text-xs font-mono text-neutral-500">
-              No new drops currently available. Check back soon for the next atelier run.
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-8">
-              {newDrops.map((product, idx) => (
-                <ProductCard key={product.id} product={product} priority={idx < 2} />
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* ============================================================
           05 — PRODUCT SPOTLIGHT (IMMERSIVE FULL-SCREEN PRESENTATION)
           ============================================================ */}
       {spotlightProduct && (
@@ -417,79 +417,50 @@ export default function HomePage() {
       )}
 
       {/* ============================================================
-          06 — QUALITY & CRAFTSMANSHIP (MACRO PHOTOGRAPHY)
+          06 — ALL CREATIONS (CONTINUOUS DISPLAY OF ALL PRODUCTS)
           ============================================================ */}
-      <section className="py-20 md:py-36 px-4 sm:px-6 md:px-12 border-t border-white/[0.06] bg-[#050505]">
-        <div className="max-w-7xl mx-auto space-y-10 sm:space-y-16">
-          <div className="max-w-2xl space-y-2">
-            <span className="text-[10px] font-mono tracking-widest text-snake-green uppercase">
-              HONEST MATERIALS
-            </span>
-            <h2 className="text-2xl sm:text-3xl md:text-5xl font-display font-bold uppercase tracking-tight text-white">
-              THE THREE PILLARS
-            </h2>
+      <section className="py-20 md:py-36 border-t border-white/[0.06] bg-[#050505] overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 space-y-8 sm:space-y-12">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div>
+              <span className="text-[10px] font-mono tracking-widest text-snake-green uppercase">
+                COMPLETE ATELIER ARCHIVE
+              </span>
+              <h2 className="text-2xl sm:text-3xl md:text-5xl font-display font-bold uppercase tracking-tight text-white">
+                ALL CREATIONS
+              </h2>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-[11px] font-mono text-neutral-400 tracking-wider">
+                [{products.length} OBJECTS]
+              </span>
+              <Link
+                href="/shop"
+                className="text-xs font-mono tracking-widest text-neutral-400 hover:text-white uppercase flex items-center gap-1.5"
+              >
+                VIEW FULL SHOP <ArrowRight size={13} />
+              </Link>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
-            {/* Pillar 1 */}
-            <div className="space-y-3 sm:space-y-4 group">
-              <div className="relative aspect-[4/5] rounded overflow-hidden bg-neutral-900 border border-white/10">
-                <Image
-                  src="https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?q=80&w=800&auto=format&fit=crop"
-                  alt="Premium Fabric Weave"
-                  fill
-                  sizes="(max-width: 768px) 100vw, 33vw"
-                  className="object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-                <div className="absolute top-4 left-4 text-xs font-mono text-white/70">01 / PILLAR</div>
+          {/* Continuous Auto-Scrolling Marquee Track */}
+          {products.length > 0 && (
+            <div className="relative w-full overflow-hidden py-4 -mx-4 sm:-mx-6 md:-mx-12 px-4 sm:px-6 md:px-12">
+              <div className="flex gap-4 sm:gap-6 w-max animate-marquee hover:[animation-play-state:paused]">
+                {[...products, ...products].map((product, idx) => (
+                  <div key={`marquee-${product.id}-${idx}`} className="w-[220px] sm:w-[280px] shrink-0">
+                    <ProductCard product={product} />
+                  </div>
+                ))}
               </div>
-              <h3 className="text-base sm:text-lg font-mono font-bold tracking-wider text-white uppercase group-hover:text-snake-green transition-colors">
-                PREMIUM FABRIC
-              </h3>
-              <p className="text-xs font-mono text-neutral-400 leading-relaxed">
-                280–300 GSM Supima® and French Terry. Spun from long-staple fibers that provide natural resilience, softness, and substantial drape without chemical softeners.
-              </p>
             </div>
+          )}
 
-            {/* Pillar 2 */}
-            <div className="space-y-3 sm:space-y-4 group">
-              <div className="relative aspect-[4/5] rounded overflow-hidden bg-neutral-900 border border-white/10">
-                <Image
-                  src="https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?q=80&w=800&auto=format&fit=crop"
-                  alt="Collar and Stitching"
-                  fill
-                  sizes="(max-width: 768px) 100vw, 33vw"
-                  className="object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-                <div className="absolute top-4 left-4 text-xs font-mono text-white/70">02 / PILLAR</div>
-              </div>
-              <h3 className="text-base sm:text-lg font-mono font-bold tracking-wider text-white uppercase group-hover:text-snake-green transition-colors">
-                BUILT FOR COMFORT
-              </h3>
-              <p className="text-xs font-mono text-neutral-400 leading-relaxed">
-                Anatomical drop-shoulder patterning that contours naturally across the clavicle and chest. Free from itch labels, using soft silicone micro-prints.
-              </p>
-            </div>
-
-            {/* Pillar 3 */}
-            <div className="space-y-3 sm:space-y-4 group">
-              <div className="relative aspect-[4/5] rounded overflow-hidden bg-neutral-900 border border-white/10">
-                <Image
-                  src="https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=800&auto=format&fit=crop"
-                  alt="Drape and Geometry"
-                  fill
-                  sizes="(max-width: 768px) 100vw, 33vw"
-                  className="object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-                <div className="absolute top-4 left-4 text-xs font-mono text-white/70">03 / PILLAR</div>
-              </div>
-              <h3 className="text-base sm:text-lg font-mono font-bold tracking-wider text-white uppercase group-hover:text-snake-green transition-colors">
-                DESIGNED TO LAST
-              </h3>
-              <p className="text-xs font-mono text-neutral-400 leading-relaxed">
-                Pre-shrunk geometry ensures that the length, chest width, and collar tension remain identical after repeated wash cycles. A garment for years, not seasons.
-              </p>
-            </div>
+          {/* Complete Responsive Product Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-8 pt-4">
+            {products.map((product) => (
+              <ProductCard key={`grid-${product.id}`} product={product} />
+            ))}
           </div>
         </div>
       </section>
@@ -610,6 +581,84 @@ export default function HomePage() {
                 sizes="(max-width: 768px) 50vw, 25vw"
                 className="object-cover transition-transform duration-700 group-hover:scale-105 brightness-90"
               />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ============================================================
+          10 — QUALITY & CRAFTSMANSHIP (MACRO PHOTOGRAPHY)
+          ============================================================ */}
+      <section className="py-20 md:py-36 px-4 sm:px-6 md:px-12 border-t border-white/[0.06] bg-[#050505]">
+        <div className="max-w-7xl mx-auto space-y-10 sm:space-y-16">
+          <div className="max-w-2xl space-y-2">
+            <span className="text-[10px] font-mono tracking-widest text-snake-green uppercase">
+              HONEST MATERIALS
+            </span>
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-display font-bold uppercase tracking-tight text-white">
+              THE THREE PILLARS
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+            {/* Pillar 1 */}
+            <div className="space-y-3 sm:space-y-4 group">
+              <div className="relative aspect-[4/5] rounded overflow-hidden bg-neutral-900 border border-white/10">
+                <Image
+                  src="https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?q=80&w=800&auto=format&fit=crop"
+                  alt="Premium Fabric Weave"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                  className="object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div className="absolute top-4 left-4 text-xs font-mono text-white/70">01 / PILLAR</div>
+              </div>
+              <h3 className="text-base sm:text-lg font-mono font-bold tracking-wider text-white uppercase group-hover:text-snake-green transition-colors">
+                PREMIUM FABRIC
+              </h3>
+              <p className="text-xs font-mono text-neutral-400 leading-relaxed">
+                280–300 GSM Supima® and French Terry. Spun from long-staple fibers that provide natural resilience, softness, and substantial drape without chemical softeners.
+              </p>
+            </div>
+
+            {/* Pillar 2 */}
+            <div className="space-y-3 sm:space-y-4 group">
+              <div className="relative aspect-[4/5] rounded overflow-hidden bg-neutral-900 border border-white/10">
+                <Image
+                  src="https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?q=80&w=800&auto=format&fit=crop"
+                  alt="Collar and Stitching"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                  className="object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div className="absolute top-4 left-4 text-xs font-mono text-white/70">02 / PILLAR</div>
+              </div>
+              <h3 className="text-base sm:text-lg font-mono font-bold tracking-wider text-white uppercase group-hover:text-snake-green transition-colors">
+                BUILT FOR COMFORT
+              </h3>
+              <p className="text-xs font-mono text-neutral-400 leading-relaxed">
+                Anatomical drop-shoulder patterning that contours naturally across the clavicle and chest. Free from itch labels, using soft silicone micro-prints.
+              </p>
+            </div>
+
+            {/* Pillar 3 */}
+            <div className="space-y-3 sm:space-y-4 group">
+              <div className="relative aspect-[4/5] rounded overflow-hidden bg-neutral-900 border border-white/10">
+                <Image
+                  src="https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=800&auto=format&fit=crop"
+                  alt="Drape and Geometry"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                  className="object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div className="absolute top-4 left-4 text-xs font-mono text-white/70">03 / PILLAR</div>
+              </div>
+              <h3 className="text-base sm:text-lg font-mono font-bold tracking-wider text-white uppercase group-hover:text-snake-green transition-colors">
+                DESIGNED TO LAST
+              </h3>
+              <p className="text-xs font-mono text-neutral-400 leading-relaxed">
+                Pre-shrunk geometry ensures that the length, chest width, and collar tension remain identical after repeated wash cycles. A garment for years, not seasons.
+              </p>
             </div>
           </div>
         </div>
