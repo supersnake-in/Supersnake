@@ -17,45 +17,13 @@ function AuthCallbackContent() {
     async function handleCallback() {
       const next = searchParams.get('next') || '/account';
       const code = searchParams.get('code');
-      const queryError = searchParams.get('error_description') || searchParams.get('error');
-
-      // Check query error
-      if (queryError) {
-        if (active) setError(decodeURIComponent(queryError));
-        setTimeout(() => {
-          if (active) router.replace('/login');
-        }, 2500);
-        return;
-      }
 
       try {
-        // 1. Check if tokens or errors are in hash fragment (#access_token=... or #error=...)
-        if (typeof window !== 'undefined' && window.location.hash) {
-          const hashParams = new URLSearchParams(window.location.hash.substring(1));
-          const hashError = hashParams.get('error_description') || hashParams.get('error');
-          if (hashError) {
-            if (active) setError(decodeURIComponent(hashError));
-            setTimeout(() => {
-              if (active) router.replace('/login');
-            }, 2500);
-            return;
-          }
-
-          const accessToken = hashParams.get('access_token');
-          const refreshToken = hashParams.get('refresh_token');
-          if (accessToken && refreshToken) {
-            await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken,
-            });
-          }
-        }
-
-        // 2. PKCE code exchange
         if (code) {
           const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
           if (exchangeError) {
             console.error('Exchange code error:', exchangeError);
+            // Check if session is already active
             const { data: currentSession } = await supabase.auth.getSession();
             if (!currentSession.session) {
               if (active) setError(exchangeError.message);
@@ -67,7 +35,7 @@ function AuthCallbackContent() {
           }
         }
 
-        // 3. Verify active session
+        // Verify session is established
         const { data: { session } } = await supabase.auth.getSession();
         if (session && active) {
           setStatusMessage('ACCESS GRANTED. ENTERING ATELIER...');
