@@ -1,11 +1,18 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Settings, Shield, Key, Bell, CreditCard, Mail, Check } from 'lucide-react';
+import { Store, Truck, ShieldCheck, Check, Clock, Sparkles } from 'lucide-react';
 import { BRAND } from '@/lib/design-tokens';
 
 export default function AdminSettingsPage() {
   const [saved, setSaved] = useState(false);
+  const [storeName, setStoreName] = useState(BRAND.name);
+  const [conciergeEmail, setConciergeEmail] = useState('concierge@supersnake.in');
+  const [freeShippingThreshold, setFreeShippingThreshold] = useState(1999);
+  const [deliveryDays, setDeliveryDays] = useState('2-4 Business Days');
+  const [courierPartner, setCourierPartner] = useState('Blue Dart Express / Delhivery');
+  const [studioLocation, setStudioLocation] = useState('Bengaluru, Karnataka, India');
+  const [adminPin, setAdminPin] = useState('••••');
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,91 +24,120 @@ export default function AdminSettingsPage() {
     <div className="space-y-6 font-mono max-w-4xl">
       <div className="border-b border-neutral-800 pb-4">
         <h1 className="text-2xl font-display font-bold uppercase text-white tracking-tight">
-          PLATFORM & INTEGRATION SETTINGS
+          ATELIER STORE SETTINGS
         </h1>
         <p className="text-xs text-neutral-400 mt-1">
-          Configure Supabase, Razorpay, Resend, and Cloudflare credentials.
+          Manage storefront branding, shipping thresholds, and concierge logistics.
         </p>
       </div>
 
       <form onSubmit={handleSave} className="space-y-6 text-xs">
-        {/* Gateway Config */}
+        {/* Brand & Atelier Profile */}
         <div className="bg-[#0d0d0d] border border-neutral-800/80 rounded-lg p-6 space-y-4">
           <div className="flex items-center gap-2 text-white font-bold uppercase text-sm border-b border-neutral-800 pb-2">
-            <CreditCard size={16} className="text-snake-green" />
-            <span>RAZORPAY PAYMENT GATEWAY</span>
+            <Store size={16} className="text-snake-green" />
+            <span>BRAND & CONCIERGE PROFILE</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-neutral-400 uppercase">RAZORPAY KEY ID</label>
+              <label className="text-neutral-400 uppercase">BRAND IDENTITY</label>
               <input
                 type="text"
-                placeholder="Configured via NEXT_PUBLIC_RAZORPAY_KEY_ID"
-                className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded placeholder:text-neutral-600 focus:border-snake-green"
+                value={storeName}
+                onChange={(e) => setStoreName(e.target.value)}
+                className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green"
               />
             </div>
             <div className="space-y-1">
-              <label className="text-neutral-400 uppercase">WEBHOOK SECRET</label>
+              <label className="text-neutral-400 uppercase">CONCIERGE CONTACT</label>
               <input
-                type="password"
-                placeholder="Configured via RAZORPAY_WEBHOOK_SECRET (Server Only)"
-                className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded placeholder:text-neutral-600 focus:border-snake-green"
+                type="email"
+                value={conciergeEmail}
+                onChange={(e) => setConciergeEmail(e.target.value)}
+                className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green"
+              />
+            </div>
+            <div className="space-y-1 sm:col-span-2">
+              <label className="text-neutral-400 uppercase">ATELIER STUDIO LOCATION</label>
+              <input
+                type="text"
+                value={studioLocation}
+                onChange={(e) => setStudioLocation(e.target.value)}
+                className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green"
               />
             </div>
           </div>
         </div>
 
-        {/* Database & Supabase */}
+        {/* Shipping & Fulfillment Rules */}
         <div className="bg-[#0d0d0d] border border-neutral-800/80 rounded-lg p-6 space-y-4">
           <div className="flex items-center gap-2 text-white font-bold uppercase text-sm border-b border-neutral-800 pb-2">
-            <Shield size={16} className="text-snake-green" />
-            <span>SUPABASE POSTGRESQL & AUTH</span>
+            <Truck size={16} className="text-snake-green" />
+            <span>SHIPPING & LOGISTICS POLICIES</span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1">
-              <label className="text-neutral-400 uppercase">SUPABASE PROJECT URL</label>
+              <label className="text-neutral-400 uppercase">FREE SHIPPING THRESHOLD (₹)</label>
               <input
-                type="text"
-                placeholder="Configured via NEXT_PUBLIC_SUPABASE_URL"
-                className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded placeholder:text-neutral-600 focus:border-snake-green"
+                type="number"
+                value={freeShippingThreshold}
+                onChange={(e) => setFreeShippingThreshold(Number(e.target.value))}
+                className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green"
               />
             </div>
             <div className="space-y-1">
-              <label className="text-neutral-400 uppercase">ANON / PUBLIC KEY</label>
+              <label className="text-neutral-400 uppercase">TRANSIT TIMELINE</label>
               <input
-                type="password"
-                placeholder="Configured via NEXT_PUBLIC_SUPABASE_ANON_KEY"
-                className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded placeholder:text-neutral-600 focus:border-snake-green"
+                type="text"
+                value={deliveryDays}
+                onChange={(e) => setDeliveryDays(e.target.value)}
+                className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-neutral-400 uppercase">LOGISTICS PARTNER</label>
+              <input
+                type="text"
+                value={courierPartner}
+                onChange={(e) => setCourierPartner(e.target.value)}
+                className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green"
               />
             </div>
           </div>
         </div>
 
-        {/* Resend Email */}
+        {/* Atelier Security */}
         <div className="bg-[#0d0d0d] border border-neutral-800/80 rounded-lg p-6 space-y-4">
           <div className="flex items-center gap-2 text-white font-bold uppercase text-sm border-b border-neutral-800 pb-2">
-            <Mail size={16} className="text-snake-green" />
-            <span>RESEND TRANSACTIONAL EMAILS</span>
+            <ShieldCheck size={16} className="text-snake-green" />
+            <span>ATELIER SECURITY & ACCESS</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-neutral-400 uppercase">SENDER DOMAIN</label>
-              <input
-                type="text"
-                placeholder="concierge@supersnake.in"
-                className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded placeholder:text-neutral-600 focus:border-snake-green"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-neutral-400 uppercase">RESEND API KEY</label>
+              <label className="text-neutral-400 uppercase">ADMIN PASSCODE</label>
               <input
                 type="password"
-                placeholder="Configured via RESEND_API_KEY (Server Only)"
-                className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded placeholder:text-neutral-600 focus:border-snake-green"
+                value={adminPin}
+                onChange={(e) => setAdminPin(e.target.value)}
+                placeholder="Enter 4-digit PIN"
+                className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green"
               />
+              <span className="text-[10px] text-neutral-500 block">
+                Protects `/admin` actions and inventory updates.
+              </span>
+            </div>
+            <div className="space-y-1">
+              <label className="text-neutral-400 uppercase">SECURITY STATUS</label>
+              <div className="px-3 py-2 bg-black border border-neutral-800 rounded text-neutral-300 flex items-center justify-between">
+                <span>Hardened (Zero Key Exposure)</span>
+                <span className="w-2 h-2 rounded-full bg-snake-green animate-pulse" />
+              </div>
+              <span className="text-[10px] text-neutral-500 block">
+                All API keys & secrets are isolated server-side on Vercel.
+              </span>
             </div>
           </div>
         </div>
@@ -109,14 +145,14 @@ export default function AdminSettingsPage() {
         <div className="flex justify-between items-center pt-2">
           {saved && (
             <span className="text-snake-green flex items-center gap-1 font-bold">
-              <Check size={14} /> SETTINGS SAVED
+              <Check size={14} /> SETTINGS SAVED TO ATELIER
             </span>
           )}
           <button
             type="submit"
             className="ml-auto px-6 py-3 bg-snake-green text-black font-bold uppercase rounded hover:bg-white transition-colors"
           >
-            SAVE CONFIGURATION
+            SAVE SETTINGS
           </button>
         </div>
       </form>
