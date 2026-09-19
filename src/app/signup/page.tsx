@@ -1,14 +1,16 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, EyeOff, ArrowRight, ShieldCheck, Check, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { SuperSnakeLogo } from '@/components/brand/SuperSnakeLogo';
 
-export default function SignupPage() {
+function SignupContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get('next') || searchParams.get('redirect') || '/account';
   const { user, signUp, isLoading } = useAuth();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -21,9 +23,9 @@ export default function SignupPage() {
 
   useEffect(() => {
     if (user && !isLoading) {
-      router.push('/account');
+      router.push(next);
     }
-  }, [user, isLoading, router]);
+  }, [user, isLoading, router, next]);
 
   // Password strength calculation
   const getPasswordStrength = (pass: string) => {
@@ -62,7 +64,7 @@ export default function SignupPage() {
     } else if (res.requireVerification) {
       router.push(`/verify-email?email=${encodeURIComponent(email)}`);
     } else {
-      router.push('/account');
+      router.push(next);
     }
   };
 
@@ -233,7 +235,7 @@ export default function SignupPage() {
 
           <div className="text-center">
             <Link
-              href="/login"
+              href={next !== '/account' ? `/login?next=${encodeURIComponent(next)}` : '/login'}
               className="inline-block w-full border border-white/20 hover:border-snake-green hover:text-snake-green text-white font-mono text-xs uppercase tracking-widest py-3 transition-colors"
             >
               SIGN IN HERE
@@ -248,5 +250,13 @@ export default function SignupPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-black text-white flex items-center justify-center font-mono text-xs text-neutral-500">JOINING ATELIER...</div>}>
+      <SignupContent />
+    </Suspense>
   );
 }

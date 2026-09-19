@@ -98,9 +98,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const loadUserProfile = (currentUser: User) => {
+  const loadUserProfile = async (currentUser: User) => {
     const meta = currentUser.user_metadata || {};
-    const loadedProfile: UserProfile = {
+    let loadedProfile: UserProfile = {
       id: currentUser.id,
       email: currentUser.email || '',
       fullName: meta.full_name || meta.name || currentUser.email?.split('@')[0] || 'Patron',
@@ -111,10 +111,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       preferredSize: meta.preferred_size || 'L',
       genderInterest: meta.gender_interest || 'all',
     };
+
     setProfile(loadedProfile);
     try {
       localStorage.setItem('supersnake_user_profile', JSON.stringify(loadedProfile));
     } catch (e) {}
+
+    // Asynchronously verify against public.profiles if available
+    try {
+      const { data: dbProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', currentUser.id)
+        .single();
+
+      if (dbProfile) {
+        loadedProfile = {
+          ...loadedProfile,
+          fullName: dbProfile.full_name || loadedProfile.fullName,
+          phone: dbProfile.phone || loadedProfile.phone,
+        };
+        setProfile(loadedProfile);
+        try {
+          localStorage.setItem('supersnake_user_profile', JSON.stringify(loadedProfile));
+        } catch (e) {}
+      }
+    } catch (err) {
+      // Graceful fallback to user_metadata
+    }
   };
 
   const signIn = async (email: string, password?: string): Promise<{ error?: string }> => {
@@ -247,6 +271,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             gender_interest: updates.genderInterest,
           },
         });
+
+        // Also update public.profiles table
+        try {
+          await supabase
+            .from('profiles')
+            .update({
+              full_name: updates.fullName,
+              phone: updates.phone,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', user.id);
+        } catch (e) {
+          // Graceful fallback
+        }
       }
       return {};
     } catch (err: any) {

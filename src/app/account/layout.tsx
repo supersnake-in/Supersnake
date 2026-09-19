@@ -85,6 +85,37 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
           </div>
         </div>
 
+        {/* Guest Patron Prompt Banner */}
+        {!user && (
+          <div className="p-4 sm:p-5 bg-white/[0.02] border border-snake-green/30 rounded-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-snake-green animate-pulse" />
+                <span className="text-[10px] font-mono text-snake-green font-semibold uppercase tracking-wider">
+                  GUEST PATRON MODE
+                </span>
+              </div>
+              <p className="text-xs font-mono text-neutral-300">
+                Sign in or enroll to sync orders across devices, store delivery addresses, and access private drops.
+              </p>
+            </div>
+            <div className="flex items-center gap-3 shrink-0">
+              <Link
+                href="/login"
+                className="px-4 py-2.5 bg-white hover:bg-snake-green text-black font-mono text-xs font-semibold uppercase tracking-widest transition-colors"
+              >
+                SIGN IN
+              </Link>
+              <Link
+                href="/signup"
+                className="px-4 py-2.5 border border-white/20 hover:border-snake-green hover:text-snake-green text-white font-mono text-xs uppercase tracking-widest transition-colors"
+              >
+                CREATE ACCOUNT
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* Mobile Navigation Tab Bar (< lg) */}
         <div className="lg:hidden border-b border-white/10 pb-2">
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
@@ -138,13 +169,30 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
               </Link>
             )}
 
-            <button
-              onClick={handleSignOut}
-              className="flex items-center gap-2 px-3.5 py-2.5 rounded-sm text-xs font-mono tracking-wider whitespace-nowrap min-h-[44px] text-neutral-400 hover:text-red-400 bg-[#0a0a0a] border border-white/10 shrink-0 transition-colors"
-            >
-              <LogOut size={14} />
-              <span>SIGN OUT</span>
-            </button>
+            {user ? (
+              <button
+                onClick={handleSignOut}
+                className="flex items-center gap-2 px-3.5 py-2.5 rounded-sm text-xs font-mono tracking-wider whitespace-nowrap min-h-[44px] text-neutral-400 hover:text-red-400 bg-[#0a0a0a] border border-white/10 shrink-0 transition-colors"
+              >
+                <LogOut size={14} />
+                <span>SIGN OUT</span>
+              </button>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="flex items-center gap-2 px-3.5 py-2.5 rounded-sm text-xs font-mono tracking-wider whitespace-nowrap min-h-[44px] text-black bg-white hover:bg-snake-green shrink-0 font-semibold transition-colors"
+                >
+                  <span>SIGN IN</span>
+                </Link>
+                <Link
+                  href="/signup"
+                  className="flex items-center gap-2 px-3.5 py-2.5 rounded-sm text-xs font-mono tracking-wider whitespace-nowrap min-h-[44px] text-white border border-white/20 hover:border-snake-green shrink-0 font-semibold transition-colors"
+                >
+                  <span>SIGN UP</span>
+                </Link>
+              </>
+            )}
           </div>
         </div>
 
@@ -213,13 +261,30 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
             )}
 
             <div className="pt-2 mt-2 border-t border-white/5">
-              <button
-                onClick={handleSignOut}
-                className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded text-xs font-mono tracking-wider text-neutral-500 hover:text-red-400 hover:bg-red-950/20 transition-colors"
-              >
-                <LogOut size={15} />
-                <span>SIGN OUT</span>
-              </button>
+              {user ? (
+                <button
+                  onClick={handleSignOut}
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded text-xs font-mono tracking-wider text-neutral-500 hover:text-red-400 hover:bg-red-950/20 transition-colors"
+                >
+                  <LogOut size={15} />
+                  <span>SIGN OUT</span>
+                </button>
+              ) : (
+                <div className="space-y-2 pt-1">
+                  <Link
+                    href="/login"
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-white hover:bg-snake-green text-black rounded text-xs font-mono tracking-wider font-semibold transition-colors"
+                  >
+                    <span>SIGN IN</span>
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2.5 border border-white/20 hover:border-snake-green hover:text-snake-green text-white rounded text-xs font-mono tracking-wider transition-colors"
+                  >
+                    <span>CREATE ACCOUNT</span>
+                  </Link>
+                </div>
+              )}
             </div>
           </aside>
 

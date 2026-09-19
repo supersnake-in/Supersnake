@@ -1,14 +1,16 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, EyeOff, ArrowRight, ShieldCheck, Mail, Lock } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { SuperSnakeLogo } from '@/components/brand/SuperSnakeLogo';
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get('next') || searchParams.get('redirect') || '/account';
   const { user, signIn, isLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,9 +22,9 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (user && !isLoading) {
-      router.push('/account');
+      router.push(next);
     }
-  }, [user, isLoading, router]);
+  }, [user, isLoading, router, next]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,7 +50,7 @@ export default function LoginPage() {
       if (res.error) {
         setError(res.error);
       } else {
-        router.push('/account');
+        router.push(next);
       }
     }
   };
@@ -195,7 +197,7 @@ export default function LoginPage() {
               New to SuperSnake?
             </p>
             <Link
-              href="/signup"
+              href={next !== '/account' ? `/signup?next=${encodeURIComponent(next)}` : '/signup'}
               className="inline-block w-full border border-white/20 hover:border-snake-green hover:text-snake-green text-white font-mono text-xs uppercase tracking-widest py-3 transition-colors"
             >
               CREATE PATRON ACCOUNT
@@ -210,5 +212,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-black text-white flex items-center justify-center font-mono text-xs text-neutral-500">ENTERING ATELIER...</div>}>
+      <LoginContent />
+    </Suspense>
   );
 }

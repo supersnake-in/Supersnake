@@ -262,13 +262,23 @@ export default function CheckoutPage() {
             {/* Step 1: Contact */}
             {step === 1 && (
               <form onSubmit={handleNextStep} className="space-y-6">
-                <div className="border-b border-white/10 pb-3">
-                  <h3 className="text-sm font-mono tracking-widest text-white uppercase font-bold">
-                    CONTACT INFORMATION
-                  </h3>
-                  <p className="text-[11px] font-mono text-neutral-500 mt-1">
-                    We will send order confirmation & shipment tracking updates here.
-                  </p>
+                <div className="border-b border-white/10 pb-3 flex justify-between items-start">
+                  <div>
+                    <h3 className="text-sm font-mono tracking-widest text-white uppercase font-bold">
+                      CONTACT INFORMATION
+                    </h3>
+                    <p className="text-[11px] font-mono text-neutral-500 mt-1">
+                      We will send order confirmation & shipment tracking updates here.
+                    </p>
+                  </div>
+                  {!user && (
+                    <Link
+                      href="/login?next=/checkout"
+                      className="text-xs font-mono text-snake-green hover:underline uppercase shrink-0 pt-0.5"
+                    >
+                      SIGN IN →
+                    </Link>
+                  )}
                 </div>
 
                 <div className="space-y-4 text-xs font-mono">

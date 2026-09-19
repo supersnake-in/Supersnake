@@ -1,19 +1,22 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Search, ShoppingBag, Heart, User, Menu, X, Shield } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { Search, ShoppingBag, Heart, User, Menu, X, Shield, LogOut, ArrowRight } from 'lucide-react';
 import { SuperSnakeLogo } from '../brand/SuperSnakeLogo';
 import { useStore } from '@/lib/store';
 import { useAuth } from '@/lib/auth-context';
 
 export function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const accountMenuRef = useRef<HTMLDivElement>(null);
   const { cartCount, wishlist, openCart, openSearch } = useStore();
-  const { isAdmin } = useAuth();
+  const { user, profile, signOut, isAdmin } = useAuth();
 
   const isStorefront = !pathname.startsWith('/admin');
 
@@ -25,10 +28,22 @@ export function Header() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Close mobile menu on route change
+  // Close mobile menu and account menu on route change
   useEffect(() => {
     setMobileMenuOpen(false);
+    setAccountMenuOpen(false);
   }, [pathname]);
+
+  // Click outside to close desktop account menu
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (accountMenuRef.current && !accountMenuRef.current.contains(event.target as Node)) {
+        setAccountMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   if (!isStorefront) return null;
 
@@ -103,13 +118,138 @@ export function Header() {
               )}
             </Link>
 
-            <Link
-              href="/account"
-              className="text-neutral-400 hover:text-white transition-colors duration-200 p-1.5 focus:outline-none"
-              aria-label="Customer Account"
-            >
-              <User size={18} />
-            </Link>
+            {/* Desktop Account Popover */}
+            <div className="relative" ref={accountMenuRef}>
+              <button
+                onClick={() => setAccountMenuOpen(!accountMenuOpen)}
+                className="text-neutral-400 hover:text-white transition-colors duration-200 p-1.5 focus:outline-none relative"
+                aria-label="Customer Account Menu"
+                aria-expanded={accountMenuOpen}
+              >
+                <User size={18} />
+                {user && (
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-snake-green rounded-full shadow-[0_0_6px_rgba(4,252,33,0.8)]" />
+                )}
+              </button>
+
+              {accountMenuOpen && (
+                <div className="absolute right-0 mt-3 w-64 bg-[#0a0a0a] border border-white/10 rounded-sm shadow-2xl p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                  {user ? (
+                    <div className="space-y-3">
+                      <div className="pb-3 border-b border-white/10">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] font-mono text-snake-green tracking-widest uppercase">
+                            PATRON PORTAL
+                          </span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-snake-green animate-pulse" />
+                        </div>
+                        <p className="text-xs font-display font-medium text-white truncate">
+                          {profile?.fullName || user.email?.split('@')[0]}
+                        </p>
+                        <p className="text-[10px] font-mono text-neutral-400 truncate">
+                          {user.email}
+                        </p>
+                      </div>
+
+                      <div className="space-y-1 text-xs font-mono">
+                        <Link
+                          href="/account"
+                          onClick={() => setAccountMenuOpen(false)}
+                          className="flex items-center justify-between p-2 rounded hover:bg-white/5 text-neutral-300 hover:text-white transition-colors"
+                        >
+                          <span>ACCOUNT OVERVIEW</span>
+                          <ArrowRight size={12} className="text-neutral-500" />
+                        </Link>
+                        <Link
+                          href="/account/orders"
+                          onClick={() => setAccountMenuOpen(false)}
+                          className="flex items-center justify-between p-2 rounded hover:bg-white/5 text-neutral-300 hover:text-white transition-colors"
+                        >
+                          <span>MY ORDERS</span>
+                          <ArrowRight size={12} className="text-neutral-500" />
+                        </Link>
+                        <Link
+                          href="/account/wishlist"
+                          onClick={() => setAccountMenuOpen(false)}
+                          className="flex items-center justify-between p-2 rounded hover:bg-white/5 text-neutral-300 hover:text-white transition-colors"
+                        >
+                          <span>SAVED PIECES</span>
+                          <ArrowRight size={12} className="text-neutral-500" />
+                        </Link>
+                      </div>
+
+                      {isAdmin && (
+                        <div className="pt-2 border-t border-white/10">
+                          <Link
+                            href="/admin"
+                            onClick={() => setAccountMenuOpen(false)}
+                            className="flex items-center justify-between p-2 rounded bg-snake-green/10 border border-snake-green/30 text-snake-green text-xs font-mono font-semibold hover:bg-snake-green hover:text-black transition-colors"
+                          >
+                            <div className="flex items-center gap-1.5">
+                              <Shield size={12} />
+                              <span>ADMIN PORTAL</span>
+                            </div>
+                            <ArrowRight size={12} />
+                          </Link>
+                        </div>
+                      )}
+
+                      <div className="pt-2 border-t border-white/10">
+                        <button
+                          onClick={async () => {
+                            setAccountMenuOpen(false);
+                            await signOut();
+                            router.push('/login');
+                          }}
+                          className="w-full flex items-center gap-2 p-2 rounded text-xs font-mono text-neutral-400 hover:text-red-400 hover:bg-red-950/20 transition-colors text-left"
+                        >
+                          <LogOut size={14} />
+                          <span>SIGN OUT</span>
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="pb-2 border-b border-white/10">
+                        <span className="text-[10px] font-mono text-snake-green tracking-widest uppercase">
+                          PATRON ACCESS
+                        </span>
+                        <p className="text-xs font-mono text-neutral-400 mt-1">
+                          Sign in to manage orders, saved pieces, and private drops.
+                        </p>
+                      </div>
+
+                      <div className="space-y-2 pt-1">
+                        <Link
+                          href="/login"
+                          onClick={() => setAccountMenuOpen(false)}
+                          className="block w-full py-2.5 bg-white hover:bg-snake-green text-black font-mono text-xs font-semibold text-center uppercase tracking-widest transition-colors"
+                        >
+                          SIGN IN
+                        </Link>
+                        <Link
+                          href="/signup"
+                          onClick={() => setAccountMenuOpen(false)}
+                          className="block w-full py-2 border border-white/20 hover:border-snake-green hover:text-snake-green text-white font-mono text-xs text-center uppercase tracking-widest transition-colors"
+                        >
+                          CREATE ACCOUNT
+                        </Link>
+                      </div>
+
+                      <div className="pt-2 border-t border-white/5 text-center">
+                        <Link
+                          href="/account"
+                          onClick={() => setAccountMenuOpen(false)}
+                          className="text-[10px] font-mono text-neutral-500 hover:text-neutral-300 transition-colors"
+                        >
+                          View guest patron portal →
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             {isAdmin && (
               <Link
@@ -226,61 +366,127 @@ export function Header() {
               ))}
             </nav>
 
-            {/* Quick Action Strip: Account, Wishlist, Search, Bag */}
-            <div className="pt-6 border-t border-white/10 grid grid-cols-2 gap-3 text-xs font-mono">
-              <Link
-                href="/account"
-                className="p-3 bg-white/[0.03] border border-white/10 rounded hover:border-snake-green text-neutral-300 hover:text-white flex items-center gap-2.5 transition-colors active:scale-95"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <User size={16} className="text-snake-green" />
-                <span>ACCOUNT</span>
-              </Link>
+            {/* Quick Action Strip: Authentication, Account, Wishlist, Search, Bag */}
+            <div className="pt-6 border-t border-white/10 space-y-3">
+              {/* Authenticated Patron Card or Sign In/Sign Up CTAs */}
+              {user ? (
+                <div className="p-3 bg-white/[0.03] border border-white/10 rounded flex items-center justify-between">
+                  <div className="min-w-0 pr-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-snake-green animate-pulse" />
+                      <span className="text-[10px] font-mono text-snake-green uppercase tracking-wider">
+                        AUTHENTICATED PATRON
+                      </span>
+                    </div>
+                    <p className="text-xs font-display font-medium text-white truncate mt-0.5">
+                      {profile?.fullName || user.email?.split('@')[0]}
+                    </p>
+                    <p className="text-[10px] font-mono text-neutral-400 truncate">
+                      {user.email}
+                    </p>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      setMobileMenuOpen(false);
+                      await signOut();
+                      router.push('/login');
+                    }}
+                    className="p-2 text-neutral-400 hover:text-red-400 border border-white/10 hover:border-red-500/40 rounded transition-colors flex items-center gap-1 text-[11px] font-mono shrink-0"
+                    title="Sign Out"
+                  >
+                    <LogOut size={13} />
+                    <span>EXIT</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2 pb-1">
+                  <Link
+                    href="/login"
+                    className="p-3 bg-white hover:bg-snake-green text-black font-mono text-xs font-bold text-center uppercase tracking-wider rounded transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    SIGN IN
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="p-3 bg-white/[0.04] border border-white/20 hover:border-snake-green text-white font-mono text-xs font-semibold text-center uppercase tracking-wider rounded transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    CREATE ACCOUNT
+                  </Link>
+                </div>
+              )}
 
-              <Link
-                href="/wishlist"
-                className="p-3 bg-white/[0.03] border border-white/10 rounded hover:border-snake-green text-neutral-300 hover:text-white flex items-center gap-2.5 transition-colors active:scale-95"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <Heart size={16} className="text-snake-green" />
-                <span>SAVED ({wishlist.length})</span>
-              </Link>
-
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  openSearch();
-                }}
-                className="p-3 bg-white/[0.03] border border-white/10 rounded hover:border-snake-green text-neutral-300 hover:text-white flex items-center gap-2.5 transition-colors active:scale-95 text-left"
-              >
-                <Search size={16} className="text-snake-green" />
-                <span>SEARCH</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  openCart();
-                }}
-                className="p-3 bg-white/[0.03] border border-white/10 rounded hover:border-snake-green text-neutral-300 hover:text-white flex items-center gap-2.5 transition-colors active:scale-95 text-left"
-              >
-                <ShoppingBag size={16} className="text-snake-green" />
-                <span>BAG ({cartCount})</span>
-              </button>
-
-              {isAdmin && (
+              {/* Action Grid */}
+              <div className="grid grid-cols-2 gap-3 text-xs font-mono">
                 <Link
-                  href="/admin"
-                  className="col-span-2 p-3 bg-snake-green/10 border border-snake-green/30 rounded text-snake-green hover:bg-snake-green hover:text-black font-semibold flex items-center justify-between transition-all"
+                  href="/account"
+                  className="p-3 bg-white/[0.03] border border-white/10 rounded hover:border-snake-green text-neutral-300 hover:text-white flex items-center gap-2.5 transition-colors active:scale-95"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  <div className="flex items-center gap-2.5">
-                    <Shield size={16} />
-                    <span>ADMIN PORTAL</span>
-                  </div>
-                  <span>→</span>
+                  <User size={16} className="text-snake-green" />
+                  <span>ACCOUNT</span>
                 </Link>
-              )}
+
+                <Link
+                  href="/wishlist"
+                  className="p-3 bg-white/[0.03] border border-white/10 rounded hover:border-snake-green text-neutral-300 hover:text-white flex items-center gap-2.5 transition-colors active:scale-95"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Heart size={16} className="text-snake-green" />
+                  <span>SAVED ({wishlist.length})</span>
+                </Link>
+
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    openSearch();
+                  }}
+                  className="p-3 bg-white/[0.03] border border-white/10 rounded hover:border-snake-green text-neutral-300 hover:text-white flex items-center gap-2.5 transition-colors active:scale-95 text-left"
+                >
+                  <Search size={16} className="text-snake-green" />
+                  <span>SEARCH</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    openCart();
+                  }}
+                  className="p-3 bg-white/[0.03] border border-white/10 rounded hover:border-snake-green text-neutral-300 hover:text-white flex items-center gap-2.5 transition-colors active:scale-95 text-left"
+                >
+                  <ShoppingBag size={16} className="text-snake-green" />
+                  <span>BAG ({cartCount})</span>
+                </button>
+
+                {isAdmin && (
+                  <Link
+                    href="/admin"
+                    className="col-span-2 p-3 bg-snake-green/10 border border-snake-green/30 rounded text-snake-green hover:bg-snake-green hover:text-black font-semibold flex items-center justify-between transition-all"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Shield size={16} />
+                      <span>ADMIN PORTAL</span>
+                    </div>
+                    <span>→</span>
+                  </Link>
+                )}
+
+                {user && (
+                  <button
+                    onClick={async () => {
+                      setMobileMenuOpen(false);
+                      await signOut();
+                      router.push('/login');
+                    }}
+                    className="col-span-2 p-2.5 bg-red-950/20 border border-red-900/30 rounded hover:border-red-500 text-red-400 hover:text-red-300 flex items-center justify-center gap-2 transition-colors active:scale-95"
+                  >
+                    <LogOut size={14} />
+                    <span>LOG OUT OF ATELIER</span>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 

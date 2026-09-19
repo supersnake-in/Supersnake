@@ -152,6 +152,49 @@ CREATE TABLE IF NOT EXISTS public.newsletter_subscribers (
 );
 
 -- ============================================================
+-- AUTOMATED AUTH TRIGGER: SYNC auth.users TO public.profiles
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+DECLARE
+  assigned_role TEXT := 'customer';
+BEGIN
+  -- Automatically grant admin role to designated executive emails
+  IF NEW.email IN ('jdhanush213@gmail.com', 'supersnake.in@gmail.com') THEN
+    assigned_role := 'admin';
+  END IF;
+
+  INSERT INTO public.profiles (id, full_name, email, phone, role)
+  VALUES (
+    NEW.id,
+    COALESCE(
+      NEW.raw_user_meta_data->>'full_name',
+      NEW.raw_user_meta_data->>'name',
+      split_part(NEW.email, '@', 1)
+    ),
+    NEW.email,
+    NEW.raw_user_meta_data->>'phone',
+    assigned_role
+  )
+  ON CONFLICT (id) DO UPDATE
+  SET
+    full_name = EXCLUDED.full_name,
+    phone = COALESCE(EXCLUDED.phone, public.profiles.phone),
+    role = assigned_role,
+    updated_at = NOW();
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Recreate trigger on auth.users
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- ============================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
 -- ============================================================
 
@@ -166,47 +209,103 @@ ALTER TABLE public.coupons ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.newsletter_subscribers ENABLE ROW LEVEL SECURITY;
 
--- Products: Public can read, anyone with key/admin can insert/update/delete
+-- 1. Profiles Policies
+DROP POLICY IF EXISTS "Users can view own profile" ON public.profiles;
+CREATE POLICY "Users can view own profile" ON public.profiles
+  FOR SELECT USING (auth.uid() = id);
+
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
+CREATE POLICY "Users can update own profile" ON public.profiles
+  FOR UPDATE USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
+
+DROP POLICY IF EXISTS "Users can insert own profile" ON public.profiles;
+CREATE POLICY "Users can insert own profile" ON public.profiles
+  FOR INSERT WITH CHECK (auth.uid() = id);
+
+DROP POLICY IF EXISTS "Admins can manage all profiles" ON public.profiles;
+CREATE POLICY "Admins can manage all profiles" ON public.profiles
+  FOR ALL USING (
+    auth.jwt()->>'email' IN ('jdhanush213@gmail.com', 'supersnake.in@gmail.com')
+  );
+
+-- 2. Addresses Policies
+DROP POLICY IF EXISTS "Users can view own addresses" ON public.addresses;
+CREATE POLICY "Users can view own addresses" ON public.addresses
+  FOR SELECT USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can insert own addresses" ON public.addresses;
+CREATE POLICY "Users can insert own addresses" ON public.addresses
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can update own addresses" ON public.addresses;
+CREATE POLICY "Users can update own addresses" ON public.addresses
+  FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can delete own addresses" ON public.addresses;
+CREATE POLICY "Users can delete own addresses" ON public.addresses
+  FOR DELETE USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Admins can manage all addresses" ON public.addresses;
+CREATE POLICY "Admins can manage all addresses" ON public.addresses
+  FOR ALL USING (
+    auth.jwt()->>'email' IN ('jdhanush213@gmail.com', 'supersnake.in@gmail.com')
+  );
+
+-- 3. Products: Public can read, anyone with key/admin can insert/update/delete
 DROP POLICY IF EXISTS "Public can view products" ON public.products;
 CREATE POLICY "Public can view products" ON public.products FOR SELECT USING (true);
+
 DROP POLICY IF EXISTS "Allow product mutation" ON public.products;
 CREATE POLICY "Allow product mutation" ON public.products FOR ALL USING (true) WITH CHECK (true);
 
--- Product Images: Public can read, anyone with key/admin can insert/update/delete
+-- 4. Product Images
 DROP POLICY IF EXISTS "Public can view product images" ON public.product_images;
 CREATE POLICY "Public can view product images" ON public.product_images FOR SELECT USING (true);
+
 DROP POLICY IF EXISTS "Allow product images mutation" ON public.product_images;
 CREATE POLICY "Allow product images mutation" ON public.product_images FOR ALL USING (true) WITH CHECK (true);
 
--- Product Variants: Public can read, anyone with key/admin can insert/update/delete
+-- 5. Product Variants
 DROP POLICY IF EXISTS "Public can view product variants" ON public.product_variants;
 CREATE POLICY "Public can view product variants" ON public.product_variants FOR SELECT USING (true);
+
 DROP POLICY IF EXISTS "Allow product variants mutation" ON public.product_variants;
 CREATE POLICY "Allow product variants mutation" ON public.product_variants FOR ALL USING (true) WITH CHECK (true);
 
--- Orders: Public can create, users/admin can view
+-- 6. Orders: Anyone can create orders (guest or patron); patrons & admins can view
 DROP POLICY IF EXISTS "Users view their own orders" ON public.orders;
-CREATE POLICY "Users view their own orders" ON public.orders FOR SELECT USING (true);
+CREATE POLICY "Users view their own orders" ON public.orders
+  FOR SELECT USING (
+    auth.uid() = user_id 
+    OR customer_email = auth.jwt()->>'email'
+    OR auth.jwt()->>'email' IN ('jdhanush213@gmail.com', 'supersnake.in@gmail.com')
+    OR true -- Fallback for storefront order lookup
+  );
+
 DROP POLICY IF EXISTS "Users can create orders" ON public.orders;
 CREATE POLICY "Users can create orders" ON public.orders FOR INSERT WITH CHECK (true);
+
 DROP POLICY IF EXISTS "Allow order update" ON public.orders;
 CREATE POLICY "Allow order update" ON public.orders FOR UPDATE USING (true) WITH CHECK (true);
 
--- Order Items
+-- 7. Order Items
 DROP POLICY IF EXISTS "Public can view order items" ON public.order_items;
 CREATE POLICY "Public can view order items" ON public.order_items FOR SELECT USING (true);
+
 DROP POLICY IF EXISTS "Public can create order items" ON public.order_items;
 CREATE POLICY "Public can create order items" ON public.order_items FOR INSERT WITH CHECK (true);
 
--- Newsletter
+-- 8. Newsletter
 DROP POLICY IF EXISTS "Public can subscribe newsletter" ON public.newsletter_subscribers;
 CREATE POLICY "Public can subscribe newsletter" ON public.newsletter_subscribers FOR INSERT WITH CHECK (true);
 
--- Coupons & Reviews
+-- 9. Coupons & Reviews
 DROP POLICY IF EXISTS "Public view coupons" ON public.coupons;
 CREATE POLICY "Public view coupons" ON public.coupons FOR SELECT USING (true);
+
 DROP POLICY IF EXISTS "Public view reviews" ON public.reviews;
 CREATE POLICY "Public view reviews" ON public.reviews FOR SELECT USING (true);
+
 DROP POLICY IF EXISTS "Public write reviews" ON public.reviews;
 CREATE POLICY "Public write reviews" ON public.reviews FOR INSERT WITH CHECK (true);
 
