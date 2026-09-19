@@ -27,7 +27,7 @@ import { saveLastCheckout } from '@/lib/storage-helper';
 
 export default function ProductDetailPage({ params }: { params: { slug: string } }) {
   const router = useRouter();
-  const { products, addToCart, isInWishlist, toggleWishlist } = useStore();
+  const { products, addToCart, setCartItem, isInWishlist, toggleWishlist } = useStore();
   const product = products.find((p) => p.slug === params.slug);
 
   if (!product) {
@@ -71,7 +71,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
       return;
     }
     setSizeError(false);
-    addToCart(product, selectedSize, selectedColor, quantity);
+    setCartItem(product, selectedSize, selectedColor, quantity);
     saveLastCheckout({
       productId: product.id,
       slug: product.slug,
