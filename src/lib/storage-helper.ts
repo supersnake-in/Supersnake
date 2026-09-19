@@ -60,6 +60,30 @@ export async function idbGet<T>(key: string): Promise<T | null> {
 }
 
 /**
+ * Deduplicates cart items by product ID/slug, size, and color to prevent duplicate entries.
+ */
+export function deduplicateCart(cartItems: CartItem[]): CartItem[] {
+  if (!Array.isArray(cartItems) || cartItems.length === 0) return [];
+  const map = new Map<string, CartItem>();
+  for (const item of cartItems) {
+    if (!item || !item.product) continue;
+    const prodId = item.product.id || item.product.slug || '';
+    const colorKey = item.selectedColor?.name || '';
+    const key = `${prodId}_${item.selectedSize}_${colorKey}`.toLowerCase();
+    if (map.has(key)) {
+      const existing = map.get(key)!;
+      map.set(key, {
+        ...existing,
+        quantity: Math.max(existing.quantity, item.quantity),
+      });
+    } else {
+      map.set(key, item);
+    }
+  }
+  return Array.from(map.values());
+}
+
+/**
  * Sanitizes cart items for storage by keeping only the primary image and omitting unneeded variants.
  * Crucially, it NEVER wipes or blanks out the primary image URL.
  */
@@ -85,7 +109,8 @@ export function sanitizeCartItem(item: CartItem): CartItem {
 export function saveCartToStorage(cart: CartItem[]): void {
   if (typeof window === 'undefined') return;
 
-  const sanitized = cart.map((item) => sanitizeCartItem(item));
+  const deduped = deduplicateCart(cart);
+  const sanitized = deduped.map((item) => sanitizeCartItem(item));
   const serialized = JSON.stringify(sanitized);
 
   // 1. Save to localStorage
@@ -101,7 +126,7 @@ export function saveCartToStorage(cart: CartItem[]): void {
   } catch (e) {}
 
   // 3. Persist complete unstripped cart to IndexedDB (virtually unlimited quota)
-  idbSet('supersnake_cart', cart).catch(() => {});
+  idbSet('supersnake_cart', deduped).catch(() => {});
 }
 
 export function loadCartFromStorageSync(): CartItem[] {
@@ -112,7 +137,7 @@ export function loadCartFromStorageSync(): CartItem[] {
     const saved = localStorage.getItem('supersnake_cart');
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) return deduplicateCart(parsed);
     }
   } catch (e) {}
 
@@ -121,7 +146,7 @@ export function loadCartFromStorageSync(): CartItem[] {
     const sessionSaved = sessionStorage.getItem('supersnake_cart');
     if (sessionSaved) {
       const parsed = JSON.parse(sessionSaved);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) return deduplicateCart(parsed);
     }
   } catch (e) {}
 
@@ -130,15 +155,16 @@ export function loadCartFromStorageSync(): CartItem[] {
 
 export async function loadCartFromStorageAsync(): Promise<CartItem[]> {
   const syncItems = loadCartFromStorageSync();
-  if (syncItems.length > 0) return syncItems;
+  if (syncItems.length > 0) return deduplicateCart(syncItems);
 
   // Fallback to IndexedDB
   try {
     const idbItems = await idbGet<CartItem[]>('supersnake_cart');
     if (Array.isArray(idbItems) && idbItems.length > 0) {
+      const deduped = deduplicateCart(idbItems);
       // Re-populate localStorage for fast synchronous reads
-      saveCartToStorage(idbItems);
-      return idbItems;
+      saveCartToStorage(deduped);
+      return deduped;
     }
   } catch (e) {}
 

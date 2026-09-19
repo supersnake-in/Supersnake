@@ -9,7 +9,7 @@ import { ShieldCheck, ArrowRight, Lock, CheckCircle2, CreditCard, Smartphone, Bu
 import { useStore } from '@/lib/store';
 import { useAuth } from '@/lib/auth-context';
 import { formatPrice, BRAND } from '@/lib/design-tokens';
-import { loadLastCheckout, loadCartFromStorageAsync } from '@/lib/storage-helper';
+import { loadLastCheckout, loadCartFromStorageAsync, loadCartFromStorageSync } from '@/lib/storage-helper';
 import { fetchProductsFromSupabase } from '@/lib/supabase/db';
 import { Size } from '@/lib/types';
 import confetti from 'canvas-confetti';
@@ -32,7 +32,7 @@ const loadRazorpayScript = (): Promise<boolean> => {
 function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { cart, cartTotal, createOrder, updateOrder, clearCart, isLoaded, products, addToCart } = useStore();
+  const { cart, cartTotal, createOrder, updateOrder, clearCart, isLoaded, products, setCart, setCartItem } = useStore();
   const { user, profile } = useAuth();
 
   const [step, setStep] = useState<1 | 2>(1);
@@ -357,7 +357,25 @@ function CheckoutContent() {
     const attemptRecovery = async () => {
       setIsRecovering(true);
 
-      // 1. Check URL search parameters (e.g. from "BUY NOW DIRECT" or "quick buy")
+      // 1. Check synchronous storage first - if items exist, hydrate directly without incrementing
+      const syncCart = loadCartFromStorageSync();
+      if (syncCart.length > 0) {
+        setCart(syncCart);
+        setIsRecovering(false);
+        setHasAttemptedRecovery(true);
+        return;
+      }
+
+      // 2. Check asynchronous storage (IndexedDB)
+      const asyncCart = await loadCartFromStorageAsync();
+      if (asyncCart.length > 0) {
+        setCart(asyncCart);
+        setIsRecovering(false);
+        setHasAttemptedRecovery(true);
+        return;
+      }
+
+      // 3. Check URL search parameters (e.g. from "BUY NOW DIRECT" or "quick buy")
       const paramSlug = searchParams.get('slug');
       const paramProductId = searchParams.get('productId');
       const paramSize = searchParams.get('size') as Size | null;
@@ -377,17 +395,17 @@ function CheckoutContent() {
         }
 
         if (found) {
-          const color = found.colors.find((c) => c.name === paramColorName) || 
+          const color = found.colors.find((c) => c.name.toLowerCase() === (paramColorName || '').toLowerCase()) || 
             (paramColorName ? { name: paramColorName, hex: paramColorHex || '#0a0a0a' } : found.colors[0]);
           const size = paramSize || found.sizes[2] || found.sizes[0] || 'L';
-          addToCart(found, size, color, isNaN(paramQty) ? 1 : paramQty);
+          setCartItem(found, size, color, isNaN(paramQty) ? 1 : paramQty);
           setIsRecovering(false);
           setHasAttemptedRecovery(true);
           return;
         }
       }
 
-      // 2. Check last checkout item from sessionStorage / localStorage / IndexedDB
+      // 4. Check last checkout item from sessionStorage / localStorage / IndexedDB
       const lastCheckout = loadLastCheckout();
       if (lastCheckout && (lastCheckout.slug || lastCheckout.productId)) {
         let found = products.find((p) => p.slug === lastCheckout.slug || p.id === lastCheckout.productId) || lastCheckout.product;
@@ -401,19 +419,11 @@ function CheckoutContent() {
         }
 
         if (found) {
-          addToCart(found, lastCheckout.size, lastCheckout.color, lastCheckout.quantity || 1);
+          setCartItem(found, lastCheckout.size, lastCheckout.color, lastCheckout.quantity || 1);
           setIsRecovering(false);
           setHasAttemptedRecovery(true);
           return;
         }
-      }
-
-      // 3. Check asynchronous storage (IndexedDB)
-      const asyncCart = await loadCartFromStorageAsync();
-      if (asyncCart.length > 0) {
-        asyncCart.forEach((item) => {
-          addToCart(item.product, item.selectedSize, item.selectedColor, item.quantity);
-        });
       }
 
       setIsRecovering(false);
@@ -421,7 +431,7 @@ function CheckoutContent() {
     };
 
     attemptRecovery();
-  }, [isLoaded, cart.length, hasAttemptedRecovery, products, searchParams, addToCart]);
+  }, [isLoaded, cart.length, hasAttemptedRecovery, products, searchParams, setCart, setCartItem]);
 
   if (!isLoaded || isRecovering) {
     return (

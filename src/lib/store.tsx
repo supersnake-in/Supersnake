@@ -85,6 +85,8 @@ interface StoreContextType {
   openCart: () => void;
   closeCart: () => void;
   addToCart: (product: Product, size: Size, color: { name: string; hex: string }, quantity?: number) => void;
+  setCartItem: (product: Product, size: Size, color: { name: string; hex: string }, quantity?: number) => void;
+  setCart: (cart: CartItem[]) => void;
   removeFromCart: (itemId: string) => void;
   updateQuantity: (itemId: string, delta: number) => void;
   clearCart: () => void;
@@ -209,12 +211,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const syncCart = loadCartFromStorageSync();
       if (syncCart.length > 0) {
         setCart(syncCart);
+        setIsLoaded(true);
       } else {
-        loadCartFromStorageAsync().then((asyncCart) => {
-          if (asyncCart.length > 0) {
-            setCart(asyncCart);
-          }
-        });
+        loadCartFromStorageAsync()
+          .then((asyncCart) => {
+            if (asyncCart.length > 0) {
+              setCart(asyncCart);
+            }
+            setIsLoaded(true);
+          })
+          .catch(() => {
+            setIsLoaded(true);
+          });
       }
 
       const savedWishlist = localStorage.getItem('supersnake_wishlist');
@@ -268,8 +276,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (e) {
       console.warn('Failed to load storage:', e);
+      setIsLoaded(true);
     }
-    setIsLoaded(true);
 
     // Fetch dynamic products from Supabase (Single Source of Truth)
     fetchProductsFromSupabase()
@@ -412,6 +420,54 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const openCart = () => setIsCartOpen(true);
   const closeCart = () => setIsCartOpen(false);
 
+  const setCartState = (newCart: CartItem[]) => {
+    saveCartToStorage(newCart);
+    setCart(newCart);
+  };
+
+  const setCartItem = (
+    product: Product,
+    size: Size,
+    color: { name: string; hex: string },
+    quantity: number = 1
+  ) => {
+    const resolvedProduct =
+      product.images && product.images.length > 0 && product.images[0]?.url
+        ? product
+        : products.find((p) => p.id === product.id || p.slug === product.slug) || product;
+
+    const currentCart = cart.length > 0 ? cart : loadCartFromStorageSync();
+    const existingIndex = currentCart.findIndex(
+      (item) =>
+        (item.product.id === resolvedProduct.id || item.product.slug === resolvedProduct.slug) &&
+        item.selectedSize === size &&
+        item.selectedColor.name.toLowerCase() === color.name.toLowerCase()
+    );
+
+    let next: CartItem[];
+    if (existingIndex > -1) {
+      next = [...currentCart];
+      next[existingIndex] = {
+        ...next[existingIndex],
+        quantity: Math.max(1, quantity),
+        product: resolvedProduct,
+      };
+    } else {
+      const newItem: CartItem = {
+        id: `${resolvedProduct.id}-${color.name}-${size}-${Date.now()}`,
+        product: resolvedProduct,
+        selectedColor: color,
+        selectedSize: size,
+        quantity: Math.max(1, quantity),
+        price: resolvedProduct.price,
+      };
+      next = [...currentCart, newItem];
+    }
+
+    saveCartToStorage(next);
+    setCart(next);
+  };
+
   const addToCart = (
     product: Product,
     size: Size,
@@ -428,9 +484,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const currentCart = cart.length > 0 ? cart : loadCartFromStorageSync();
     const existingIndex = currentCart.findIndex(
       (item) =>
-        item.product.id === resolvedProduct.id &&
+        (item.product.id === resolvedProduct.id || item.product.slug === resolvedProduct.slug) &&
         item.selectedSize === size &&
-        item.selectedColor.name === color.name
+        item.selectedColor.name.toLowerCase() === color.name.toLowerCase()
     );
 
     let next: CartItem[];
@@ -715,6 +771,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         openCart,
         closeCart,
         addToCart,
+        setCartItem,
+        setCart: setCartState,
         removeFromCart,
         updateQuantity,
         clearCart,
