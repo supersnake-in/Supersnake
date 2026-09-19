@@ -44,3 +44,16 @@ export function isValidImageSource(src: string): boolean {
   if (src.startsWith('/')) return true;
   return false;
 }
+
+// Authorized Admin Email Whitelist
+export const AUTHORIZED_ADMIN_EMAILS = [
+  'jdhanush213@gmail.com',
+  'supersnake.in@gmail.com',
+] as const;
+
+// Verify if an email is an authorized atelier administrator
+export function isAuthorizedAdmin(email?: string | null): boolean {
+  if (!email) return false;
+  const normalized = email.trim().toLowerCase();
+  return AUTHORIZED_ADMIN_EMAILS.some((adminEmail) => adminEmail.toLowerCase() === normalized);
+}

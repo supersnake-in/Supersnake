@@ -32,7 +32,7 @@ const ACCOUNT_NAV = [
 export default function AccountLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, isAdmin } = useAuth();
   const { orders, wishlist } = useStore();
 
   const handleSignOut = async () => {
@@ -133,6 +133,21 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
                 </Link>
               );
             })}
+
+            {isAdmin && (
+              <div className="pt-2 mt-2 border-t border-white/10">
+                <Link
+                  href="/admin"
+                  className="flex items-center justify-between px-3 py-2.5 rounded text-xs font-mono tracking-wider text-snake-green bg-snake-green/10 border border-snake-green/30 hover:bg-snake-green hover:text-black transition-all font-semibold"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Shield size={15} />
+                    <span>ADMIN PORTAL</span>
+                  </div>
+                  <ArrowRight size={13} />
+                </Link>
+              </div>
+            )}
 
             <div className="pt-2 mt-2 border-t border-white/5">
               <button

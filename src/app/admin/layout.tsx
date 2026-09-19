@@ -20,9 +20,11 @@ import {
   Search,
 } from 'lucide-react';
 import { SuperSnakeLogo } from '@/components/brand/SuperSnakeLogo';
+import { useAuth } from '@/lib/auth-context';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { user, profile, isLoading, isAdmin } = useAuth();
 
   const navItems = [
     { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
@@ -37,6 +39,54 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { label: 'Homepage', href: '/admin/homepage', icon: Home },
     { label: 'Settings', href: '/admin/settings', icon: Settings },
   ];
+
+  // While checking auth status
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#080808] flex flex-col items-center justify-center p-6 font-mono text-center">
+        <div className="w-8 h-8 border-2 border-snake-green border-t-transparent rounded-full animate-spin mb-4" />
+        <span className="text-xs text-neutral-400 tracking-widest uppercase">
+          AUTHENTICATING ATELIER ACCESS...
+        </span>
+      </div>
+    );
+  }
+
+  // Strict unauthorized access block
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 font-sans text-center">
+        <div className="max-w-md space-y-6">
+          <div className="flex justify-center mb-2">
+            <SuperSnakeLogo size="md" showText={false} withLink={false} />
+          </div>
+          <span className="text-[10px] font-mono tracking-[0.3em] text-red-500 uppercase block">
+            403 // ATELIER ACCESS RESTRICTED
+          </span>
+          <h1 className="text-3xl md:text-4xl font-display font-medium uppercase tracking-tight text-white">
+            UNAUTHORIZED PERSONNEL
+          </h1>
+          <p className="text-xs md:text-sm font-mono text-neutral-400 leading-relaxed">
+            This administration portal is strictly restricted to authorized SuperSnake personnel. Access is limited to authenticated administrative email accounts.
+          </p>
+          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              href="/login"
+              className="w-full sm:w-auto px-6 py-3 bg-white hover:bg-snake-green text-black font-mono text-xs uppercase tracking-widest font-semibold transition-colors"
+            >
+              SIGN IN TO ATELIER
+            </Link>
+            <Link
+              href="/"
+              className="w-full sm:w-auto px-6 py-3 border border-white/20 hover:border-white text-white font-mono text-xs uppercase tracking-widest transition-colors"
+            >
+              RETURN TO STOREFRONT
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#080808] text-neutral-200 flex font-sans antialiased">
@@ -87,8 +137,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <ArrowUpRight size={14} />
           </Link>
 
-          <div className="px-3 py-2 text-[11px] text-neutral-500">
-            Logged in as <strong className="text-neutral-300">atelier-admin</strong>
+          <div className="px-3 py-2 text-[11px] text-neutral-500 truncate">
+            Logged in as <strong className="text-snake-green">{user?.email || profile?.email || 'admin'}</strong>
           </div>
         </div>
       </aside>

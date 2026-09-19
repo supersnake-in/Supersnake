@@ -3,15 +3,17 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Search, ShoppingBag, Heart, User, Menu, X } from 'lucide-react';
+import { Search, ShoppingBag, Heart, User, Menu, X, Shield } from 'lucide-react';
 import { SuperSnakeLogo } from '../brand/SuperSnakeLogo';
 import { useStore } from '@/lib/store';
+import { useAuth } from '@/lib/auth-context';
 
 export function Header() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { cartCount, wishlist, openCart, openSearch } = useStore();
+  const { isAdmin } = useAuth();
 
   const isStorefront = !pathname.startsWith('/admin');
 
@@ -115,6 +117,17 @@ export function Header() {
               <User size={18} />
             </Link>
 
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="hidden md:inline-flex items-center gap-1.5 text-[10px] font-mono tracking-widest text-snake-green border border-snake-green/30 bg-snake-green/10 hover:bg-snake-green hover:text-black px-2.5 py-1 rounded transition-all font-semibold"
+                title="SuperSnake Admin Atelier"
+              >
+                <Shield size={12} />
+                ADMIN
+              </Link>
+            )}
+
             <button
               onClick={openCart}
               className="text-neutral-300 hover:text-white transition-colors duration-200 p-1.5 relative focus:outline-none group flex items-center gap-2"
@@ -161,13 +174,16 @@ export function Header() {
               >
                 <Heart size={16} /> SAVED FOR LATER ({wishlist.length})
               </Link>
-              <Link
-                href="/admin"
-                className="text-xs font-mono tracking-wider text-neutral-500 hover:text-snake-green"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                ADMIN PORTAL →
-              </Link>
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  className="text-xs font-mono tracking-wider text-snake-green hover:underline flex items-center gap-2"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Shield size={14} />
+                  ADMIN PORTAL →
+                </Link>
+              )}
             </div>
           </div>
 
