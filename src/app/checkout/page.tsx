@@ -1,14 +1,17 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Script from 'next/script';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ShieldCheck, ArrowRight, Lock, CheckCircle2, CreditCard, Smartphone, Building, Wallet, AlertCircle, RefreshCw, ShoppingBag, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useAuth } from '@/lib/auth-context';
 import { formatPrice, BRAND } from '@/lib/design-tokens';
+import { loadLastCheckout, loadCartFromStorageAsync } from '@/lib/storage-helper';
+import { fetchProductsFromSupabase } from '@/lib/supabase/db';
+import { Size } from '@/lib/types';
 import confetti from 'canvas-confetti';
 
 const loadRazorpayScript = (): Promise<boolean> => {
@@ -26,9 +29,10 @@ const loadRazorpayScript = (): Promise<boolean> => {
   });
 };
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const router = useRouter();
-  const { cart, cartTotal, createOrder, updateOrder, clearCart, isLoaded } = useStore();
+  const searchParams = useSearchParams();
+  const { cart, cartTotal, createOrder, updateOrder, clearCart, isLoaded, products, addToCart } = useStore();
   const { user, profile } = useAuth();
 
   const [step, setStep] = useState<1 | 2>(1);
@@ -343,7 +347,83 @@ export default function CheckoutPage() {
     }
   };
 
-  if (!isLoaded) {
+  // Recovery effect: If cart is empty, recover from URL params, storage helper, or last checkout item
+  const [isRecovering, setIsRecovering] = useState(false);
+  const [hasAttemptedRecovery, setHasAttemptedRecovery] = useState(false);
+
+  useEffect(() => {
+    if (!isLoaded || cart.length > 0 || hasAttemptedRecovery) return;
+
+    const attemptRecovery = async () => {
+      setIsRecovering(true);
+
+      // 1. Check URL search parameters (e.g. from "BUY NOW DIRECT" or "quick buy")
+      const paramSlug = searchParams.get('slug');
+      const paramProductId = searchParams.get('productId');
+      const paramSize = searchParams.get('size') as Size | null;
+      const paramColorName = searchParams.get('color');
+      const paramColorHex = searchParams.get('colorHex');
+      const paramQty = parseInt(searchParams.get('qty') || '1', 10);
+
+      if (paramSlug || paramProductId) {
+        let found = products.find((p) => p.slug === paramSlug || p.id === paramProductId);
+        if (!found) {
+          try {
+            const fetched = await fetchProductsFromSupabase();
+            if (fetched) {
+              found = fetched.find((p) => p.slug === paramSlug || p.id === paramProductId);
+            }
+          } catch (e) {}
+        }
+
+        if (found) {
+          const color = found.colors.find((c) => c.name === paramColorName) || 
+            (paramColorName ? { name: paramColorName, hex: paramColorHex || '#0a0a0a' } : found.colors[0]);
+          const size = paramSize || found.sizes[2] || found.sizes[0] || 'L';
+          addToCart(found, size, color, isNaN(paramQty) ? 1 : paramQty);
+          setIsRecovering(false);
+          setHasAttemptedRecovery(true);
+          return;
+        }
+      }
+
+      // 2. Check last checkout item from sessionStorage / localStorage / IndexedDB
+      const lastCheckout = loadLastCheckout();
+      if (lastCheckout && (lastCheckout.slug || lastCheckout.productId)) {
+        let found = products.find((p) => p.slug === lastCheckout.slug || p.id === lastCheckout.productId) || lastCheckout.product;
+        if (!found) {
+          try {
+            const fetched = await fetchProductsFromSupabase();
+            if (fetched) {
+              found = fetched.find((p) => p.slug === lastCheckout.slug || p.id === lastCheckout.productId);
+            }
+          } catch (e) {}
+        }
+
+        if (found) {
+          addToCart(found, lastCheckout.size, lastCheckout.color, lastCheckout.quantity || 1);
+          setIsRecovering(false);
+          setHasAttemptedRecovery(true);
+          return;
+        }
+      }
+
+      // 3. Check asynchronous storage (IndexedDB)
+      const asyncCart = await loadCartFromStorageAsync();
+      if (asyncCart.length > 0) {
+        asyncCart.forEach((item) => {
+          addToCart(item.product, item.selectedSize, item.selectedColor, item.quantity);
+        });
+      }
+
+      setIsRecovering(false);
+      setHasAttemptedRecovery(true);
+    };
+
+    attemptRecovery();
+  }, [isLoaded, cart.length, hasAttemptedRecovery, products, searchParams, addToCart]);
+
+  if (!isLoaded || isRecovering) {
     return (
       <div className="bg-black text-white min-h-screen pt-32 pb-24 px-6 flex flex-col items-center justify-center text-center space-y-4">
         <Loader2 size={32} className="text-snake-green animate-spin" />
@@ -889,5 +969,21 @@ export default function CheckoutPage() {
       {/* Preload Razorpay Checkout Script */}
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="bg-black text-white min-h-screen pt-32 pb-24 px-6 flex flex-col items-center justify-center text-center space-y-4">
+          <Loader2 size={32} className="text-snake-green animate-spin" />
+          <h2 className="text-xl font-display uppercase tracking-wider text-neutral-300">PREPARING ATELIER CHECKOUT...</h2>
+          <p className="text-xs font-mono text-neutral-500">Securing your garment selection</p>
+        </div>
+      }
+    >
+      <CheckoutContent />
+    </Suspense>
   );
 }

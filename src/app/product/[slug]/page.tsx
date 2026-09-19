@@ -23,6 +23,7 @@ import { formatPrice, BRAND } from '@/lib/design-tokens';
 import { Size, ProductImage } from '@/lib/types';
 import { SizeGuideModal } from '@/components/product/SizeGuideModal';
 import { ProductCard } from '@/components/product/ProductCard';
+import { saveLastCheckout } from '@/lib/storage-helper';
 
 export default function ProductDetailPage({ params }: { params: { slug: string } }) {
   const router = useRouter();
@@ -71,7 +72,24 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
     }
     setSizeError(false);
     addToCart(product, selectedSize, selectedColor, quantity);
-    router.push('/checkout');
+    saveLastCheckout({
+      productId: product.id,
+      slug: product.slug,
+      size: selectedSize,
+      color: selectedColor,
+      quantity,
+      product,
+    });
+    const query = new URLSearchParams({
+      buyNow: '1',
+      slug: product.slug,
+      productId: product.id,
+      size: selectedSize,
+      color: selectedColor.name,
+      colorHex: selectedColor.hex,
+      qty: String(quantity),
+    });
+    router.push(`/checkout?${query.toString()}`);
   };
 
   const activeImage = product.images[activeImageIndex] || product.images[0];

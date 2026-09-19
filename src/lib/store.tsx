@@ -17,7 +17,12 @@ import {
   fetchSocialConfigFromSupabase,
   saveSocialConfigToSupabase,
 } from './supabase/db';
-
+import {
+  saveCartToStorage,
+  loadCartFromStorageSync,
+  loadCartFromStorageAsync,
+  sanitizeCartItem,
+} from './storage-helper';
 export interface HomepageConfig {
   heroImages: string[];
   heroIntervalSeconds: number;
@@ -148,16 +153,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   });
 
   const [cart, setCart] = useState<CartItem[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('supersnake_cart');
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-        }
-      } catch (e) {}
-    }
-    return [];
+    return loadCartFromStorageSync();
   });
 
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -210,8 +206,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      const savedCart = localStorage.getItem('supersnake_cart');
-      if (savedCart) setCart(JSON.parse(savedCart));
+      const syncCart = loadCartFromStorageSync();
+      if (syncCart.length > 0) {
+        setCart(syncCart);
+      } else {
+        loadCartFromStorageAsync().then((asyncCart) => {
+          if (asyncCart.length > 0) {
+            setCart(asyncCart);
+          }
+        });
+      }
 
       const savedWishlist = localStorage.getItem('supersnake_wishlist');
       if (savedWishlist) setWishlist(JSON.parse(savedWishlist));
@@ -353,9 +357,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!isLoaded) return;
-    try {
-      localStorage.setItem('supersnake_cart', JSON.stringify(cart));
-    } catch (e) {}
+    saveCartToStorage(cart);
   }, [cart, isLoaded]);
 
   useEffect(() => {
@@ -388,70 +390,61 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     color: { name: string; hex: string },
     quantity: number = 1
   ) => {
-    setCart((prev) => {
-      const existingIndex = prev.findIndex(
-        (item) =>
-          item.product.id === product.id &&
-          item.selectedSize === size &&
-          item.selectedColor.name === color.name
-      );
+    // Read directly from storage or memory to guarantee synchronous, fresh state
+    const currentCart = cart.length > 0 ? cart : loadCartFromStorageSync();
+    const existingIndex = currentCart.findIndex(
+      (item) =>
+        item.product.id === product.id &&
+        item.selectedSize === size &&
+        item.selectedColor.name === color.name
+    );
 
-      let next: CartItem[];
-      if (existingIndex > -1) {
-        next = [...prev];
-        next[existingIndex].quantity += quantity;
-      } else {
-        const newItem: CartItem = {
-          id: `${product.id}-${color.name}-${size}-${Date.now()}`,
-          product,
-          selectedColor: color,
-          selectedSize: size,
-          quantity,
-          price: product.price,
-        };
-        next = [...prev, newItem];
-      }
-      try {
-        localStorage.setItem('supersnake_cart', JSON.stringify(next));
-      } catch (e) {}
-      return next;
-    });
+    let next: CartItem[];
+    if (existingIndex > -1) {
+      next = [...currentCart];
+      next[existingIndex] = {
+        ...next[existingIndex],
+        quantity: next[existingIndex].quantity + quantity,
+      };
+    } else {
+      const newItem: CartItem = {
+        id: `${product.id}-${color.name}-${size}-${Date.now()}`,
+        product,
+        selectedColor: color,
+        selectedSize: size,
+        quantity,
+        price: product.price,
+      };
+      next = [...currentCart, newItem];
+    }
 
+    saveCartToStorage(next);
+    setCart(next);
     setIsCartOpen(true);
   };
 
   const removeFromCart = (itemId: string) => {
-    setCart((prev) => {
-      const next = prev.filter((item) => item.id !== itemId);
-      try {
-        localStorage.setItem('supersnake_cart', JSON.stringify(next));
-      } catch (e) {}
-      return next;
-    });
+    const next = cart.filter((item) => item.id !== itemId);
+    saveCartToStorage(next);
+    setCart(next);
   };
 
   const updateQuantity = (itemId: string, delta: number) => {
-    setCart((prev) => {
-      const next = prev
-        .map((item) => {
-          if (item.id === itemId) {
-            const nextQty = item.quantity + delta;
-            return nextQty > 0 ? { ...item, quantity: nextQty } : null;
-          }
-          return item;
-        })
-        .filter(Boolean) as CartItem[];
-      try {
-        localStorage.setItem('supersnake_cart', JSON.stringify(next));
-      } catch (e) {}
-      return next;
-    });
+    const next = cart
+      .map((item) => {
+        if (item.id === itemId) {
+          const nextQty = item.quantity + delta;
+          return nextQty > 0 ? { ...item, quantity: nextQty } : null;
+        }
+        return item;
+      })
+      .filter(Boolean) as CartItem[];
+    saveCartToStorage(next);
+    setCart(next);
   };
 
   const clearCart = () => {
-    try {
-      localStorage.removeItem('supersnake_cart');
-    } catch (e) {}
+    saveCartToStorage([]);
     setCart([]);
   };
 
