@@ -95,15 +95,20 @@ export type OrderStatus =
 
 export interface Address {
   id?: string;
+  userId?: string;
+  label?: string;
   fullName: string;
+  full_name?: string;
   phone: string;
   street: string;
   landmark?: string;
   city: string;
   state: string;
   postalCode: string;
+  postal_code?: string;
   postOffice?: string;
   district?: string;
+  country?: string;
   isDefault?: boolean;
 }
 
@@ -120,6 +125,7 @@ export interface OrderItem {
 export interface Order {
   id: string;
   orderNumber: string;
+  userId?: string;
   createdAt: string;
   status: OrderStatus;
   items: OrderItem[];

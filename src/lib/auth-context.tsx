@@ -18,6 +18,8 @@ export interface UserProfile {
   genderInterest?: 'men' | 'women' | 'all';
   isEmailVerified?: boolean;
   isPhoneVerified?: boolean;
+  phone_verified?: boolean;
+  phone_verified_at?: string;
 }
 
 interface AuthContextType {
@@ -29,9 +31,10 @@ interface AuthContextType {
   signIn: (email: string, password?: string) => Promise<{ error?: string }>;
   signUp: (email: string, password: string, fullName?: string, phone?: string) => Promise<{ error?: string; requireVerification?: boolean }>;
   signInWithGoogle: (redirectTo?: string) => Promise<{ error?: string }>;
-  sendPhoneOtp: (phone: string) => Promise<{ error?: string; simulatedOtp?: string }>;
+  checkEmailExists: (email: string) => Promise<{ exists: boolean; error?: string }>;
+  sendPhoneOtp: (phone: string) => Promise<{ error?: string }>;
   verifyPhoneOtp: (phone: string, code: string) => Promise<{ error?: string }>;
-  sendEmailOtp: (email: string) => Promise<{ error?: string; simulatedOtp?: string }>;
+  sendEmailOtp: (email: string) => Promise<{ error?: string }>;
   verifyEmailOtp: (email: string, code: string) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error?: string }>;
@@ -108,6 +111,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadUserProfile = async (currentUser: User) => {
     const meta = currentUser.user_metadata || {};
+    const isPhoneVerified = Boolean(
+      currentUser.phone_confirmed_at ||
+      meta.phone_verified ||
+      meta.is_phone_verified
+    );
+
     let loadedProfile: UserProfile = {
       id: currentUser.id,
       email: currentUser.email || '',
@@ -119,7 +128,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       preferredSize: meta.preferred_size || 'M',
       genderInterest: meta.gender_interest || 'all',
       isEmailVerified: Boolean(currentUser.email_confirmed_at || meta.email_verified || meta.is_email_verified),
-      isPhoneVerified: Boolean(currentUser.phone_confirmed_at || meta.phone_verified || meta.is_phone_verified),
+      isPhoneVerified,
+      phone_verified: isPhoneVerified,
+      phone_verified_at: meta.phone_verified_at,
     };
 
     setProfile(loadedProfile);
@@ -136,12 +147,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single();
 
       if (dbProfile) {
+        const dbPhoneVerified = Boolean(
+          dbProfile.phone_verified ??
+          dbProfile.is_phone_verified ??
+          loadedProfile.isPhoneVerified
+        );
+
         loadedProfile = {
           ...loadedProfile,
           fullName: dbProfile.full_name || loadedProfile.fullName,
           phone: dbProfile.phone || loadedProfile.phone,
           isEmailVerified: dbProfile.is_email_verified ?? loadedProfile.isEmailVerified,
-          isPhoneVerified: dbProfile.is_phone_verified ?? loadedProfile.isPhoneVerified,
+          isPhoneVerified: dbPhoneVerified,
+          phone_verified: dbPhoneVerified,
+          phone_verified_at: dbProfile.phone_verified_at || loadedProfile.phone_verified_at,
         };
         setProfile(loadedProfile);
         try {
@@ -284,16 +303,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const sendPhoneOtp = async (phone: string): Promise<{ error?: string; simulatedOtp?: string }> => {
+  const checkEmailExists = async (email: string): Promise<{ exists: boolean; error?: string }> => {
     try {
-      const res = await fetch('/api/auth/otp', {
+      const res = await fetch('/api/auth/lookup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'send_phone', phone }),
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { exists: false, error: data.error };
+      return { exists: Boolean(data.exists) };
+    } catch (err: any) {
+      return { exists: false, error: err.message };
+    }
+  };
+
+  const sendPhoneOtp = async (phone: string): Promise<{ error?: string }> => {
+    try {
+      const res = await fetch('/api/auth/phone/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone }),
       });
       const data = await res.json();
       if (!res.ok) return { error: data.error || 'Failed to dispatch phone verification code' };
-      return { simulatedOtp: data.simulatedOtp };
+      return {};
     } catch (err: any) {
       return { error: err.message || 'Phone verification dispatch error' };
     }
@@ -301,17 +335,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const verifyPhoneOtp = async (phone: string, code: string): Promise<{ error?: string }> => {
     try {
-      const res = await fetch('/api/auth/otp', {
+      const res = await fetch('/api/auth/phone/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'verify_phone', phone, code }),
+        body: JSON.stringify({ phone, code, userId: user?.id }),
       });
       const data = await res.json();
       if (!res.ok) return { error: data.error || 'Incorrect phone verification code' };
 
       // Update local profile and Supabase metadata
       if (profile) {
-        const updated = { ...profile, isPhoneVerified: true, phone };
+        const updated = {
+          ...profile,
+          isPhoneVerified: true,
+          phone_verified: true,
+          phone_verified_at: new Date().toISOString(),
+          phone,
+        };
         setProfile(updated);
         try {
           localStorage.setItem('supersnake_user_profile', JSON.stringify(updated));
@@ -321,7 +361,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (user) {
         try {
           await supabase.auth.updateUser({
-            data: { phone_verified: true, is_phone_verified: true, phone },
+            data: {
+              phone_verified: true,
+              is_phone_verified: true,
+              phone_verified_at: new Date().toISOString(),
+              phone,
+            },
           });
         } catch (e) {}
       }
@@ -332,16 +377,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const sendEmailOtp = async (email: string): Promise<{ error?: string; simulatedOtp?: string }> => {
+  const sendEmailOtp = async (email: string): Promise<{ error?: string }> => {
     try {
-      const res = await fetch('/api/auth/otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'send_email', email }),
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/checkout`,
+        },
       });
-      const data = await res.json();
-      if (!res.ok) return { error: data.error || 'Failed to dispatch email verification code' };
-      return { simulatedOtp: data.simulatedOtp };
+      if (error) return { error: error.message };
+      return {};
     } catch (err: any) {
       return { error: err.message || 'Email verification dispatch error' };
     }
@@ -349,31 +394,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const verifyEmailOtp = async (email: string, code: string): Promise<{ error?: string }> => {
     try {
-      const res = await fetch('/api/auth/otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'verify_email', email, code }),
+      const { data, error } = await supabase.auth.verifyOtp({
+        email: email.trim(),
+        token: code.trim(),
+        type: 'email',
       });
-      const data = await res.json();
-      if (!res.ok) return { error: data.error || 'Incorrect email verification code' };
+      if (error) return { error: error.message };
 
-      // Update local profile and Supabase metadata
-      if (profile) {
-        const updated = { ...profile, isEmailVerified: true };
-        setProfile(updated);
-        try {
-          localStorage.setItem('supersnake_user_profile', JSON.stringify(updated));
-        } catch (e) {}
+      if (data.user) {
+        setUser(data.user);
+        loadUserProfile(data.user);
       }
-
-      if (user) {
-        try {
-          await supabase.auth.updateUser({
-            data: { email_verified: true, is_email_verified: true },
-          });
-        } catch (e) {}
-      }
-
       return {};
     } catch (err: any) {
       return { error: err.message || 'Email verification failed' };
@@ -454,6 +485,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signIn,
         signUp,
         signInWithGoogle,
+        checkEmailExists,
         sendPhoneOtp,
         verifyPhoneOtp,
         sendEmailOtp,

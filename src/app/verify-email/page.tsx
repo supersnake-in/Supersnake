@@ -52,18 +52,13 @@ function VerifyAccountContent() {
   const [phoneCooldown, setPhoneCooldown] = useState(0);
   const [emailSentNotice, setEmailSentNotice] = useState(false);
   const [phoneSentNotice, setPhoneSentNotice] = useState(false);
-  const [simulatedPhoneOtp, setSimulatedPhoneOtp] = useState<string | null>(null);
 
   // Initial phone OTP trigger if not yet sent
   useEffect(() => {
-    if (phone && !phoneVerified && !simulatedPhoneOtp) {
-      sendPhoneOtp(phone).then((res) => {
-        if (res.simulatedOtp) {
-          setSimulatedPhoneOtp(res.simulatedOtp);
-        }
-      });
+    if (phone && !phoneVerified) {
+      sendPhoneOtp(phone);
     }
-  }, [phone, phoneVerified, sendPhoneOtp, simulatedPhoneOtp]);
+  }, [phone, phoneVerified, sendPhoneOtp]);
 
   // Sync state if user session changes
   useEffect(() => {
@@ -166,9 +161,6 @@ function VerifyAccountContent() {
     if (res.error) {
       setPhoneError(res.error);
     } else {
-      if (res.simulatedOtp) {
-        setSimulatedPhoneOtp(res.simulatedOtp);
-      }
       setPhoneSentNotice(true);
       setPhoneCooldown(60);
       setTimeout(() => setPhoneSentNotice(false), 5000);
@@ -370,25 +362,6 @@ function VerifyAccountContent() {
                 <div className="p-3 bg-snake-green/10 border border-snake-green/30 text-snake-green text-xs font-mono flex items-center gap-2">
                   <CheckCircle2 size={15} className="shrink-0" />
                   <span>New SMS verification code dispatched.</span>
-                </div>
-              )}
-
-              {/* Development/Testing Notice for Simulated SMS Gateway */}
-              {simulatedPhoneOtp && (
-                <div className="p-3 bg-neutral-900 border border-snake-green/40 rounded flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-mono">
-                  <div className="flex items-center gap-2">
-                    <span className="text-snake-green">⚡</span>
-                    <span className="text-neutral-300">
-                      SMS Gateway Code: <strong className="text-snake-green tracking-widest">{simulatedPhoneOtp}</strong>
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setPhoneCode(simulatedPhoneOtp)}
-                    className="text-[10px] px-2 py-1 bg-snake-green/20 hover:bg-snake-green text-snake-green hover:text-black rounded uppercase font-bold transition-colors shrink-0"
-                  >
-                    Auto-Fill Code
-                  </button>
                 </div>
               )}
 
