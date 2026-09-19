@@ -430,17 +430,12 @@ export default function HomePage() {
                 ALL CREATIONS
               </h2>
             </div>
-            <div className="flex items-center gap-4">
-              <span className="text-[11px] font-mono text-neutral-400 tracking-wider">
-                [{products.length} OBJECTS]
-              </span>
-              <Link
-                href="/shop"
-                className="text-xs font-mono tracking-widest text-neutral-400 hover:text-white uppercase flex items-center gap-1.5"
-              >
-                VIEW FULL SHOP <ArrowRight size={13} />
-              </Link>
-            </div>
+            <Link
+              href="/shop"
+              className="text-xs font-mono tracking-widest text-neutral-400 hover:text-white uppercase flex items-center gap-1.5"
+            >
+              VIEW FULL SHOP <ArrowRight size={13} />
+            </Link>
           </div>
 
           {/* Continuous Auto-Scrolling Marquee Track */}
