@@ -3,12 +3,28 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import Script from 'next/script';
 import { useRouter } from 'next/navigation';
 import { ShieldCheck, ArrowRight, Lock, CheckCircle2, CreditCard, Smartphone, Building, Wallet, AlertCircle, RefreshCw, ShoppingBag, ChevronDown, ChevronUp } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useAuth } from '@/lib/auth-context';
 import { formatPrice, BRAND } from '@/lib/design-tokens';
 import confetti from 'canvas-confetti';
+
+const loadRazorpayScript = (): Promise<boolean> => {
+  return new Promise((resolve) => {
+    if (typeof window !== 'undefined' && (window as any).Razorpay) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -62,60 +78,159 @@ export default function CheckoutPage() {
 
   const handleCompletePayment = async () => {
     setIsProcessing(true);
+    setPaymentError(null);
+
+    const totalOrderAmount = cartTotal + (cartTotal >= BRAND.freeShippingThreshold ? 0 : 150);
+    const amountInPaise = Math.round(totalOrderAmount * 100);
 
     try {
-      // Simulate Razorpay Gateway Interaction
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // 1. Ensure Razorpay checkout script is loaded
+      const isLoaded = await loadRazorpayScript();
+      if (!isLoaded) {
+        throw new Error('Could not load Razorpay payment SDK. Please verify your internet connection and retry.');
+      }
 
-      const newOrder = createOrder({
-        status: 'Confirmed',
-        items: cart.map((c) => ({
-          productId: c.product.id,
-          productName: c.product.name,
-          color: c.selectedColor.name,
-          size: c.selectedSize,
-          quantity: c.quantity,
-          price: c.price,
-          imageUrl: c.product.images[0]?.url || '',
-        })),
-        subtotal: cartTotal,
-        discount: 0,
-        shipping: cartTotal >= BRAND.freeShippingThreshold ? 0 : 150,
-        tax: Math.round(cartTotal * 0.05),
-        total: cartTotal + (cartTotal >= BRAND.freeShippingThreshold ? 0 : 150),
-        customer: {
-          name: formData.fullName,
-          email: formData.email,
-          phone: formData.phone,
+      // 2. Call backend endpoint to create order
+      const orderRes = await fetch('/api/create-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        shippingAddress: {
-          fullName: formData.fullName,
-          phone: formData.phone,
-          street: formData.street,
-          landmark: formData.landmark,
-          city: formData.city,
-          state: formData.state || 'Karnataka',
-          postalCode: formData.postalCode,
-        },
-        payment: {
-          method: 'razorpay',
-          transactionId: `pay_SS${Date.now().toString().slice(-8)}`,
-          status: 'paid',
-          paidAt: new Date().toISOString(),
-        },
+        body: JSON.stringify({
+          amount: amountInPaise,
+          currency: 'INR',
+          receipt: `rcpt_${Date.now().toString().slice(-8)}`,
+        }),
       });
 
-      // Celebration
-      try {
-        confetti({
-          particleCount: 80,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#04fc21', '#ffffff', '#000000'],
-        });
-      } catch (e) {}
+      if (!orderRes.ok) {
+        const errData = await orderRes.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to initialize payment order with server.');
+      }
 
-      router.push(`/checkout/confirmation?orderId=${newOrder.id}`);
+      const orderData = await orderRes.json();
+      const razorpayKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TdtCpOjDeqd3Mg';
+
+      // 3. Open Razorpay Standard Checkout modal
+      const options = {
+        key: razorpayKey,
+        amount: orderData.amount,
+        currency: orderData.currency || 'INR',
+        name: 'SuperSnake',
+        description: `Order for ${cart.length} item${cart.length > 1 ? 's' : ''}`,
+        order_id: orderData.order_id || orderData.id,
+        prefill: {
+          name: formData.fullName,
+          email: formData.email,
+          contact: formData.phone,
+        },
+        theme: {
+          color: '#04fc21',
+        },
+        handler: async function (response: {
+          razorpay_payment_id: string;
+          razorpay_order_id: string;
+          razorpay_signature: string;
+        }) {
+          try {
+            // 4. Verify payment signature on backend
+            const verifyRes = await fetch('/api/verify-payment', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+
+            const verifyData = await verifyRes.json();
+
+            if (!verifyRes.ok || !verifyData.success) {
+              throw new Error(
+                verifyData.error || 'Payment signature verification failed. Please contact support.'
+              );
+            }
+
+            // 5. Create confirmed order in store
+            const newOrder = createOrder({
+              status: 'Confirmed',
+              items: cart.map((c) => ({
+                productId: c.product.id,
+                productName: c.product.name,
+                color: c.selectedColor.name,
+                size: c.selectedSize,
+                quantity: c.quantity,
+                price: c.price,
+                imageUrl: c.product.images[0]?.url || '',
+              })),
+              subtotal: cartTotal,
+              discount: 0,
+              shipping: cartTotal >= BRAND.freeShippingThreshold ? 0 : 150,
+              tax: Math.round(cartTotal * 0.05),
+              total: totalOrderAmount,
+              customer: {
+                name: formData.fullName,
+                email: formData.email,
+                phone: formData.phone,
+              },
+              shippingAddress: {
+                fullName: formData.fullName,
+                phone: formData.phone,
+                street: formData.street,
+                landmark: formData.landmark,
+                city: formData.city,
+                state: formData.state || 'Karnataka',
+                postalCode: formData.postalCode,
+              },
+              payment: {
+                method: 'razorpay',
+                transactionId: response.razorpay_payment_id,
+                status: 'paid',
+                paidAt: new Date().toISOString(),
+              },
+            });
+
+            // Celebration
+            try {
+              confetti({
+                particleCount: 80,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#04fc21', '#ffffff', '#000000'],
+              });
+            } catch (e) {}
+
+            router.push(`/checkout/confirmation?orderId=${newOrder.id}`);
+          } catch (err: any) {
+            setIsProcessing(false);
+            setPaymentError(
+              err.message || 'Payment signature verification failed. If your account was debited, please contact support.'
+            );
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            setIsProcessing(false);
+            setPaymentError('Payment window was closed. You can retry whenever you are ready.');
+          },
+        },
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+
+      rzp.on('payment.failed', function (response: any) {
+        setIsProcessing(false);
+        setPaymentError(
+          response.error?.description ||
+          response.error?.reason ||
+          'Payment transaction was not completed. Please try again or use another payment method.'
+        );
+      });
+
+      rzp.open();
     } catch (err: any) {
       setIsProcessing(false);
       setPaymentError(err.message || 'Payment gateway connection interrupted. Please verify your payment details and retry.');
@@ -571,7 +686,9 @@ export default function CheckoutPage() {
                     disabled={isProcessing}
                     className="flex-1 min-h-[48px] py-4 bg-snake-green text-black font-mono text-xs tracking-widest font-bold uppercase hover:bg-white active:scale-[0.99] transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(4,252,33,0.3)] disabled:opacity-50"
                   >
-                    {isProcessing ? 'PROCESSING SECURE TRANSACTION...' : `PAY ${formatPrice(cartTotal)} →`}
+                    {isProcessing
+                      ? 'PROCESSING SECURE TRANSACTION...'
+                      : `PAY ${formatPrice(cartTotal + (cartTotal >= BRAND.freeShippingThreshold ? 0 : 150))} →`}
                   </button>
                 </div>
               </div>
@@ -677,6 +794,8 @@ export default function CheckoutPage() {
           </div>
         </div>
       )}
+      {/* Preload Razorpay Checkout Script */}
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
     </div>
   );
 }
