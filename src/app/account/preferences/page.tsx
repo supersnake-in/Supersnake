@@ -7,8 +7,8 @@ import { FitType, Size } from '@/lib/types';
 
 export default function AccountPreferencesPage() {
   const { profile, updateProfile } = useAuth();
-  const [preferredFit, setPreferredFit] = useState<FitType>('Oversized');
-  const [preferredSize, setPreferredSize] = useState<Size>('L');
+  const [preferredFit, setPreferredFit] = useState<FitType>('Classic');
+  const [preferredSize, setPreferredSize] = useState<Size>('M');
   const [genderInterest, setGenderInterest] = useState<'men' | 'women' | 'all'>('all');
   const [saved, setSaved] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);

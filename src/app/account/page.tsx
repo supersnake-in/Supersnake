@@ -85,10 +85,10 @@ export default function AccountOverviewPage() {
             <Sparkles size={16} className="text-neutral-400" />
           </div>
           <p className="text-2xl md:text-3xl font-display font-medium text-white">
-            {profile?.preferredFit || 'OVERSIZED'}
+            {profile?.preferredFit || 'CLASSIC'}
           </p>
           <p className="text-[10px] font-mono text-neutral-500">
-            Size: {profile?.preferredSize || 'L'}
+            Size: {profile?.preferredSize || 'M'}
           </p>
         </div>
 

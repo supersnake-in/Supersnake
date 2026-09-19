@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Shield, Lock, Smartphone, Check, AlertCircle, Key } from 'lucide-react';
+import { Lock, Check, AlertCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 
 export default function AccountSecurityPage() {
@@ -121,43 +121,6 @@ export default function AccountSecurityPage() {
               {isSubmitting ? 'UPDATING...' : 'CHANGE PASSWORD'}
             </button>
           </form>
-        </div>
-
-        {/* 2FA & Active Sessions */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div className="bg-[#0a0a0a] border border-white/10 p-6 rounded-sm space-y-4">
-            <div className="flex items-center gap-3">
-              <Smartphone size={18} className="text-snake-green" />
-              <h3 className="text-sm font-display font-medium text-white uppercase tracking-wider">
-                TWO-FACTOR AUTH
-              </h3>
-            </div>
-            <p className="text-xs font-mono text-neutral-400 leading-relaxed">
-              Add a second verification layer for all checkout authorizations and high-value orders.
-            </p>
-            <div className="pt-2">
-              <span className="text-[10px] font-mono px-2.5 py-1 bg-white/5 border border-white/10 text-neutral-400 uppercase tracking-widest">
-                AVAILABLE VIA SMS / AUTHENTICATOR
-              </span>
-            </div>
-          </div>
-
-          <div className="bg-[#0a0a0a] border border-white/10 p-6 rounded-sm space-y-4">
-            <div className="flex items-center gap-3">
-              <Shield size={18} className="text-snake-green" />
-              <h3 className="text-sm font-display font-medium text-white uppercase tracking-wider">
-                CURRENT SESSION
-              </h3>
-            </div>
-            <p className="text-xs font-mono text-neutral-400 leading-relaxed">
-              Active Browser: Current Session • IP Protected via SSL • Bengaluru, IN
-            </p>
-            <div className="pt-2">
-              <span className="text-[10px] font-mono px-2.5 py-1 bg-snake-green/10 text-snake-green border border-snake-green/30 uppercase tracking-widest">
-                ACTIVE & SECURED
-              </span>
-            </div>
-          </div>
         </div>
       </div>
     </div>

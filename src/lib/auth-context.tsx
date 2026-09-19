@@ -107,8 +107,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       phone: meta.phone || '',
       avatarUrl: meta.avatar_url || '',
       createdAt: currentUser.created_at,
-      preferredFit: meta.preferred_fit || 'Oversized',
-      preferredSize: meta.preferred_size || 'L',
+      preferredFit: meta.preferred_fit || 'Classic',
+      preferredSize: meta.preferred_size || 'M',
       genderInterest: meta.gender_interest || 'all',
     };
 
