@@ -368,39 +368,7 @@ export function Footer() {
           </div>
         </div>
 
-        {/* 
-          ============================================================
-          ZONE 03: BRAND STATEMENT & RESTRAINED SERVICE STRIP
-          Quiet, editorial, confident.
-          ============================================================
-        */}
-        <div className="pt-8 border-t border-white/[0.06] flex flex-col md:flex-row md:items-center justify-between gap-6 text-[11px] font-mono text-neutral-500">
-          {/* Restrained Trust Strip */}
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[10px] tracking-widest uppercase">
-            <div className="flex items-center gap-1.5 text-neutral-400">
-              <span className="w-1 h-1 rounded-full bg-snake-green/80" />
-              <span>SECURE 256-BIT ENCRYPTION</span>
-            </div>
-            <div className="flex items-center gap-1.5 text-neutral-400">
-              <span className="w-1 h-1 rounded-full bg-snake-green/80" />
-              <span>ATELIER QUALITY CHECKS</span>
-            </div>
-            <div className="flex items-center gap-1.5 text-neutral-400">
-              <span className="w-1 h-1 rounded-full bg-snake-green/80" />
-              <span>PRIORITY AIR EXPRESS</span>
-            </div>
-            <div className="flex items-center gap-1.5 text-neutral-400">
-              <span className="w-1 h-1 rounded-full bg-snake-green/80" />
-              <span>280 GSM SUPIMA® COTTON</span>
-            </div>
-          </div>
 
-          {/* Right-Side Editorial Statement */}
-          <div className="text-left md:text-right font-display text-xs tracking-wider text-neutral-400 uppercase">
-            <span className="text-neutral-600 mr-2">—</span>
-            <span>NOT MADE TO BLEND IN.</span>
-          </div>
-        </div>
 
         {/* 
           ============================================================
