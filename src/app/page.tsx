@@ -97,17 +97,6 @@ export default function HomePage() {
           className="relative z-10 max-w-7xl mx-auto w-full flex flex-col justify-end"
         >
           <div className="max-w-3xl space-y-3 sm:space-y-4 lg:space-y-5">
-            {/* Subtle Brand pill */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              className="inline-flex items-center gap-2 px-2.5 sm:px-3 py-1 bg-black/60 backdrop-blur-md border border-white/10 text-[9px] sm:text-[10px] font-mono tracking-widest text-neutral-300 uppercase"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-snake-green animate-pulse" />
-              THE MONOLITH COLLECTION — AUTUMN 2026
-            </motion.div>
-
             {/* Monumental Headline */}
             <motion.h1
               initial={{ opacity: 0, y: 30 }}
