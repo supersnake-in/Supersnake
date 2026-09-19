@@ -13,6 +13,10 @@ export default function AdminOrdersPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
+  React.useEffect(() => {
+    setOrdersList(orders);
+  }, [orders]);
+
   const statuses: OrderStatus[] = [
     'Pending',
     'Confirmed',
@@ -38,8 +42,8 @@ export default function AdminOrdersPage() {
   const filtered = ordersList.filter((ord) => {
     const matchesSearch =
       ord.orderNumber.toLowerCase().includes(search.toLowerCase()) ||
-      ord.customer.name.toLowerCase().includes(search.toLowerCase()) ||
-      ord.customer.email.toLowerCase().includes(search.toLowerCase());
+      (ord.customer?.name || '').toLowerCase().includes(search.toLowerCase()) ||
+      (ord.customer?.email || '').toLowerCase().includes(search.toLowerCase());
 
     const matchesStatus = selectedStatus === 'all' || ord.status === selectedStatus;
     return matchesSearch && matchesStatus;
@@ -111,51 +115,62 @@ export default function AdminOrdersPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-800/60">
-            {filtered.map((ord) => (
-              <tr key={ord.id} className="hover:bg-white/[0.02] transition-colors">
-                <td className="py-3 px-4 font-bold text-white">{ord.orderNumber}</td>
-                <td className="py-3 px-4 text-neutral-400">
-                  {new Date(ord.createdAt).toLocaleDateString('en-IN', {
-                    day: 'numeric',
-                    month: 'short',
-                  })}
-                </td>
-                <td className="py-3 px-4">
-                  <span className="text-white block font-semibold">{ord.customer.name}</span>
-                  <span className="text-[10px] text-neutral-500">{ord.customer.phone}</span>
-                </td>
-                <td className="py-3 px-4 text-neutral-300">
-                  {ord.items.map((it) => `${it.quantity}x ${it.size}`).join(', ')}
-                </td>
-                <td className="py-3 px-4 text-white font-bold">{formatPrice(ord.total)}</td>
-                <td className="py-3 px-4">
-                  <span className="px-2 py-0.5 bg-neutral-900 border border-neutral-700 rounded text-[9px] uppercase font-semibold text-snake-green">
-                    PAID (RAZORPAY)
-                  </span>
-                </td>
-                <td className="py-3 px-4">
-                  <select
-                    value={ord.status}
-                    onChange={(e) => handleUpdateStatus(ord.id, e.target.value as OrderStatus)}
-                    className="bg-black border border-neutral-700 text-xs px-2.5 py-1 rounded text-white focus:border-snake-green cursor-pointer uppercase font-semibold"
-                  >
-                    {statuses.map((st) => (
-                      <option key={st} value={st}>
-                        {st}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-                <td className="py-3 px-4 text-right">
-                  <button
-                    onClick={() => setSelectedOrder(ord)}
-                    className="px-2.5 py-1 bg-neutral-800 hover:bg-white hover:text-black rounded text-[10px] uppercase font-bold text-neutral-300 transition-colors"
-                  >
-                    VIEW
-                  </button>
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="py-12 text-center text-neutral-500">
+                  <p className="text-xs uppercase font-bold text-neutral-400">NO ATELIER ORDERS FOUND</p>
+                  <p className="text-[11px] text-neutral-600 mt-1">
+                    Real orders placed by customers on SUPERSNAKE.IN will stream here in real time.
+                  </p>
                 </td>
               </tr>
-            ))}
+            ) : (
+              filtered.map((ord) => (
+                <tr key={ord.id} className="hover:bg-white/[0.02] transition-colors">
+                  <td className="py-3 px-4 font-bold text-white">{ord.orderNumber}</td>
+                  <td className="py-3 px-4 text-neutral-400">
+                    {new Date(ord.createdAt).toLocaleDateString('en-IN', {
+                      day: 'numeric',
+                      month: 'short',
+                    })}
+                  </td>
+                  <td className="py-3 px-4">
+                    <span className="text-white block font-semibold">{ord.customer?.name || 'Customer'}</span>
+                    <span className="text-[10px] text-neutral-500">{ord.customer?.phone || '—'}</span>
+                  </td>
+                  <td className="py-3 px-4 text-neutral-300">
+                    {(ord.items || []).map((it) => `${it.quantity}x ${it.size}`).join(', ')}
+                  </td>
+                  <td className="py-3 px-4 text-white font-bold">{formatPrice(ord.total)}</td>
+                  <td className="py-3 px-4">
+                    <span className="px-2 py-0.5 bg-neutral-900 border border-neutral-700 rounded text-[9px] uppercase font-semibold text-snake-green">
+                      PAID (RAZORPAY)
+                    </span>
+                  </td>
+                  <td className="py-3 px-4">
+                    <select
+                      value={ord.status}
+                      onChange={(e) => handleUpdateStatus(ord.id, e.target.value as OrderStatus)}
+                      className="bg-black border border-neutral-700 text-xs px-2.5 py-1 rounded text-white focus:border-snake-green cursor-pointer uppercase font-semibold"
+                    >
+                      {statuses.map((st) => (
+                        <option key={st} value={st}>
+                          {st}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="py-3 px-4 text-right">
+                    <button
+                      onClick={() => setSelectedOrder(ord)}
+                      className="px-2.5 py-1 bg-neutral-800 hover:bg-white hover:text-black rounded text-[10px] uppercase font-bold text-neutral-300 transition-colors"
+                    >
+                      VIEW
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

@@ -34,6 +34,21 @@ export default function AdminInventoryPage() {
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'low' | 'out'>('all');
 
+  React.useEffect(() => {
+    const nextItems: InventoryItem[] = products.flatMap((p) =>
+      (p.variants || []).map((v) => ({
+        id: v.id,
+        productName: p.name,
+        sku: v.sku,
+        color: v.colorName,
+        size: v.size,
+        stock: v.stock,
+        price: v.price,
+      }))
+    );
+    setItems(nextItems);
+  }, [products]);
+
   const updateStock = (id: string, delta: number) => {
     setItems((prev) =>
       prev.map((item) =>

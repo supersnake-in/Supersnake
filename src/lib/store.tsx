@@ -8,6 +8,7 @@ import {
   createProductInSupabase,
   deleteProductFromSupabase,
   createOrderInSupabase,
+  fetchOrdersFromSupabase,
 } from './supabase/db';
 
 interface StoreContextType {
@@ -54,71 +55,6 @@ interface StoreContextType {
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
-const INITIAL_MOCK_ORDERS: Order[] = [
-  {
-    id: 'ord-8891',
-    orderNumber: 'SS-2026-8891',
-    createdAt: '2026-09-15T14:32:00Z',
-    status: 'Delivered',
-    items: [
-      {
-        productId: 'prod-01',
-        productName: 'THE SIGNATURE TEE',
-        color: 'Obsidian Black',
-        size: 'L',
-        quantity: 1,
-        price: 1499,
-        imageUrl: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=600&auto=format&fit=crop',
-      },
-      {
-        productId: 'prod-03',
-        productName: 'THE MONOLITH OVERSIZED',
-        color: 'Washed Charcoal',
-        size: 'L',
-        quantity: 1,
-        price: 1799,
-        imageUrl: 'https://images.unsplash.com/photo-1503342394128-c104d54dba01?q=80&w=600&auto=format&fit=crop',
-      },
-    ],
-    subtotal: 3298,
-    discount: 0,
-    shipping: 0,
-    tax: 165,
-    total: 3463,
-    customer: {
-      name: 'Aditya Sharma',
-      email: 'aditya.sharma@example.com',
-      phone: '+91 98765 43210',
-    },
-    shippingAddress: {
-      fullName: 'Aditya Sharma',
-      phone: '+91 98765 43210',
-      street: '42 Lavelle Road, Richmond Town',
-      landmark: 'Near UB City',
-      city: 'Bengaluru',
-      state: 'Karnataka',
-      postalCode: '560001',
-    },
-    payment: {
-      method: 'razorpay',
-      transactionId: 'pay_SS8891048291',
-      status: 'paid',
-      paidAt: '2026-09-15T14:35:10Z',
-    },
-    tracking: {
-      carrier: 'Blue Dart Express',
-      trackingNumber: 'BD-9821873619',
-      estimatedDelivery: '2026-09-18',
-      updates: [
-        { status: 'Delivered to recipient', timestamp: '2026-09-18 11:42 AM', location: 'Bengaluru' },
-        { status: 'Out for delivery', timestamp: '2026-09-18 08:15 AM', location: 'Bengaluru Central Hub' },
-        { status: 'Arrived at destination facility', timestamp: '2026-09-17 07:30 PM', location: 'Bengaluru' },
-        { status: 'Shipped from SuperSnake Studio', timestamp: '2026-09-16 10:00 AM', location: 'Bengaluru' },
-      ],
-    },
-  },
-];
-
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [products, setProducts] = useState<Product[]>(PRODUCTS);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -126,10 +62,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [orders, setOrders] = useState<Order[]>(INITIAL_MOCK_ORDERS);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Sync from localStorage
+  // Sync from localStorage & Supabase
   useEffect(() => {
     try {
       const savedProducts = localStorage.getItem('supersnake_products');
@@ -162,6 +98,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       })
       .catch((err) => {
         console.warn('Supabase fetch failed, continuing with cached/fallback products:', err);
+      });
+
+    // Fetch dynamic orders from Supabase
+    fetchOrdersFromSupabase()
+      .then((supabaseOrders) => {
+        if (supabaseOrders && supabaseOrders.length > 0) {
+          setOrders(supabaseOrders);
+        }
+      })
+      .catch((err) => {
+        console.warn('Supabase orders fetch failed:', err);
       });
   }, []);
 

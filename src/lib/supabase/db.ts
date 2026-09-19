@@ -226,6 +226,62 @@ export async function createOrderInSupabase(order: Order): Promise<boolean> {
 }
 
 /**
+ * FETCH ORDERS DYNAMICALLY FROM SUPABASE
+ */
+export async function fetchOrdersFromSupabase(): Promise<Order[] | null> {
+  try {
+    const { data: ordersData, error: ordersError } = await supabase
+      .from('orders')
+      .select(`
+        *,
+        items:order_items(*)
+      `)
+      .order('created_at', { ascending: false });
+
+    if (ordersError || !ordersData || ordersData.length === 0) {
+      return null;
+    }
+
+    return ordersData.map((row: any): Order => ({
+      id: row.id,
+      orderNumber: row.order_number,
+      createdAt: row.created_at,
+      status: row.status,
+      items: (row.items || []).map((it: any) => ({
+        productId: it.product_id || '',
+        productName: it.product_name,
+        color: it.color,
+        size: it.size,
+        quantity: it.quantity,
+        price: Number(it.price),
+        imageUrl: it.image_url || '',
+      })),
+      subtotal: Number(row.subtotal),
+      discount: Number(row.discount || 0),
+      shipping: Number(row.shipping || 0),
+      tax: Number(row.tax || 0),
+      total: Number(row.total),
+      customer: {
+        name: row.customer_name,
+        email: row.customer_email,
+        phone: row.customer_phone,
+      },
+      shippingAddress: row.shipping_address || {},
+      payment: {
+        method: row.payment_method || 'card',
+        transactionId: row.transaction_id || '',
+        status: row.payment_status || 'paid',
+        paidAt: row.created_at,
+      },
+      tracking: row.tracking_info,
+    }));
+  } catch (err) {
+    console.warn('Error fetching orders from Supabase:', err);
+    return null;
+  }
+}
+
+/**
  * SUBSCRIBE NEWSLETTER IN SUPABASE
  */
 export async function subscribeNewsletterInSupabase(email: string): Promise<boolean> {
@@ -238,3 +294,4 @@ export async function subscribeNewsletterInSupabase(email: string): Promise<bool
     return false;
   }
 }
+

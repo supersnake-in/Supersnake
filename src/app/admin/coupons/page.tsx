@@ -3,14 +3,16 @@
 import React, { useState } from 'react';
 import { Tag, Plus, Check, Copy } from 'lucide-react';
 import { formatPrice } from '@/lib/design-tokens';
+import { useStore } from '@/lib/store';
 
 export default function AdminCouponsPage() {
+  const { orders } = useStore();
+
   const [coupons, setCoupons] = useState([
     {
       code: 'INSTINCT10',
       discount: '10% OFF',
       minOrder: 1499,
-      uses: 142,
       status: 'ACTIVE',
       expires: '2026-12-31',
     },
@@ -18,7 +20,6 @@ export default function AdminCouponsPage() {
       code: 'SNAKE20',
       discount: '20% OFF',
       minOrder: 2999,
-      uses: 58,
       status: 'ACTIVE',
       expires: '2026-10-31',
     },
@@ -26,7 +27,6 @@ export default function AdminCouponsPage() {
       code: 'ATELIERFREE',
       discount: 'FREE SHIPPING',
       minOrder: 999,
-      uses: 320,
       status: 'ACTIVE',
       expires: '2026-12-31',
     },
@@ -63,7 +63,9 @@ export default function AdminCouponsPage() {
                 <td className="py-3 px-4 font-bold text-snake-green">{c.code}</td>
                 <td className="py-3 px-4 text-white font-bold">{c.discount}</td>
                 <td className="py-3 px-4 text-neutral-300">{formatPrice(c.minOrder)}</td>
-                <td className="py-3 px-4 text-neutral-300">{c.uses} times</td>
+                <td className="py-3 px-4 text-neutral-300">
+                  {orders.filter((o) => (o.discount || 0) > 0).length} times
+                </td>
                 <td className="py-3 px-4">
                   <span className="px-2 py-0.5 bg-snake-green/10 text-snake-green border border-snake-green/30 rounded text-[9px] font-bold uppercase">
                     {c.status}
