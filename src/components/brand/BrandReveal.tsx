@@ -15,10 +15,18 @@ export function BrandReveal() {
       return;
     }
 
-    // Auto-dismiss after snake slithers to center, SUPERSNAKE text reveals, and rests
+    // Check if already shown in this session
+    const hasSeenIntro = sessionStorage.getItem('supersnake_intro_viewed');
+    if (hasSeenIntro) {
+      setIsVisible(false);
+      return;
+    }
+
+    // Short atmospheric reveal (1.6s total)
     const timer = setTimeout(() => {
       setIsVisible(false);
-    }, 3400);
+      sessionStorage.setItem('supersnake_intro_viewed', 'true');
+    }, 1600);
 
     return () => clearTimeout(timer);
   }, []);
@@ -29,110 +37,46 @@ export function BrandReveal() {
         <motion.div
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black pointer-events-auto cursor-pointer select-none overflow-hidden"
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black pointer-events-auto cursor-pointer"
           onClick={() => setIsVisible(false)}
-          aria-label="SuperSnake Intro Animation - Click to skip"
         >
-          {/* Luminous emerald venom glow that expands at the center */}
+          {/* Subtle venom green light gradient in background */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.4 }}
-            animate={{
-              opacity: [0, 0, 0.35, 0.2],
-              scale: [0.4, 0.4, 1.4, 1.1],
-            }}
-            transition={{
-              duration: 2.2,
-              times: [0, 0.55, 0.85, 1],
-              ease: 'easeOut',
-            }}
-            className="absolute w-80 h-80 sm:w-96 sm:h-96 rounded-full bg-snake-green/25 blur-[100px] pointer-events-none"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: [0, 0.25, 0.15], scale: [0.8, 1.2, 1] }}
+            transition={{ duration: 1.4, ease: 'easeInOut' }}
+            className="absolute w-72 h-72 rounded-full bg-snake-green/20 blur-[100px] pointer-events-none"
           />
 
-          {/* Sinuous Snake Motion: starts at the bottom of respective device (80vh) and slithers to center (0vh) */}
-          <motion.div
-            initial={{
-              y: '80vh',
-              x: 0,
-              rotate: 0,
-              opacity: 0,
-            }}
-            animate={{
-              // Vertical ascent from bottom edge of screen to exact center
-              y: ['80vh', '60vh', '40vh', '20vh', '0vh'],
-              // Sinusoidal lateral slither
-              x: [0, -22, 22, -16, 16, -10, 10, -4, 4, 0],
-              // Directional rotational weaving
-              rotate: [0, -8, 8, -6, 6, -4, 4, -2, 2, 0],
-              opacity: [0, 1, 1, 1, 1],
-            }}
-            transition={{
-              y: {
-                duration: 1.7,
-                ease: [0.25, 0.1, 0.25, 1],
-                times: [0, 0.3, 0.6, 0.85, 1],
-              },
-              x: {
-                duration: 1.7,
-                ease: 'easeInOut',
-                times: [0, 0.12, 0.25, 0.38, 0.5, 0.63, 0.75, 0.88, 0.95, 1],
-              },
-              rotate: {
-                duration: 1.7,
-                ease: 'easeInOut',
-                times: [0, 0.12, 0.25, 0.38, 0.5, 0.63, 0.75, 0.88, 0.95, 1],
-              },
-              opacity: {
-                duration: 0.35,
-                ease: 'easeOut',
-              },
-            }}
-            className="relative flex flex-col items-center"
-          >
-            {/* Snake Crest with Luminous Sweep */}
-            <div className="relative">
+          {/* Logo container with emerging animation */}
+          <div className="relative flex flex-col items-center">
+            <motion.div
+              initial={{ opacity: 0, y: 15, filter: 'blur(8px)' }}
+              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+              className="relative"
+            >
               <Image
                 src="/supersnake logonobg.png"
-                alt="SUPERSNAKE Logo"
-                width={52}
-                height={92}
+                alt="SUPERSNAKE"
+                width={48}
+                height={85}
                 priority
-                className="object-contain drop-shadow-[0_0_20px_rgba(4,252,33,0.5)]"
+                className="object-contain"
               />
+            </motion.div>
 
-              {/* Light pulse gliding through the crest upon arrival at center */}
-              <motion.div
-                initial={{ top: '-40%', opacity: 0 }}
-                animate={{ top: '140%', opacity: [0, 1, 0] }}
-                transition={{ duration: 0.9, delay: 1.7, ease: 'easeInOut' }}
-                className="absolute inset-x-0 h-10 bg-gradient-to-b from-transparent via-snake-green/60 to-transparent blur-sm pointer-events-none"
-              />
-            </div>
-
-            {/* Brand Text "SUPERSNAKE": only appears AFTER the snake reaches the center of the screen */}
+            {/* Subtle Brand Name */}
             <motion.div
-              initial={{
-                opacity: 0,
-                y: 16,
-                filter: 'blur(8px)',
-                letterSpacing: '0.45em',
-              }}
-              animate={{
-                opacity: 1,
-                y: 0,
-                filter: 'blur(0px)',
-                letterSpacing: '0.28em',
-              }}
-              transition={{
-                duration: 0.8,
-                delay: 1.7, // Triggers immediately as the snake reaches the center!
-                ease: [0.16, 1, 0.3, 1],
-              }}
-              className="mt-6 font-sans font-bold text-xs sm:text-sm tracking-[0.28em] text-white select-none text-center"
+              initial={{ opacity: 0, letterSpacing: '0.4em' }}
+              animate={{ opacity: 1, letterSpacing: '0.3em' }}
+              transition={{ duration: 0.8, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              className="mt-6 text-xs font-medium tracking-mega text-neutral-300"
             >
               SUPERSNAKE
             </motion.div>
-          </motion.div>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>
