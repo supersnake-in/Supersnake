@@ -1,8 +1,8 @@
 export type Gender = 'men' | 'women' | 'unisex';
 
-export type FitType = 'Oversized' | 'Relaxed' | 'Boxy' | 'Classic';
+export type FitType = 'Oversized' | 'Relaxed' | 'Boxy' | 'Classic' | 'Slim';
 
-export type Size = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL';
+export type Size = 'XXS' | 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | '3XL' | '4XL' | '5XL' | '6XL';
 
 export interface ProductVariant {
   id: string;

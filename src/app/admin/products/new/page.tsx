@@ -18,7 +18,7 @@ const LUXURY_COLOR_PRESETS = [
   { name: 'Bone Ivory', hex: '#e6dfd5' },
 ];
 
-const ALL_SIZES: Size[] = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+const ALL_SIZES: Size[] = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL', '6XL'];
 
 export default function AdminNewProductPage() {
   const router = useRouter();
@@ -281,6 +281,7 @@ export default function AdminNewProductPage() {
                 <option value="Oversized">Oversized</option>
                 <option value="Relaxed">Relaxed</option>
                 <option value="Classic">Classic</option>
+                <option value="Slim">Slim</option>
               </select>
             </div>
           </div>

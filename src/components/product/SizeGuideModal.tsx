@@ -16,12 +16,17 @@ export function SizeGuideModal({ isOpen, onClose, fitType }: SizeGuideModalProps
   if (!isOpen) return null;
 
   const sizeChart = [
+    { size: 'XXS', chest: unit === 'inches' ? '36"' : '91 cm', length: unit === 'inches' ? '26"' : '66 cm', shoulder: unit === 'inches' ? '17"' : '43 cm', sleeve: unit === 'inches' ? '8.0"' : '20.0 cm' },
     { size: 'XS', chest: unit === 'inches' ? '38"' : '96 cm', length: unit === 'inches' ? '27"' : '68 cm', shoulder: unit === 'inches' ? '18"' : '46 cm', sleeve: unit === 'inches' ? '8.5"' : '21.5 cm' },
     { size: 'S', chest: unit === 'inches' ? '40"' : '102 cm', length: unit === 'inches' ? '28"' : '71 cm', shoulder: unit === 'inches' ? '19"' : '48 cm', sleeve: unit === 'inches' ? '9.0"' : '23.0 cm' },
     { size: 'M', chest: unit === 'inches' ? '42"' : '107 cm', length: unit === 'inches' ? '29"' : '74 cm', shoulder: unit === 'inches' ? '20"' : '51 cm', sleeve: unit === 'inches' ? '9.5"' : '24.0 cm' },
     { size: 'L', chest: unit === 'inches' ? '44"' : '112 cm', length: unit === 'inches' ? '30"' : '76 cm', shoulder: unit === 'inches' ? '21"' : '53 cm', sleeve: unit === 'inches' ? '10.0"' : '25.5 cm' },
     { size: 'XL', chest: unit === 'inches' ? '47"' : '119 cm', length: unit === 'inches' ? '31"' : '79 cm', shoulder: unit === 'inches' ? '22"' : '56 cm', sleeve: unit === 'inches' ? '10.5"' : '26.5 cm' },
     { size: 'XXL', chest: unit === 'inches' ? '50"' : '127 cm', length: unit === 'inches' ? '32"' : '81 cm', shoulder: unit === 'inches' ? '23"' : '58 cm', sleeve: unit === 'inches' ? '11.0"' : '28.0 cm' },
+    { size: '3XL', chest: unit === 'inches' ? '53"' : '135 cm', length: unit === 'inches' ? '33"' : '84 cm', shoulder: unit === 'inches' ? '24"' : '61 cm', sleeve: unit === 'inches' ? '11.5"' : '29.0 cm' },
+    { size: '4XL', chest: unit === 'inches' ? '56"' : '142 cm', length: unit === 'inches' ? '34"' : '86 cm', shoulder: unit === 'inches' ? '25"' : '63.5 cm', sleeve: unit === 'inches' ? '12.0"' : '30.5 cm' },
+    { size: '5XL', chest: unit === 'inches' ? '59"' : '150 cm', length: unit === 'inches' ? '35"' : '89 cm', shoulder: unit === 'inches' ? '26"' : '66 cm', sleeve: unit === 'inches' ? '12.5"' : '32.0 cm' },
+    { size: '6XL', chest: unit === 'inches' ? '62"' : '157 cm', length: unit === 'inches' ? '36"' : '91 cm', shoulder: unit === 'inches' ? '27"' : '68.5 cm', sleeve: unit === 'inches' ? '13.0"' : '33.0 cm' },
   ];
 
   return (

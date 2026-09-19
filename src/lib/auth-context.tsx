@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from './supabase/client';
 import { User, Session } from '@supabase/supabase-js';
 import { isAuthorizedAdmin } from './security';
+import { FitType } from './types';
 
 export interface UserProfile {
   id: string;
@@ -12,7 +13,7 @@ export interface UserProfile {
   phone?: string;
   avatarUrl?: string;
   createdAt?: string;
-  preferredFit?: 'Oversized' | 'Relaxed' | 'Boxy' | 'Classic';
+  preferredFit?: FitType;
   preferredSize?: string;
   genderInterest?: 'men' | 'women' | 'all';
 }

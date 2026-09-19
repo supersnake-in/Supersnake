@@ -33,9 +33,11 @@ const LUXURY_COLOR_PRESETS = [
   { name: 'Deep Forest', hex: '#112217' },
   { name: 'Bone Ivory', hex: '#e6dfd5' },
   { name: 'Raw Sand', hex: '#8a7d6d' },
+  { name: 'Vintage Navy', hex: '#162238' },
+  { name: 'Crimson Burgundy', hex: '#3b1219' },
 ];
 
-const ALL_SIZES: Size[] = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+const ALL_SIZES: Size[] = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL', '6XL'];
 
 export default function AdminProductsPage() {
   const { products, addProduct, updateProduct, deleteProduct } = useStore();
@@ -55,6 +57,13 @@ export default function AdminProductsPage() {
   const [fit, setFit] = useState<FitType>('Boxy');
   const [gender, setGender] = useState<Gender>('unisex');
   const [fabric, setFabric] = useState('100% Long-Staple Supima® Cotton (280 GSM Heavyweight)');
+  const [specificationsText, setSpecificationsText] = useState(
+    '280 GSM Heavyweight structure\nZero-sag reinforced 1-inch collar\nPre-shrunk architectural geometry\nHigh-density luxury stitch finish'
+  );
+  const [careInstructionsText, setCareInstructionsText] = useState(
+    'Machine wash cold, inside out with like colors\nDo not tumble dry\nLay flat to dry in shade\nCool iron on reverse; avoid contact with prints/embroidery'
+  );
+  const [isNewProduct, setIsNewProduct] = useState(true);
 
   // Selected Sizes & Colors
   const [selectedSizes, setSelectedSizes] = useState<Size[]>(['S', 'M', 'L', 'XL']);
@@ -151,6 +160,18 @@ export default function AdminProductsPage() {
     );
   };
 
+  const selectAllSizes = () => {
+    setSelectedSizes([...ALL_SIZES]);
+  };
+
+  const selectCoreSizes = () => {
+    setSelectedSizes(['S', 'M', 'L', 'XL']);
+  };
+
+  const clearAllSizes = () => {
+    setSelectedSizes([]);
+  };
+
   const toggleColorPreset = (preset: { name: string; hex: string }) => {
     setSelectedColors((prev) => {
       const exists = prev.some((c) => c.name === preset.name);
@@ -179,6 +200,13 @@ export default function AdminProductsPage() {
     setFit('Boxy');
     setGender('unisex');
     setFabric('100% Long-Staple Supima® Cotton (280 GSM Heavyweight)');
+    setSpecificationsText(
+      '280 GSM Heavyweight structure\nZero-sag reinforced 1-inch collar\nPre-shrunk architectural geometry\nHigh-density luxury stitch finish'
+    );
+    setCareInstructionsText(
+      'Machine wash cold, inside out with like colors\nDo not tumble dry\nLay flat to dry in shade\nCool iron on reverse; avoid contact with prints/embroidery'
+    );
+    setIsNewProduct(true);
     setSelectedSizes(['S', 'M', 'L', 'XL']);
     setSelectedColors([{ name: 'Obsidian Black', hex: '#0a0a0a' }]);
     setUploadedImages([
@@ -201,7 +229,18 @@ export default function AdminProductsPage() {
     setGsm(prod.gsm);
     setFit(prod.fit);
     setGender(prod.gender);
-    setFabric(prod.fabric);
+    setFabric(prod.fabric || `${prod.gsm} GSM 100% Long-Staple Supima® Cotton`);
+    setSpecificationsText(
+      prod.features && prod.features.length > 0
+        ? prod.features.join('\n')
+        : `${prod.gsm} GSM Heavyweight structure\nZero-sag reinforced 1-inch collar\nPre-shrunk architectural geometry\nHigh-density luxury stitch finish`
+    );
+    setCareInstructionsText(
+      prod.careInstructions && prod.careInstructions.length > 0
+        ? prod.careInstructions.join('\n')
+        : 'Machine wash cold, inside out with like colors\nDo not tumble dry\nLay flat to dry in shade\nCool iron on reverse; avoid contact with prints/embroidery'
+    );
+    setIsNewProduct(prod.isNew ?? true);
     setSelectedSizes(prod.sizes || ['S', 'M', 'L', 'XL']);
     setSelectedColors(prod.colors || [{ name: 'Obsidian Black', hex: '#0a0a0a' }]);
     setUploadedImages(
@@ -222,7 +261,7 @@ export default function AdminProductsPage() {
       return;
     }
     if (selectedSizes.length === 0) {
-      alert('Select at least one available size.');
+      alert('Select at least one available size (from XXS to 6XL).');
       return;
     }
     if (selectedColors.length === 0) {
@@ -240,6 +279,16 @@ export default function AdminProductsPage() {
     const cleanMrp = sanitizeNumber(mrp, Math.max(cleanPrice, 2499));
     const cleanGsm = sanitizeNumber(gsm, 280);
 
+    const parsedFeatures = specificationsText
+      .split('\n')
+      .map((line) => sanitizeString(line.trim()))
+      .filter(Boolean);
+
+    const parsedCare = careInstructionsText
+      .split('\n')
+      .map((line) => sanitizeString(line.trim()))
+      .filter(Boolean);
+
     // Build variant matrix
     const variants = selectedColors.flatMap((c) =>
       selectedSizes.map((s) => ({
@@ -254,11 +303,13 @@ export default function AdminProductsPage() {
       }))
     );
 
+    const existingProd = editingProductId ? products.find((p) => p.id === editingProductId) : null;
+
     const productPayload: Product = {
       id: editingProductId || `prod-${Date.now()}`,
       name: cleanName,
       slug: cleanSlug,
-      tagline: sanitizeString(tagline || 'Engineered heavyweight luxury garment.'),
+      tagline: sanitizeString(tagline || `${cleanGsm} GSM Engineered luxury garment`),
       description: sanitizeString(
         description || 'Constructed from premium heavyweight long-staple cotton with architectural drape.'
       ),
@@ -267,17 +318,25 @@ export default function AdminProductsPage() {
       price: cleanPrice,
       mrp: cleanMrp,
       gsm: cleanGsm,
-      fabric: sanitizeString(fabric),
-      careInstructions: [
-        'Machine wash cold, inside out with like colors',
-        'Do not tumble dry',
-        'Lay flat to dry in shade',
-      ],
-      features: [
-        `${cleanGsm} GSM Heavyweight structure`,
-        'Zero-sag reinforced 1-inch collar',
-        'Pre-shrunk architectural geometry',
-      ],
+      fabric: sanitizeString(fabric || `${cleanGsm} GSM 100% Long-Staple Supima® Cotton`),
+      careInstructions:
+        parsedCare.length > 0
+          ? parsedCare
+          : [
+              'Machine wash cold, inside out with like colors',
+              'Do not tumble dry',
+              'Lay flat to dry in shade',
+              'Cool iron on reverse; avoid contact with prints/embroidery',
+            ],
+      features:
+        parsedFeatures.length > 0
+          ? parsedFeatures
+          : [
+              `${cleanGsm} GSM Heavyweight structure`,
+              'Zero-sag reinforced 1-inch collar',
+              'Pre-shrunk architectural geometry',
+              'High-density luxury stitch finish',
+            ],
       images: uploadedImages.map((img, idx) => ({
         url: img.url,
         alt: `${cleanName} - ${img.angle}`,
@@ -287,10 +346,10 @@ export default function AdminProductsPage() {
       colors: selectedColors,
       sizes: selectedSizes,
       variants,
-      isNew: editingProductId ? (products.find((p) => p.id === editingProductId)?.isNew ?? true) : true,
-      rating: 5.0,
-      reviewsCount: 0,
-      createdAt: new Date().toISOString(),
+      isNew: isNewProduct,
+      rating: existingProd?.rating ?? 5.0,
+      reviewsCount: existingProd?.reviewsCount ?? 0,
+      createdAt: existingProd?.createdAt || new Date().toISOString(),
     };
 
     if (editingProductId) {
@@ -525,324 +584,504 @@ export default function AdminProductsPage() {
       </div>
 
       {/* ============================================================
-          CREATE / EDIT PRODUCT MODAL
+          CREATE / EDIT PRODUCT MODAL (VERTICAL SCROLL FIXED + STICKY FOOTER SAVE BUTTON)
           ============================================================ */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
-          <div className="bg-[#0e0e0e] border border-neutral-800 rounded-lg p-6 sm:p-8 max-w-3xl w-full space-y-6 text-xs max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div className="flex justify-between items-center border-b border-neutral-800 pb-3">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/85 backdrop-blur-md p-3 sm:p-6 flex justify-center items-start">
+          <div className="relative w-full max-w-3xl bg-[#0e0e0e] border border-neutral-800 rounded-xl my-4 sm:my-8 shadow-2xl flex flex-col max-h-[92vh] overflow-hidden">
+            {/* STICKY HEADER */}
+            <div className="sticky top-0 z-20 bg-[#0e0e0e] border-b border-neutral-800 px-6 py-4 flex justify-between items-center shrink-0">
               <div>
-                <h3 className="text-base font-bold uppercase text-white tracking-wider flex items-center gap-2">
+                <h3 className="text-sm sm:text-base font-bold uppercase text-white tracking-wider flex items-center gap-2">
                   <Sparkles size={16} className="text-snake-green" />
-                  {editingProductId ? `EDIT: ${name}` : 'CREATE & PUBLISH NEW GARMENT'}
+                  {editingProductId ? `EDIT: ${name || 'GARMENT'}` : 'CREATE & PUBLISH NEW GARMENT'}
                 </h3>
-                <p className="text-[11px] text-neutral-500 mt-0.5">
-                  Changes immediately update the customer-facing storefront in real-time.
+                <p className="text-[11px] text-neutral-400 mt-0.5">
+                  Configure technical specifications, GSM, size grid, and photography. Live on storefront upon save.
                 </p>
               </div>
               <button
+                type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="text-neutral-400 hover:text-white p-1"
+                className="text-neutral-400 hover:text-white p-2 rounded-md hover:bg-neutral-800 transition-colors"
+                aria-label="Close modal"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveProduct} className="space-y-6">
-              {/* SECTION 1: IMAGES UPLOAD */}
-              <div className="space-y-3 p-4 bg-neutral-950 border border-neutral-800 rounded-lg">
-                <div className="flex justify-between items-center">
-                  <label className="text-white font-bold uppercase tracking-wider flex items-center gap-1.5 text-[11px]">
-                    <Upload size={14} className="text-snake-green" />
-                    PRODUCT PHOTOGRAPHY ({uploadedImages.length})
-                  </label>
-                  <span className="text-[10px] text-neutral-500">Supports PNG, JPG, WEBP (Max 5MB)</span>
+            {/* FORM: Wraps scrollable body + sticky footer */}
+            <form onSubmit={handleSaveProduct} className="flex flex-col flex-1 overflow-hidden">
+              {/* SCROLLABLE BODY */}
+              <div className="overflow-y-auto flex-1 p-6 space-y-6 text-xs custom-scrollbar">
+                {/* SECTION 1: IMAGES UPLOAD */}
+                <div className="space-y-3 p-4 bg-neutral-950 border border-neutral-800 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <label className="text-white font-bold uppercase tracking-wider flex items-center gap-1.5 text-[11px]">
+                      <Upload size={14} className="text-snake-green" />
+                      PRODUCT PHOTOGRAPHY ({uploadedImages.length}) *
+                    </label>
+                    <span className="text-[10px] text-neutral-500">Supports PNG, JPG, WEBP (Max 5MB)</span>
+                  </div>
+
+                  {/* Upload Trigger Area */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="border-2 border-dashed border-neutral-800 hover:border-snake-green/60 p-4 rounded-lg flex flex-col items-center justify-center text-center cursor-pointer transition-colors bg-black/40"
+                    >
+                      <Upload size={20} className="text-snake-green mb-1" />
+                      <span className="text-white font-bold text-[11px]">UPLOAD IMAGE FROM COMPUTER</span>
+                      <span className="text-[10px] text-neutral-500">Drag or click to choose files</span>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleFileUpload}
+                        className="hidden"
+                      />
+                    </div>
+
+                    {/* External URL alternative */}
+                    <div className="p-4 bg-black/40 border border-neutral-800 rounded-lg flex flex-col justify-between space-y-2">
+                      <span className="text-neutral-400 text-[10px] uppercase font-bold">OR ADD VIA IMAGE URL:</span>
+                      <div className="flex gap-2">
+                        <input
+                          type="url"
+                          value={externalImageUrl}
+                          onChange={(e) => setExternalImageUrl(e.target.value)}
+                          placeholder="https://images.unsplash.com/..."
+                          className="flex-1 bg-neutral-900 border border-neutral-800 px-2.5 py-1.5 text-white rounded text-[11px] focus:outline-none focus:border-snake-green"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAddExternalImageUrl}
+                          className="px-3 py-1.5 bg-neutral-800 hover:bg-snake-green hover:text-black text-white font-bold uppercase rounded text-[10px] transition-colors"
+                        >
+                          ADD
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Image Previews */}
+                  {uploadedImages.length > 0 && (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+                      {uploadedImages.map((img, idx) => (
+                        <div
+                          key={idx}
+                          className="relative aspect-[4/5] rounded overflow-hidden bg-black border border-neutral-800 group"
+                        >
+                          <Image
+                            src={img.url}
+                            alt={img.alt}
+                            fill
+                            sizes="150px"
+                            className="object-cover"
+                          />
+                          <div className="absolute top-1 left-1 px-1.5 py-0.5 bg-black/80 text-[9px] font-bold text-snake-green uppercase rounded">
+                            {idx === 0 ? 'PRIMARY' : `SHOT ${idx + 1}`}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveImage(idx)}
+                            className="absolute top-1 right-1 p-1 bg-black/80 hover:bg-red-500 text-white rounded transition-colors"
+                            title="Remove image"
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                {/* Upload Trigger Area */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div
-                    onClick={() => fileInputRef.current?.click()}
-                    className="border-2 border-dashed border-neutral-800 hover:border-snake-green/60 p-4 rounded-lg flex flex-col items-center justify-center text-center cursor-pointer transition-colors bg-black/40"
-                  >
-                    <Upload size={20} className="text-snake-green mb-1" />
-                    <span className="text-white font-bold text-[11px]">UPLOAD IMAGE FROM COMPUTER</span>
-                    <span className="text-[10px] text-neutral-500">Drag or click to choose files</span>
+                {/* SECTION 2: GARMENT IDENTIFIERS (NAME & TAGLINE) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-neutral-400 uppercase font-semibold text-[11px]">
+                      GARMENT NAME *
+                    </label>
                     <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={handleFileUpload}
-                      className="hidden"
+                      type="text"
+                      required
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="e.g. THE ARCHIVE HEAVYWEIGHT"
+                      className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green"
                     />
                   </div>
 
-                  {/* External URL alternative */}
-                  <div className="p-4 bg-black/40 border border-neutral-800 rounded-lg flex flex-col justify-between space-y-2">
-                    <span className="text-neutral-400 text-[10px] uppercase font-bold">OR ADD VIA IMAGE URL:</span>
-                    <div className="flex gap-2">
-                      <input
-                        type="url"
-                        value={externalImageUrl}
-                        onChange={(e) => setExternalImageUrl(e.target.value)}
-                        placeholder="https://images.unsplash.com/..."
-                        className="flex-1 bg-neutral-900 border border-neutral-800 px-2.5 py-1.5 text-white rounded text-[11px] focus:outline-none focus:border-snake-green"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleAddExternalImageUrl}
-                        className="px-3 py-1.5 bg-neutral-800 hover:bg-snake-green hover:text-black text-white font-bold uppercase rounded text-[10px] transition-colors"
-                      >
-                        ADD
-                      </button>
+                  <div className="space-y-1">
+                    <label className="text-neutral-400 uppercase font-semibold text-[11px]">
+                      TAGLINE / SHORT SUBTITLE
+                    </label>
+                    <input
+                      type="text"
+                      value={tagline}
+                      onChange={(e) => setTagline(e.target.value)}
+                      placeholder="e.g. 280 GSM Supima® architectural drape"
+                      className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green"
+                    />
+                  </div>
+                </div>
+
+                {/* SECTION 3: PRICING & MRP */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-neutral-400 uppercase font-semibold text-[11px]">
+                      PRICE (INR ₹) *
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      value={price}
+                      onChange={(e) => setPrice(Number(e.target.value))}
+                      className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green font-bold text-snake-green"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-neutral-400 uppercase font-semibold text-[11px]">
+                      MRP (STRIKE PRICE) *
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      value={mrp}
+                      onChange={(e) => setMrp(Number(e.target.value))}
+                      className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-neutral-400 uppercase font-semibold text-[11px]">
+                      LIVE DISCOUNT
+                    </label>
+                    <div className="py-2 px-3 bg-neutral-900 border border-neutral-800 rounded text-neutral-300 font-bold flex items-center justify-between">
+                      <span>{mrp > price ? `SAVE ${Math.round(((mrp - price) / mrp) * 100)}%` : 'NO DISCOUNT'}</span>
+                      {mrp > price && <Tag size={12} className="text-snake-green" />}
                     </div>
                   </div>
                 </div>
 
-                {/* Image Previews */}
-                {uploadedImages.length > 0 && (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-                    {uploadedImages.map((img, idx) => (
-                      <div
-                        key={idx}
-                        className="relative aspect-[4/5] rounded overflow-hidden bg-black border border-neutral-800 group"
-                      >
-                        <Image
-                          src={img.url}
-                          alt={img.alt}
-                          fill
-                          sizes="150px"
-                          className="object-cover"
-                        />
-                        <div className="absolute top-1 left-1 px-1.5 py-0.5 bg-black/80 text-[9px] font-bold text-snake-green uppercase rounded">
-                          {idx === 0 ? 'PRIMARY' : `SHOT ${idx + 1}`}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveImage(idx)}
-                          className="absolute top-1 right-1 p-1 bg-black/80 hover:bg-red-500 text-white rounded transition-colors"
-                          title="Remove image"
-                        >
-                          <X size={12} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* SECTION 2: TITLE, PRICING & MRP */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="sm:col-span-3 space-y-1">
-                  <label className="text-neutral-400 uppercase font-semibold">GARMENT NAME *</label>
-                  <input
-                    type="text"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. THE ARCHIVE HEAVYWEIGHT"
-                    className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-neutral-400 uppercase font-semibold">PRICE (INR ₹) *</label>
-                  <input
-                    type="number"
-                    required
-                    value={price}
-                    onChange={(e) => setPrice(Number(e.target.value))}
-                    className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green font-bold text-snake-green"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-neutral-400 uppercase font-semibold">MRP (STRIKE PRICE) *</label>
-                  <input
-                    type="number"
-                    required
-                    value={mrp}
-                    onChange={(e) => setMrp(Number(e.target.value))}
-                    className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-neutral-400 uppercase font-semibold">DISCOUNT</label>
-                  <div className="py-2 px-3 bg-neutral-900 border border-neutral-800 rounded text-neutral-300 font-bold">
-                    {mrp > price ? `SAVE ${Math.round(((mrp - price) / mrp) * 100)}%` : 'NO DISCOUNT'}
-                  </div>
-                </div>
-              </div>
-
-              {/* SECTION 3: SIZES AVAILABLE */}
-              <div className="space-y-2 p-4 bg-neutral-950 border border-neutral-800 rounded-lg">
-                <div className="flex justify-between items-center">
-                  <label className="text-white font-bold uppercase tracking-wider flex items-center gap-1.5 text-[11px]">
-                    <Ruler size={14} className="text-snake-green" />
-                    SIZES AVAILABLE IN STOCK *
-                  </label>
-                  <span className="text-[10px] text-neutral-500">
-                    Selected: {selectedSizes.join(', ') || 'None'}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-6 gap-2">
-                  {ALL_SIZES.map((size) => {
-                    const isSelected = selectedSizes.includes(size);
-                    return (
+                {/* SECTION 4: SIZES AVAILABLE (XXS TO 6XL) */}
+                <div className="space-y-2.5 p-4 bg-neutral-950 border border-neutral-800 rounded-lg">
+                  <div className="flex flex-wrap justify-between items-center gap-2">
+                    <label className="text-white font-bold uppercase tracking-wider flex items-center gap-1.5 text-[11px]">
+                      <Ruler size={14} className="text-snake-green" />
+                      SIZES AVAILABLE IN STOCK (XXS - 6XL) *
+                    </label>
+                    <div className="flex items-center gap-1.5 text-[10px]">
                       <button
-                        key={size}
                         type="button"
-                        onClick={() => toggleSize(size)}
-                        className={`py-2.5 rounded font-bold uppercase text-xs transition-all border ${
-                          isSelected
-                            ? 'bg-snake-green text-black border-snake-green shadow-[0_0_10px_rgba(4,252,33,0.3)]'
-                            : 'bg-black text-neutral-400 border-neutral-800 hover:border-neutral-700'
-                        }`}
+                        onClick={selectCoreSizes}
+                        className="px-2 py-0.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 rounded border border-neutral-800 transition-colors"
                       >
-                        {size}
+                        CORE (S-XL)
                       </button>
-                    );
-                  })}
-                </div>
-              </div>
+                      <button
+                        type="button"
+                        onClick={selectAllSizes}
+                        className="px-2 py-0.5 bg-neutral-900 hover:bg-neutral-800 text-snake-green rounded border border-neutral-800 transition-colors"
+                      >
+                        ALL (XXS-6XL)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={clearAllSizes}
+                        className="px-2 py-0.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-500 rounded border border-neutral-800 transition-colors"
+                      >
+                        CLEAR
+                      </button>
+                    </div>
+                  </div>
 
-              {/* SECTION 4: COLORS AVAILABLE */}
-              <div className="space-y-3 p-4 bg-neutral-950 border border-neutral-800 rounded-lg">
-                <div className="flex justify-between items-center">
-                  <label className="text-white font-bold uppercase tracking-wider flex items-center gap-1.5 text-[11px]">
-                    <Palette size={14} className="text-snake-green" />
-                    COLORS AVAILABLE *
-                  </label>
-                  <span className="text-[10px] text-neutral-500">
-                    {selectedColors.length} color(s) configured
-                  </span>
-                </div>
-
-                {/* Preset Luxury Colors */}
-                <div className="space-y-1.5">
-                  <span className="text-[10px] text-neutral-400 uppercase">LUXURY PRESETS:</span>
-                  <div className="flex flex-wrap gap-2">
-                    {LUXURY_COLOR_PRESETS.map((preset) => {
-                      const isSelected = selectedColors.some((c) => c.name === preset.name);
+                  <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-11 gap-1.5">
+                    {ALL_SIZES.map((size) => {
+                      const isSelected = selectedSizes.includes(size);
                       return (
                         <button
-                          key={preset.name}
+                          key={size}
                           type="button"
-                          onClick={() => toggleColorPreset(preset)}
-                          className={`px-3 py-1.5 rounded-full border text-[11px] flex items-center gap-2 transition-all ${
+                          onClick={() => toggleSize(size)}
+                          className={`py-2 rounded font-bold uppercase text-xs transition-all border ${
                             isSelected
-                              ? 'border-snake-green bg-snake-green/10 text-white font-bold'
-                              : 'border-neutral-800 bg-black text-neutral-400 hover:border-neutral-700'
+                              ? 'bg-snake-green text-black border-snake-green shadow-[0_0_10px_rgba(4,252,33,0.3)]'
+                              : 'bg-black text-neutral-400 border-neutral-800 hover:border-neutral-700'
                           }`}
                         >
-                          <span
-                            className="w-2.5 h-2.5 rounded-full border border-white/20"
-                            style={{ backgroundColor: preset.hex }}
-                          />
-                          <span>{preset.name}</span>
+                          {size}
                         </button>
                       );
                     })}
                   </div>
+                  <div className="text-[10px] text-neutral-500 pt-1">
+                    Selected: {selectedSizes.length} sizes ({selectedSizes.join(', ') || 'None'})
+                  </div>
                 </div>
 
-                {/* Custom Color Creator */}
-                <div className="pt-2 border-t border-neutral-800 flex flex-wrap items-center gap-2">
-                  <span className="text-[10px] text-neutral-400 uppercase">ADD BESPOKE SHADE:</span>
-                  <input
-                    type="text"
-                    value={customColorName}
-                    onChange={(e) => setCustomColorName(e.target.value)}
-                    placeholder="Color Name (e.g. Acid Lime)"
-                    className="bg-black border border-neutral-800 px-2.5 py-1 text-white rounded text-xs focus:border-snake-green"
+                {/* SECTION 5: COLORS AVAILABLE */}
+                <div className="space-y-3 p-4 bg-neutral-950 border border-neutral-800 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <label className="text-white font-bold uppercase tracking-wider flex items-center gap-1.5 text-[11px]">
+                      <Palette size={14} className="text-snake-green" />
+                      COLORS AVAILABLE *
+                    </label>
+                    <span className="text-[10px] text-neutral-500">
+                      {selectedColors.length} color(s) configured
+                    </span>
+                  </div>
+
+                  {/* Preset Luxury Colors */}
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] text-neutral-400 uppercase">LUXURY PRESETS:</span>
+                    <div className="flex flex-wrap gap-2">
+                      {LUXURY_COLOR_PRESETS.map((preset) => {
+                        const isSelected = selectedColors.some((c) => c.name === preset.name);
+                        return (
+                          <button
+                            key={preset.name}
+                            type="button"
+                            onClick={() => toggleColorPreset(preset)}
+                            className={`px-3 py-1.5 rounded-full border text-[11px] flex items-center gap-2 transition-all ${
+                              isSelected
+                                ? 'border-snake-green bg-snake-green/10 text-white font-bold'
+                                : 'border-neutral-800 bg-black text-neutral-400 hover:border-neutral-700'
+                            }`}
+                          >
+                            <span
+                              className="w-2.5 h-2.5 rounded-full border border-white/20"
+                              style={{ backgroundColor: preset.hex }}
+                            />
+                            <span>{preset.name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Custom Color Creator */}
+                  <div className="pt-2 border-t border-neutral-800 flex flex-wrap items-center gap-2">
+                    <span className="text-[10px] text-neutral-400 uppercase">ADD BESPOKE SHADE:</span>
+                    <input
+                      type="text"
+                      value={customColorName}
+                      onChange={(e) => setCustomColorName(e.target.value)}
+                      placeholder="Color Name (e.g. Acid Lime)"
+                      className="bg-black border border-neutral-800 px-2.5 py-1 text-white rounded text-xs focus:border-snake-green"
+                    />
+                    <input
+                      type="color"
+                      value={customColorHex}
+                      onChange={(e) => setCustomColorHex(e.target.value)}
+                      className="w-8 h-8 rounded bg-transparent border border-neutral-800 cursor-pointer p-0.5"
+                      title="Choose Hex Color"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddCustomColor}
+                      className="px-3 py-1 bg-neutral-800 hover:bg-snake-green hover:text-black text-white font-bold uppercase rounded text-[10px] transition-colors"
+                    >
+                      + ADD SHADE
+                    </button>
+                  </div>
+                </div>
+
+                {/* SECTION 6: GSM, FIT, GENDER & FABRIC */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center">
+                      <label className="text-neutral-400 uppercase font-semibold text-[11px]">
+                        GSM DENSITY *
+                      </label>
+                      <span className="text-[10px] text-snake-green font-bold">{gsm} GSM</span>
+                    </div>
+                    <input
+                      type="number"
+                      required
+                      value={gsm}
+                      onChange={(e) => setGsm(Number(e.target.value))}
+                      className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green"
+                    />
+                    <div className="flex flex-wrap gap-1 pt-1">
+                      {[220, 240, 260, 280, 300, 320, 400].map((weight) => (
+                        <button
+                          key={weight}
+                          type="button"
+                          onClick={() => setGsm(weight)}
+                          className={`px-1.5 py-0.5 text-[9px] rounded border transition-colors ${
+                            gsm === weight
+                              ? 'bg-snake-green text-black border-snake-green font-bold'
+                              : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white'
+                          }`}
+                        >
+                          {weight}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-neutral-400 uppercase font-semibold text-[11px]">
+                      FIT / SUB-CATEGORY *
+                    </label>
+                    <select
+                      value={fit}
+                      onChange={(e) => setFit(e.target.value as any)}
+                      className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green cursor-pointer"
+                    >
+                      <option value="Boxy">Boxy Fit</option>
+                      <option value="Oversized">Oversized Fit</option>
+                      <option value="Relaxed">Relaxed Fit</option>
+                      <option value="Classic">Classic Fit</option>
+                      <option value="Slim">Slim Fit</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-neutral-400 uppercase font-semibold text-[11px]">
+                      COLLECTION / CATEGORY *
+                    </label>
+                    <select
+                      value={gender}
+                      onChange={(e) => setGender(e.target.value as any)}
+                      className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green cursor-pointer"
+                    >
+                      <option value="unisex">Unisex Collection</option>
+                      <option value="men">Men Collection</option>
+                      <option value="women">Women Collection</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* SECTION 7: FABRIC & GARMENT SPECIFICATIONS */}
+                <div className="space-y-4 p-4 bg-neutral-950 border border-neutral-800 rounded-lg">
+                  <div className="space-y-1">
+                    <label className="text-white font-bold uppercase tracking-wider flex items-center gap-1.5 text-[11px]">
+                      <Sparkles size={14} className="text-snake-green" />
+                      FABRIC COMPOSITION & MATERIAL SPECIFICATION *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={fabric}
+                      onChange={(e) => setFabric(e.target.value)}
+                      placeholder="e.g. 100% Long-Staple Supima® Cotton (280 GSM Heavyweight)"
+                      className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green text-xs"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center">
+                      <label className="text-neutral-300 uppercase font-bold text-[11px]">
+                        GARMENT SPECIFICATIONS / KEY FEATURES (1 PER LINE)
+                      </label>
+                      <span className="text-[10px] text-neutral-500">Separated by line breaks</span>
+                    </div>
+                    <textarea
+                      rows={4}
+                      value={specificationsText}
+                      onChange={(e) => setSpecificationsText(e.target.value)}
+                      placeholder="e.g.&#10;280 GSM Heavyweight structure&#10;Zero-sag reinforced 1-inch collar&#10;Pre-shrunk architectural geometry&#10;High-density luxury stitch finish"
+                      className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green resize-none text-xs leading-relaxed"
+                    />
+                  </div>
+                </div>
+
+                {/* SECTION 8: ABOUT PRODUCT / DESCRIPTION */}
+                <div className="space-y-1">
+                  <label className="text-neutral-400 uppercase font-semibold text-[11px]">
+                    ABOUT THE PRODUCT / DESCRIPTION *
+                  </label>
+                  <textarea
+                    rows={3}
+                    required
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Constructed from premium heavyweight long-staple cotton with architectural drape..."
+                    className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green resize-none text-xs leading-relaxed"
                   />
+                </div>
+
+                {/* SECTION 9: CRAFTSMANSHIP, CARE & POLICIES (AUTO-CONFIGURED) */}
+                <div className="p-4 bg-neutral-950 border border-neutral-800 rounded-lg space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck size={16} className="text-snake-green" />
+                      <span className="text-white font-bold uppercase tracking-wider text-[11px]">
+                        CRAFTSMANSHIP, CARE & STORE POLICIES
+                      </span>
+                    </div>
+                    <span className="px-2 py-0.5 bg-snake-green/10 text-snake-green border border-snake-green/30 rounded text-[9px] uppercase font-bold">
+                      AUTO-CONFIGURED
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-neutral-400">
+                    SuperSnake automatically standardizes luxury care protocols and shipping & return policies across all products. You can customize care instructions below if desired:
+                  </p>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-neutral-400 uppercase font-semibold">
+                      CARE INSTRUCTIONS (1 PER LINE)
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={careInstructionsText}
+                      onChange={(e) => setCareInstructionsText(e.target.value)}
+                      className="w-full bg-black border border-neutral-800 px-3 py-2 text-neutral-300 rounded focus:border-snake-green resize-none text-xs leading-relaxed font-mono"
+                    />
+                  </div>
+
+                  <div className="pt-2 border-t border-neutral-900 flex items-center justify-between text-[10px] text-neutral-400">
+                    <span>SHIPPING & RETURNS:</span>
+                    <span className="text-neutral-300 font-medium">Complimentary Express Shipping across India • 7-Day Doorstep Returns</span>
+                  </div>
+                </div>
+
+                {/* SECTION 10: NEW DROPS STOREFRONT TOGGLE */}
+                <div className="p-4 bg-neutral-950 border border-neutral-800 rounded-lg flex items-center justify-between">
+                  <div>
+                    <label htmlFor="newDropToggle" className="text-white font-bold uppercase text-[11px] block cursor-pointer">
+                      FEATURE IN &quot;NEW DROPS&quot; SECTION
+                    </label>
+                    <span className="text-[10px] text-neutral-500">
+                      When checked, this garment appears in the homepage New Drops carousel.
+                    </span>
+                  </div>
                   <input
-                    type="color"
-                    value={customColorHex}
-                    onChange={(e) => setCustomColorHex(e.target.value)}
-                    className="w-8 h-8 rounded bg-transparent border border-neutral-800 cursor-pointer p-0.5"
-                    title="Choose Hex Color"
+                    id="newDropToggle"
+                    type="checkbox"
+                    checked={isNewProduct}
+                    onChange={(e) => setIsNewProduct(e.target.checked)}
+                    className="w-5 h-5 rounded border-neutral-700 bg-neutral-900 text-snake-green focus:ring-snake-green focus:ring-offset-0 accent-snake-green cursor-pointer"
                   />
-                  <button
-                    type="button"
-                    onClick={handleAddCustomColor}
-                    className="px-3 py-1 bg-neutral-800 hover:bg-snake-green hover:text-black text-white font-bold uppercase rounded text-[10px] transition-colors"
-                  >
-                    + ADD SHADE
-                  </button>
                 </div>
               </div>
 
-              {/* SECTION 5: GSM, FIT, GENDER & FABRIC */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="space-y-1">
-                  <label className="text-neutral-400 uppercase font-semibold">GSM WEIGHT</label>
-                  <input
-                    type="number"
-                    value={gsm}
-                    onChange={(e) => setGsm(Number(e.target.value))}
-                    className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-neutral-400 uppercase font-semibold">FIT TYPE</label>
-                  <select
-                    value={fit}
-                    onChange={(e) => setFit(e.target.value as any)}
-                    className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green cursor-pointer"
-                  >
-                    <option value="Boxy">Boxy</option>
-                    <option value="Oversized">Oversized</option>
-                    <option value="Relaxed">Relaxed</option>
-                    <option value="Classic">Classic</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-neutral-400 uppercase font-semibold">COLLECTION / GENDER</label>
-                  <select
-                    value={gender}
-                    onChange={(e) => setGender(e.target.value as any)}
-                    className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green cursor-pointer"
-                  >
-                    <option value="unisex">Unisex</option>
-                    <option value="men">Men</option>
-                    <option value="women">Women</option>
-                  </select>
-                </div>
-
-                <div className="sm:col-span-3 space-y-1">
-                  <label className="text-neutral-400 uppercase font-semibold">FABRIC SPECIFICATION</label>
-                  <input
-                    type="text"
-                    value={fabric}
-                    onChange={(e) => setFabric(e.target.value)}
-                    className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green"
-                  />
-                </div>
-              </div>
-
-              {/* ACTION BUTTONS */}
-              <div className="flex justify-between items-center pt-4 border-t border-neutral-800">
+              {/* STICKY FOOTER: ALWAYS VISIBLE, NEVER CUT OFF */}
+              <div className="sticky bottom-0 z-20 bg-[#0e0e0e] border-t border-neutral-800 px-6 py-4 flex items-center justify-between shrink-0 shadow-2xl">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-5 py-2.5 border border-neutral-800 text-neutral-300 rounded hover:text-white uppercase tracking-wider"
+                  className="px-5 py-2.5 border border-neutral-800 text-neutral-300 rounded hover:text-white hover:border-neutral-600 uppercase tracking-wider text-xs transition-colors"
                 >
                   CANCEL
                 </button>
 
-                <button
-                  type="submit"
-                  className="px-8 py-3 bg-snake-green text-black font-bold uppercase rounded hover:bg-white transition-all shadow-[0_0_20px_rgba(4,252,33,0.4)] flex items-center gap-2"
-                >
-                  <Check size={16} />
-                  <span>{editingProductId ? 'UPDATE & PUBLISH' : 'PUBLISH TO LIVE STOREFRONT'}</span>
-                </button>
+                <div className="flex items-center gap-3">
+                  <span className="hidden sm:inline text-[11px] text-neutral-500">
+                    Real-time storefront sync active
+                  </span>
+                  <button
+                    type="submit"
+                    className="px-8 py-3 bg-snake-green text-black font-bold uppercase rounded hover:bg-white transition-all shadow-[0_0_20px_rgba(4,252,33,0.4)] flex items-center gap-2 cursor-pointer text-xs tracking-wider"
+                  >
+                    <Check size={16} />
+                    <span>{editingProductId ? 'UPDATE & PUBLISH' : 'PUBLISH TO LIVE STOREFRONT'}</span>
+                  </button>
+                </div>
               </div>
             </form>
           </div>

@@ -33,8 +33,8 @@ export default function AccountPreferencesPage() {
     setTimeout(() => setSaved(false), 2500);
   };
 
-  const fits: FitType[] = ['Oversized', 'Boxy', 'Relaxed', 'Classic'];
-  const sizes: Size[] = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+  const fits: FitType[] = ['Oversized', 'Boxy', 'Relaxed', 'Classic', 'Slim'];
+  const sizes: Size[] = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL', '6XL'];
 
   return (
     <div className="space-y-6">
@@ -64,7 +64,7 @@ export default function AccountPreferencesPage() {
           <label className="block text-[10px] font-mono uppercase tracking-widest text-neutral-400">
             PREFERRED CUT & SILHOUETTE
           </label>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
             {fits.map((fit) => {
               const isSelected = preferredFit === fit;
               return (
@@ -86,6 +86,7 @@ export default function AccountPreferencesPage() {
                     {fit === 'Boxy' && 'Cropped torso, wide chest'}
                     {fit === 'Relaxed' && 'Generous everyday comfort'}
                     {fit === 'Classic' && 'Tailored athletic contour'}
+                    {fit === 'Slim' && 'Tailored close-cut contour'}
                   </span>
                 </button>
               );
