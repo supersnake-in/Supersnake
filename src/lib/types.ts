@@ -31,6 +31,11 @@ export interface HomepageConfig {
   brandStatement: string;
   menCollectionImage?: string;
   womenCollectionImage?: string;
+  supersnakeTeeImage?: string;
+  signatureTeeImage?: string;
+  pillar1Image?: string;
+  pillar2Image?: string;
+  pillar3Image?: string;
 }
 
 export interface Product {

@@ -26,6 +26,11 @@ export interface HomepageConfig {
   brandStatement: string;
   menCollectionImage?: string;
   womenCollectionImage?: string;
+  supersnakeTeeImage?: string;
+  signatureTeeImage?: string;
+  pillar1Image?: string;
+  pillar2Image?: string;
+  pillar3Image?: string;
 }
 
 export const DEFAULT_HOMEPAGE_CONFIG: HomepageConfig = {
@@ -42,6 +47,11 @@ export const DEFAULT_HOMEPAGE_CONFIG: HomepageConfig = {
   brandStatement: 'NOT MADE TO BLEND IN.',
   menCollectionImage: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&w=1600&auto=format&fit=crop',
   womenCollectionImage: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1600&auto=format&fit=crop',
+  supersnakeTeeImage: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=1800&auto=format&fit=crop',
+  signatureTeeImage: '',
+  pillar1Image: 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?q=80&w=800&auto=format&fit=crop',
+  pillar2Image: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?q=80&w=800&auto=format&fit=crop',
+  pillar3Image: 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=800&auto=format&fit=crop',
 };
 
 export const DEFAULT_SOCIAL_CONFIG: SocialConfig = {

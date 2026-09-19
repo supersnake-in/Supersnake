@@ -318,6 +318,11 @@ export async function fetchHomepageConfigFromSupabase(): Promise<HomepageConfig 
       brandStatement: data.brand_statement || '',
       menCollectionImage: data.men_collection_image || undefined,
       womenCollectionImage: data.women_collection_image || undefined,
+      supersnakeTeeImage: data.supersnake_tee_image || undefined,
+      signatureTeeImage: data.signature_tee_image || undefined,
+      pillar1Image: data.pillar1_image || undefined,
+      pillar2Image: data.pillar2_image || undefined,
+      pillar3Image: data.pillar3_image || undefined,
     };
   } catch (err) {
     console.warn('Supabase homepage config fetch failed:', err);
@@ -343,6 +348,11 @@ export async function saveHomepageConfigToSupabase(config: HomepageConfig): Prom
           brand_statement: config.brandStatement,
           men_collection_image: config.menCollectionImage,
           women_collection_image: config.womenCollectionImage,
+          supersnake_tee_image: config.supersnakeTeeImage,
+          signature_tee_image: config.signatureTeeImage,
+          pillar1_image: config.pillar1Image,
+          pillar2_image: config.pillar2Image,
+          pillar3_image: config.pillar3Image,
           updated_at: new Date().toISOString(),
         },
         { onConflict: 'id' }

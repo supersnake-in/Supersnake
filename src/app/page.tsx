@@ -275,10 +275,17 @@ export default function HomePage() {
             <div className="lg:col-span-8 order-1 lg:order-2">
               <div className="relative aspect-[4/5] sm:aspect-[16/11] w-full rounded overflow-hidden bg-neutral-950 border border-white/10 group">
                 <Image
-                  src="https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=1800&auto=format&fit=crop"
+                  src={
+                    homepageConfig?.supersnakeTeeImage ||
+                    "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=1800&auto=format&fit=crop"
+                  }
                   alt="The SuperSnake Tee - Sculpture"
                   fill
                   sizes="(max-width: 1024px) 100vw, 66vw"
+                  unoptimized={
+                    homepageConfig?.supersnakeTeeImage?.startsWith('data:') ||
+                    (homepageConfig?.supersnakeTeeImage ? !homepageConfig.supersnakeTeeImage.includes('unsplash.com') : false)
+                  }
                   className="object-cover transition-transform duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105"
                 />
                 <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 right-4 sm:right-6 p-3 sm:p-4 bg-black/70 backdrop-blur-md border border-white/10 flex justify-between items-center text-xs font-mono">
@@ -375,10 +382,14 @@ export default function HomePage() {
         <section className="relative min-h-[580px] sm:min-h-[750px] md:min-h-[900px] w-full border-t border-white/[0.06] overflow-hidden flex items-center px-4 sm:px-6 md:px-16 py-16 md:py-20 bg-black">
           <div className="absolute inset-0 z-0">
             <Image
-              src={spotlightProduct.images?.[0]?.url || ''}
+              src={homepageConfig?.signatureTeeImage || spotlightProduct.images?.[0]?.url || ''}
               alt={spotlightProduct.name}
               fill
               sizes="100vw"
+              unoptimized={
+                homepageConfig?.signatureTeeImage?.startsWith('data:') ||
+                (homepageConfig?.signatureTeeImage ? !homepageConfig.signatureTeeImage.includes('unsplash.com') : false)
+              }
               className="object-cover object-[center_30%] md:object-center brightness-50 contrast-125"
             />
             <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-black via-black/80 to-transparent" />
@@ -590,10 +601,17 @@ export default function HomePage() {
             <div className="w-[82vw] sm:w-[340px] md:w-auto shrink-0 md:shrink space-y-3 sm:space-y-4 group snap-center">
               <div className="relative aspect-[4/5] rounded overflow-hidden bg-neutral-900 border border-white/10">
                 <Image
-                  src="https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?q=80&w=800&auto=format&fit=crop"
+                  src={
+                    homepageConfig?.pillar1Image ||
+                    "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?q=80&w=800&auto=format&fit=crop"
+                  }
                   alt="Premium Fabric Weave"
                   fill
                   sizes="(max-width: 768px) 100vw, 33vw"
+                  unoptimized={
+                    homepageConfig?.pillar1Image?.startsWith('data:') ||
+                    (homepageConfig?.pillar1Image ? !homepageConfig.pillar1Image.includes('unsplash.com') : false)
+                  }
                   className="object-cover transition-transform duration-700 group-hover:scale-105"
                 />
                 <div className="absolute top-4 left-4 text-xs font-mono text-white/70">01 / PILLAR</div>
@@ -610,10 +628,17 @@ export default function HomePage() {
             <div className="w-[82vw] sm:w-[340px] md:w-auto shrink-0 md:shrink space-y-3 sm:space-y-4 group snap-center">
               <div className="relative aspect-[4/5] rounded overflow-hidden bg-neutral-900 border border-white/10">
                 <Image
-                  src="https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?q=80&w=800&auto=format&fit=crop"
+                  src={
+                    homepageConfig?.pillar2Image ||
+                    "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?q=80&w=800&auto=format&fit=crop"
+                  }
                   alt="Collar and Stitching"
                   fill
                   sizes="(max-width: 768px) 100vw, 33vw"
+                  unoptimized={
+                    homepageConfig?.pillar2Image?.startsWith('data:') ||
+                    (homepageConfig?.pillar2Image ? !homepageConfig.pillar2Image.includes('unsplash.com') : false)
+                  }
                   className="object-cover transition-transform duration-700 group-hover:scale-105"
                 />
                 <div className="absolute top-4 left-4 text-xs font-mono text-white/70">02 / PILLAR</div>
@@ -630,10 +655,17 @@ export default function HomePage() {
             <div className="w-[82vw] sm:w-[340px] md:w-auto shrink-0 md:shrink space-y-3 sm:space-y-4 group snap-center">
               <div className="relative aspect-[4/5] rounded overflow-hidden bg-neutral-900 border border-white/10">
                 <Image
-                  src="https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=800&auto=format&fit=crop"
+                  src={
+                    homepageConfig?.pillar3Image ||
+                    "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=800&auto=format&fit=crop"
+                  }
                   alt="Drape and Geometry"
                   fill
                   sizes="(max-width: 768px) 100vw, 33vw"
+                  unoptimized={
+                    homepageConfig?.pillar3Image?.startsWith('data:') ||
+                    (homepageConfig?.pillar3Image ? !homepageConfig.pillar3Image.includes('unsplash.com') : false)
+                  }
                   className="object-cover transition-transform duration-700 group-hover:scale-105"
                 />
                 <div className="absolute top-4 left-4 text-xs font-mono text-white/70">03 / PILLAR</div>

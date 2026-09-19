@@ -34,10 +34,15 @@ CREATE TABLE IF NOT EXISTS public.homepage_config (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- If the table was already created, add the collection image columns:
+-- If the table was already created, add the new image columns:
 ALTER TABLE public.homepage_config 
   ADD COLUMN IF NOT EXISTS men_collection_image TEXT,
-  ADD COLUMN IF NOT EXISTS women_collection_image TEXT;
+  ADD COLUMN IF NOT EXISTS women_collection_image TEXT,
+  ADD COLUMN IF NOT EXISTS supersnake_tee_image TEXT,
+  ADD COLUMN IF NOT EXISTS signature_tee_image TEXT,
+  ADD COLUMN IF NOT EXISTS pillar1_image TEXT,
+  ADD COLUMN IF NOT EXISTS pillar2_image TEXT,
+  ADD COLUMN IF NOT EXISTS pillar3_image TEXT;
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE public.homepage_config ENABLE ROW LEVEL SECURITY;
@@ -84,6 +89,11 @@ export default function AdminHomepageConfigPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const menFileInputRef = useRef<HTMLInputElement>(null);
   const womenFileInputRef = useRef<HTMLInputElement>(null);
+  const supersnakeTeeFileRef = useRef<HTMLInputElement>(null);
+  const signatureTeeFileRef = useRef<HTMLInputElement>(null);
+  const pillar1FileRef = useRef<HTMLInputElement>(null);
+  const pillar2FileRef = useRef<HTMLInputElement>(null);
+  const pillar3FileRef = useRef<HTMLInputElement>(null);
 
   const [heroImages, setHeroImages] = useState<string[]>(
     homepageConfig?.heroImages || DEFAULT_HOMEPAGE_CONFIG.heroImages
@@ -110,12 +120,41 @@ export default function AdminHomepageConfigPage() {
     homepageConfig?.womenCollectionImage || DEFAULT_HOMEPAGE_CONFIG.womenCollectionImage || ''
   );
 
+  // New section image states
+  const [supersnakeTeeImage, setSupersnakeTeeImage] = useState<string>(
+    homepageConfig?.supersnakeTeeImage || DEFAULT_HOMEPAGE_CONFIG.supersnakeTeeImage || ''
+  );
+  const [signatureTeeImage, setSignatureTeeImage] = useState<string>(
+    homepageConfig?.signatureTeeImage || DEFAULT_HOMEPAGE_CONFIG.signatureTeeImage || ''
+  );
+  const [pillar1Image, setPillar1Image] = useState<string>(
+    homepageConfig?.pillar1Image || DEFAULT_HOMEPAGE_CONFIG.pillar1Image || ''
+  );
+  const [pillar2Image, setPillar2Image] = useState<string>(
+    homepageConfig?.pillar2Image || DEFAULT_HOMEPAGE_CONFIG.pillar2Image || ''
+  );
+  const [pillar3Image, setPillar3Image] = useState<string>(
+    homepageConfig?.pillar3Image || DEFAULT_HOMEPAGE_CONFIG.pillar3Image || ''
+  );
+
   const [newImageUrl, setNewImageUrl] = useState('');
   const [menImageUrl, setMenImageUrl] = useState('');
   const [womenImageUrl, setWomenImageUrl] = useState('');
+  const [supersnakeTeeUrl, setSupersnakeTeeUrl] = useState('');
+  const [signatureTeeUrl, setSignatureTeeUrl] = useState('');
+  const [pillar1Url, setPillar1Url] = useState('');
+  const [pillar2Url, setPillar2Url] = useState('');
+  const [pillar3Url, setPillar3Url] = useState('');
+
   const [isUploading, setIsUploading] = useState(false);
   const [isUploadingMen, setIsUploadingMen] = useState(false);
   const [isUploadingWomen, setIsUploadingWomen] = useState(false);
+  const [isUploadingSupersnakeTee, setIsUploadingSupersnakeTee] = useState(false);
+  const [isUploadingSignatureTee, setIsUploadingSignatureTee] = useState(false);
+  const [isUploadingPillar1, setIsUploadingPillar1] = useState(false);
+  const [isUploadingPillar2, setIsUploadingPillar2] = useState(false);
+  const [isUploadingPillar3, setIsUploadingPillar3] = useState(false);
+
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saved_supabase' | 'saved_local' | 'error'>('idle');
   const [showSql, setShowSql] = useState(false);
@@ -150,6 +189,21 @@ export default function AdminHomepageConfigPage() {
       }
       if (homepageConfig.womenCollectionImage) {
         setWomenCollectionImage(homepageConfig.womenCollectionImage);
+      }
+      if (homepageConfig.supersnakeTeeImage) {
+        setSupersnakeTeeImage(homepageConfig.supersnakeTeeImage);
+      }
+      if (homepageConfig.signatureTeeImage) {
+        setSignatureTeeImage(homepageConfig.signatureTeeImage);
+      }
+      if (homepageConfig.pillar1Image) {
+        setPillar1Image(homepageConfig.pillar1Image);
+      }
+      if (homepageConfig.pillar2Image) {
+        setPillar2Image(homepageConfig.pillar2Image);
+      }
+      if (homepageConfig.pillar3Image) {
+        setPillar3Image(homepageConfig.pillar3Image);
       }
       hasInitialized.current = true;
     }
@@ -308,6 +362,32 @@ export default function AdminHomepageConfigPage() {
     }
   };
 
+  // Helper for single image upload with client-side canvas compression
+  const handleSingleUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setter: (val: string) => void,
+    setLoading: (val: boolean) => void,
+    ref: React.RefObject<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Only image files (PNG, JPG, WEBP) are supported.');
+      return;
+    }
+    setLoading(true);
+    isDirty.current = true;
+    try {
+      const compressed = await compressImage(file);
+      setter(compressed);
+    } catch (err) {
+      console.error('Image compression failed:', err);
+    } finally {
+      setLoading(false);
+      if (ref.current) ref.current.value = '';
+    }
+  };
+
   // Save changes
   const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -327,6 +407,11 @@ export default function AdminHomepageConfigPage() {
         brandStatement,
         menCollectionImage,
         womenCollectionImage,
+        supersnakeTeeImage,
+        signatureTeeImage,
+        pillar1Image,
+        pillar2Image,
+        pillar3Image,
       });
 
       if (syncedToSupabase) {
@@ -841,7 +926,534 @@ export default function AdminHomepageConfigPage() {
         </div>
 
         {/* ============================================================
-            SECTION 3: EDITORIAL HEADLINE & COPY
+            SECTION 3: THE SUPERSNAKE TEE (HERO OBJECT EDITORIAL)
+            ============================================================ */}
+        <div className="bg-[#0d0d0d] border border-neutral-800/80 rounded-lg p-6 sm:p-8 space-y-6">
+          <div className="border-b border-neutral-800 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-bold uppercase text-white tracking-wider flex items-center gap-2">
+                <Layers size={16} className="text-snake-green" />
+                THE SUPERSNAKE TEE — HERO OBJECT VISUAL
+              </h2>
+              <p className="text-[11px] text-neutral-400 mt-0.5">
+                Manage the monumental macro hero photography displayed in &ldquo;THE SUPERSNAKE TEE&rdquo; section on the homepage.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              disabled={isSaving}
+              onClick={() => handleSave()}
+              className="px-4 py-1.5 bg-snake-green text-black font-bold uppercase text-xs rounded hover:bg-white transition-colors flex items-center gap-1.5 disabled:opacity-50 self-start sm:self-auto"
+            >
+              {isSaving ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
+              <span>SAVE IMAGE</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* Preview Thumbnail */}
+            <div className="lg:col-span-7 bg-black border border-neutral-800 rounded-lg p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase text-white tracking-wider">
+                  LIVE PREVIEW
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    isDirty.current = true;
+                    setSupersnakeTeeImage(DEFAULT_HOMEPAGE_CONFIG.supersnakeTeeImage || '');
+                  }}
+                  className="text-[10px] text-neutral-400 hover:text-white uppercase transition-colors"
+                >
+                  RESET DEFAULT
+                </button>
+              </div>
+
+              <div className="relative aspect-[16/11] sm:aspect-[16/10] w-full bg-neutral-900 rounded-md overflow-hidden border border-neutral-800 group">
+                <Image
+                  src={supersnakeTeeImage || DEFAULT_HOMEPAGE_CONFIG.supersnakeTeeImage || ''}
+                  alt="The SuperSnake Tee Hero Object"
+                  fill
+                  unoptimized={supersnakeTeeImage?.startsWith('data:') || (supersnakeTeeImage ? !supersnakeTeeImage.includes('unsplash.com') : false)}
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
+                <div className="absolute bottom-3 left-3 right-3 p-2.5 bg-black/70 backdrop-blur-md border border-white/10 flex justify-between items-center text-xs font-mono rounded">
+                  <span className="text-neutral-300 tracking-wider">ARCHITECTURAL BOXY FIT</span>
+                  <span className="text-snake-green font-bold">₹1,499</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Controls */}
+            <div className="lg:col-span-5 bg-black border border-neutral-800 rounded-lg p-5 space-y-4">
+              <span className="text-xs font-bold uppercase text-white tracking-wider block border-b border-neutral-800 pb-2">
+                UPLOAD / UPDATE VISUAL
+              </span>
+
+              <div className="space-y-3">
+                <label className="cursor-pointer w-full py-3 bg-neutral-900 border border-neutral-700 hover:border-snake-green text-white text-xs uppercase font-bold rounded flex items-center justify-center gap-2 transition-colors">
+                  {isUploadingSupersnakeTee ? (
+                    <Loader2 size={15} className="animate-spin text-snake-green" />
+                  ) : (
+                    <Upload size={15} className="text-snake-green" />
+                  )}
+                  <span>{isUploadingSupersnakeTee ? 'OPTIMIZING & UPLOADING...' : 'UPLOAD FROM DEVICE'}</span>
+                  <input
+                    ref={supersnakeTeeFileRef}
+                    type="file"
+                    accept="image/*"
+                    disabled={isUploadingSupersnakeTee}
+                    onChange={(e) =>
+                      handleSingleUpload(
+                        e,
+                        setSupersnakeTeeImage,
+                        setIsUploadingSupersnakeTee,
+                        supersnakeTeeFileRef
+                      )
+                    }
+                    className="hidden"
+                  />
+                </label>
+
+                <div className="space-y-1.5">
+                  <span className="text-[10px] text-neutral-400 uppercase font-semibold block">OR ENTER IMAGE URL:</span>
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      placeholder="https://..."
+                      value={supersnakeTeeUrl}
+                      onChange={(e) => setSupersnakeTeeUrl(e.target.value)}
+                      className="flex-1 bg-[#111] border border-neutral-800 px-3 py-2 text-white text-xs rounded focus:border-snake-green focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!supersnakeTeeUrl.trim()) return;
+                        isDirty.current = true;
+                        setSupersnakeTeeImage(supersnakeTeeUrl.trim());
+                        setSupersnakeTeeUrl('');
+                      }}
+                      className="px-4 py-2 bg-white text-black font-bold text-xs uppercase rounded hover:bg-snake-green transition-colors shrink-0"
+                    >
+                      SET
+                    </button>
+                  </div>
+                </div>
+
+                <p className="text-[10px] text-neutral-500 leading-relaxed pt-1">
+                  Recommended: High-resolution landscape or square photograph showcasing garment drape and collar construction.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ============================================================
+            SECTION 4: THE SIGNATURE TEE (SPOTLIGHT CAMPAIGN VISUAL)
+            ============================================================ */}
+        <div className="bg-[#0d0d0d] border border-neutral-800/80 rounded-lg p-6 sm:p-8 space-y-6">
+          <div className="border-b border-neutral-800 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-bold uppercase text-white tracking-wider flex items-center gap-2">
+                <Layers size={16} className="text-snake-green" />
+                THE SIGNATURE TEE — SPOTLIGHT CAMPAIGN VISUAL
+              </h2>
+              <p className="text-[11px] text-neutral-400 mt-0.5">
+                Upload and manage the full-bleed campaign backdrop for the Spotlight Campaign section on the homepage.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              disabled={isSaving}
+              onClick={() => handleSave()}
+              className="px-4 py-1.5 bg-snake-green text-black font-bold uppercase text-xs rounded hover:bg-white transition-colors flex items-center gap-1.5 disabled:opacity-50 self-start sm:self-auto"
+            >
+              {isSaving ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
+              <span>SAVE IMAGE</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* Preview Thumbnail */}
+            <div className="lg:col-span-7 bg-black border border-neutral-800 rounded-lg p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase text-white tracking-wider">
+                  LIVE PREVIEW
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    isDirty.current = true;
+                    setSignatureTeeImage('');
+                  }}
+                  className="text-[10px] text-neutral-400 hover:text-white uppercase transition-colors"
+                >
+                  USE PRODUCT DEFAULT
+                </button>
+              </div>
+
+              <div className="relative aspect-[16/9] w-full bg-neutral-900 rounded-md overflow-hidden border border-neutral-800 group">
+                <Image
+                  src={
+                    signatureTeeImage ||
+                    (products.find((p) => p.slug === 'the-signature-tee')?.images?.[0]?.url) ||
+                    'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=2400&auto=format&fit=crop'
+                  }
+                  alt="The Signature Tee Spotlight"
+                  fill
+                  unoptimized={signatureTeeImage?.startsWith('data:') || (signatureTeeImage ? !signatureTeeImage.includes('unsplash.com') : false)}
+                  className="object-cover brightness-60"
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent pointer-events-none" />
+                <div className="absolute bottom-4 left-4 space-y-1">
+                  <span className="text-[9px] font-mono tracking-widest text-snake-green uppercase block">SPOTLIGHT CAMPAIGN</span>
+                  <span className="text-lg sm:text-xl font-display font-black text-white uppercase block">THE SIGNATURE TEE</span>
+                  <span className="inline-block px-2.5 py-1 bg-snake-green text-black font-mono text-[9px] font-bold uppercase rounded-sm">SHOP NOW →</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Controls */}
+            <div className="lg:col-span-5 bg-black border border-neutral-800 rounded-lg p-5 space-y-4">
+              <span className="text-xs font-bold uppercase text-white tracking-wider block border-b border-neutral-800 pb-2">
+                UPLOAD / UPDATE VISUAL
+              </span>
+
+              <div className="space-y-3">
+                <label className="cursor-pointer w-full py-3 bg-neutral-900 border border-neutral-700 hover:border-snake-green text-white text-xs uppercase font-bold rounded flex items-center justify-center gap-2 transition-colors">
+                  {isUploadingSignatureTee ? (
+                    <Loader2 size={15} className="animate-spin text-snake-green" />
+                  ) : (
+                    <Upload size={15} className="text-snake-green" />
+                  )}
+                  <span>{isUploadingSignatureTee ? 'OPTIMIZING & UPLOADING...' : 'UPLOAD FROM DEVICE'}</span>
+                  <input
+                    ref={signatureTeeFileRef}
+                    type="file"
+                    accept="image/*"
+                    disabled={isUploadingSignatureTee}
+                    onChange={(e) =>
+                      handleSingleUpload(
+                        e,
+                        setSignatureTeeImage,
+                        setIsUploadingSignatureTee,
+                        signatureTeeFileRef
+                      )
+                    }
+                    className="hidden"
+                  />
+                </label>
+
+                <div className="space-y-1.5">
+                  <span className="text-[10px] text-neutral-400 uppercase font-semibold block">OR ENTER IMAGE URL:</span>
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      placeholder="https://..."
+                      value={signatureTeeUrl}
+                      onChange={(e) => setSignatureTeeUrl(e.target.value)}
+                      className="flex-1 bg-[#111] border border-neutral-800 px-3 py-2 text-white text-xs rounded focus:border-snake-green focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!signatureTeeUrl.trim()) return;
+                        isDirty.current = true;
+                        setSignatureTeeImage(signatureTeeUrl.trim());
+                        setSignatureTeeUrl('');
+                      }}
+                      className="px-4 py-2 bg-white text-black font-bold text-xs uppercase rounded hover:bg-snake-green transition-colors shrink-0"
+                    >
+                      SET
+                    </button>
+                  </div>
+                </div>
+
+                <p className="text-[10px] text-neutral-500 leading-relaxed pt-1">
+                  Full-bleed cinematic landscape visual. Leave empty to automatically fallback to the primary product image.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ============================================================
+            SECTION 5: THE THREE PILLARS (HONEST MATERIALS EDITORIAL)
+            ============================================================ */}
+        <div className="bg-[#0d0d0d] border border-neutral-800/80 rounded-lg p-6 sm:p-8 space-y-6">
+          <div className="border-b border-neutral-800 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-bold uppercase text-white tracking-wider flex items-center gap-2">
+                <Layers size={16} className="text-snake-green" />
+                THE THREE PILLARS — HONEST MATERIALS PHOTOGRAPHY
+              </h2>
+              <p className="text-[11px] text-neutral-400 mt-0.5">
+                Upload and manage the 3 editorial images representing the craftsmanship pillars on the homepage.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              disabled={isSaving}
+              onClick={() => handleSave()}
+              className="px-4 py-1.5 bg-snake-green text-black font-bold uppercase text-xs rounded hover:bg-white transition-colors flex items-center gap-1.5 disabled:opacity-50 self-start sm:self-auto"
+            >
+              {isSaving ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
+              <span>SAVE ALL PILLARS</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* PILLAR 1: PREMIUM FABRIC */}
+            <div className="bg-black border border-neutral-800 rounded-lg p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase text-white tracking-wider">
+                  01 / PREMIUM FABRIC
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    isDirty.current = true;
+                    setPillar1Image(DEFAULT_HOMEPAGE_CONFIG.pillar1Image || '');
+                  }}
+                  className="text-[10px] text-neutral-400 hover:text-white uppercase transition-colors"
+                >
+                  RESET DEFAULT
+                </button>
+              </div>
+
+              {/* Preview Thumbnail */}
+              <div className="relative aspect-[4/5] w-full bg-neutral-900 rounded-md overflow-hidden border border-neutral-800">
+                <Image
+                  src={pillar1Image || DEFAULT_HOMEPAGE_CONFIG.pillar1Image || ''}
+                  alt="Pillar 1: Premium Fabric"
+                  fill
+                  unoptimized={pillar1Image?.startsWith('data:') || (pillar1Image ? !pillar1Image.includes('unsplash.com') : false)}
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent pointer-events-none" />
+                <div className="absolute top-2.5 left-2.5 text-[10px] font-mono text-white/80 bg-black/60 px-2 py-0.5 rounded backdrop-blur-sm">
+                  01 / PILLAR
+                </div>
+                <div className="absolute bottom-2.5 left-2.5 right-2.5">
+                  <span className="text-xs font-mono font-bold uppercase text-white">PREMIUM FABRIC</span>
+                </div>
+              </div>
+
+              {/* Upload & URL Controls */}
+              <div className="space-y-2">
+                <label className="cursor-pointer w-full py-2.5 bg-neutral-900 border border-neutral-700 hover:border-snake-green text-white text-xs uppercase font-bold rounded flex items-center justify-center gap-2 transition-colors">
+                  {isUploadingPillar1 ? (
+                    <Loader2 size={14} className="animate-spin text-snake-green" />
+                  ) : (
+                    <Upload size={14} className="text-snake-green" />
+                  )}
+                  <span>{isUploadingPillar1 ? 'OPTIMIZING...' : 'UPLOAD PILLAR 01'}</span>
+                  <input
+                    ref={pillar1FileRef}
+                    type="file"
+                    accept="image/*"
+                    disabled={isUploadingPillar1}
+                    onChange={(e) =>
+                      handleSingleUpload(e, setPillar1Image, setIsUploadingPillar1, pillar1FileRef)
+                    }
+                    className="hidden"
+                  />
+                </label>
+
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    placeholder="Or paste URL..."
+                    value={pillar1Url}
+                    onChange={(e) => setPillar1Url(e.target.value)}
+                    className="flex-1 bg-[#111] border border-neutral-800 px-3 py-1.5 text-white text-xs rounded focus:border-snake-green focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!pillar1Url.trim()) return;
+                      isDirty.current = true;
+                      setPillar1Image(pillar1Url.trim());
+                      setPillar1Url('');
+                    }}
+                    className="px-3 py-1.5 bg-white text-black font-bold text-xs uppercase rounded hover:bg-snake-green transition-colors shrink-0"
+                  >
+                    SET
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* PILLAR 2: BUILT FOR COMFORT */}
+            <div className="bg-black border border-neutral-800 rounded-lg p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase text-white tracking-wider">
+                  02 / BUILT FOR COMFORT
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    isDirty.current = true;
+                    setPillar2Image(DEFAULT_HOMEPAGE_CONFIG.pillar2Image || '');
+                  }}
+                  className="text-[10px] text-neutral-400 hover:text-white uppercase transition-colors"
+                >
+                  RESET DEFAULT
+                </button>
+              </div>
+
+              {/* Preview Thumbnail */}
+              <div className="relative aspect-[4/5] w-full bg-neutral-900 rounded-md overflow-hidden border border-neutral-800">
+                <Image
+                  src={pillar2Image || DEFAULT_HOMEPAGE_CONFIG.pillar2Image || ''}
+                  alt="Pillar 2: Built for Comfort"
+                  fill
+                  unoptimized={pillar2Image?.startsWith('data:') || (pillar2Image ? !pillar2Image.includes('unsplash.com') : false)}
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent pointer-events-none" />
+                <div className="absolute top-2.5 left-2.5 text-[10px] font-mono text-white/80 bg-black/60 px-2 py-0.5 rounded backdrop-blur-sm">
+                  02 / PILLAR
+                </div>
+                <div className="absolute bottom-2.5 left-2.5 right-2.5">
+                  <span className="text-xs font-mono font-bold uppercase text-white">BUILT FOR COMFORT</span>
+                </div>
+              </div>
+
+              {/* Upload & URL Controls */}
+              <div className="space-y-2">
+                <label className="cursor-pointer w-full py-2.5 bg-neutral-900 border border-neutral-700 hover:border-snake-green text-white text-xs uppercase font-bold rounded flex items-center justify-center gap-2 transition-colors">
+                  {isUploadingPillar2 ? (
+                    <Loader2 size={14} className="animate-spin text-snake-green" />
+                  ) : (
+                    <Upload size={14} className="text-snake-green" />
+                  )}
+                  <span>{isUploadingPillar2 ? 'OPTIMIZING...' : 'UPLOAD PILLAR 02'}</span>
+                  <input
+                    ref={pillar2FileRef}
+                    type="file"
+                    accept="image/*"
+                    disabled={isUploadingPillar2}
+                    onChange={(e) =>
+                      handleSingleUpload(e, setPillar2Image, setIsUploadingPillar2, pillar2FileRef)
+                    }
+                    className="hidden"
+                  />
+                </label>
+
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    placeholder="Or paste URL..."
+                    value={pillar2Url}
+                    onChange={(e) => setPillar2Url(e.target.value)}
+                    className="flex-1 bg-[#111] border border-neutral-800 px-3 py-1.5 text-white text-xs rounded focus:border-snake-green focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!pillar2Url.trim()) return;
+                      isDirty.current = true;
+                      setPillar2Image(pillar2Url.trim());
+                      setPillar2Url('');
+                    }}
+                    className="px-3 py-1.5 bg-white text-black font-bold text-xs uppercase rounded hover:bg-snake-green transition-colors shrink-0"
+                  >
+                    SET
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* PILLAR 3: DESIGNED TO LAST */}
+            <div className="bg-black border border-neutral-800 rounded-lg p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase text-white tracking-wider">
+                  03 / DESIGNED TO LAST
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    isDirty.current = true;
+                    setPillar3Image(DEFAULT_HOMEPAGE_CONFIG.pillar3Image || '');
+                  }}
+                  className="text-[10px] text-neutral-400 hover:text-white uppercase transition-colors"
+                >
+                  RESET DEFAULT
+                </button>
+              </div>
+
+              {/* Preview Thumbnail */}
+              <div className="relative aspect-[4/5] w-full bg-neutral-900 rounded-md overflow-hidden border border-neutral-800">
+                <Image
+                  src={pillar3Image || DEFAULT_HOMEPAGE_CONFIG.pillar3Image || ''}
+                  alt="Pillar 3: Designed to Last"
+                  fill
+                  unoptimized={pillar3Image?.startsWith('data:') || (pillar3Image ? !pillar3Image.includes('unsplash.com') : false)}
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent pointer-events-none" />
+                <div className="absolute top-2.5 left-2.5 text-[10px] font-mono text-white/80 bg-black/60 px-2 py-0.5 rounded backdrop-blur-sm">
+                  03 / PILLAR
+                </div>
+                <div className="absolute bottom-2.5 left-2.5 right-2.5">
+                  <span className="text-xs font-mono font-bold uppercase text-white">DESIGNED TO LAST</span>
+                </div>
+              </div>
+
+              {/* Upload & URL Controls */}
+              <div className="space-y-2">
+                <label className="cursor-pointer w-full py-2.5 bg-neutral-900 border border-neutral-700 hover:border-snake-green text-white text-xs uppercase font-bold rounded flex items-center justify-center gap-2 transition-colors">
+                  {isUploadingPillar3 ? (
+                    <Loader2 size={14} className="animate-spin text-snake-green" />
+                  ) : (
+                    <Upload size={14} className="text-snake-green" />
+                  )}
+                  <span>{isUploadingPillar3 ? 'OPTIMIZING...' : 'UPLOAD PILLAR 03'}</span>
+                  <input
+                    ref={pillar3FileRef}
+                    type="file"
+                    accept="image/*"
+                    disabled={isUploadingPillar3}
+                    onChange={(e) =>
+                      handleSingleUpload(e, setPillar3Image, setIsUploadingPillar3, pillar3FileRef)
+                    }
+                    className="hidden"
+                  />
+                </label>
+
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    placeholder="Or paste URL..."
+                    value={pillar3Url}
+                    onChange={(e) => setPillar3Url(e.target.value)}
+                    className="flex-1 bg-[#111] border border-neutral-800 px-3 py-1.5 text-white text-xs rounded focus:border-snake-green focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!pillar3Url.trim()) return;
+                      isDirty.current = true;
+                      setPillar3Image(pillar3Url.trim());
+                      setPillar3Url('');
+                    }}
+                    className="px-3 py-1.5 bg-white text-black font-bold text-xs uppercase rounded hover:bg-snake-green transition-colors shrink-0"
+                  >
+                    SET
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ============================================================
+            SECTION 6: EDITORIAL HEADLINE & COPY
             ============================================================ */}
         <div className="space-y-6 text-xs bg-[#0d0d0d] border border-neutral-800/80 rounded-lg p-6 sm:p-8">
           <h2 className="text-sm font-bold uppercase text-white tracking-wider border-b border-neutral-800 pb-3">
