@@ -93,12 +93,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* SaaS Sidebar */}
       <aside className="w-64 bg-[#0d0d0d] border-r border-neutral-800/80 flex flex-col justify-between p-4 hidden md:flex flex-shrink-0">
         <div className="space-y-6">
-          {/* Logo & Portal Badge */}
-          <div className="px-2 pt-2 flex items-center justify-between">
+          {/* Logo */}
+          <div className="px-2 pt-2 flex items-center">
             <SuperSnakeLogo size="sm" showText={true} withLink={false} />
-            <span className="px-1.5 py-0.5 bg-snake-green/10 text-snake-green border border-snake-green/20 rounded text-[9px] font-mono font-bold uppercase">
-              SAAS v2.4
-            </span>
           </div>
 
           {/* Navigation Links */}
