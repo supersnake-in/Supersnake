@@ -12,7 +12,6 @@ import {
   RotateCcw,
   Truck,
   ChevronDown,
-  Star,
   Check,
   CheckCircle2,
   Ruler,
@@ -246,18 +245,6 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
                 <span className="px-2 py-0.5 bg-snake-green/10 border border-snake-green/30 text-snake-green font-mono text-[10px] tracking-wider uppercase">
                   SAVE {Math.round(((product.mrp - product.price) / product.mrp) * 100)}%
                 </span>
-              </div>
-
-              {/* Rating */}
-              <div className="flex items-center gap-2 pt-1 text-xs font-mono text-neutral-400">
-                <div className="flex text-snake-green">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={13} className="fill-snake-green" />
-                  ))}
-                </div>
-                <span>{product.rating}</span>
-                <span>•</span>
-                <span className="underline">{product.reviewsCount} atelier reviews</span>
               </div>
             </div>
 
