@@ -114,14 +114,21 @@ export default function CheckoutPage() {
         const state = data.state || '';
         const poList = data.postOffices;
 
-        setPostOffices(poList);
+        // Prioritize delivery post offices, then alphabetical
+        const sortedPOs = [...poList].sort((a: any, b: any) => {
+          if (a.deliveryStatus === 'Delivery' && b.deliveryStatus !== 'Delivery') return -1;
+          if (a.deliveryStatus !== 'Delivery' && b.deliveryStatus === 'Delivery') return 1;
+          return a.name.localeCompare(b.name);
+        });
+
+        setPostOffices(sortedPOs);
 
         // Auto-fill city/district and state
         setFormData((prev) => {
           const selectedPO =
-            poList.length === 1
-              ? poList[0].name
-              : poList.some((p: any) => p.name === prev.postOffice)
+            sortedPOs.length === 1
+              ? sortedPOs[0].name
+              : sortedPOs.some((p: any) => p.name === prev.postOffice)
               ? prev.postOffice
               : '';
           return {
@@ -657,7 +664,7 @@ export default function CheckoutPage() {
                           </option>
                           {postOffices.map((po) => (
                             <option key={po.name} value={po.name} className="bg-neutral-900 text-white py-1">
-                              {po.name} {po.branchType ? `(${po.branchType})` : ''} {po.deliveryStatus ? `• ${po.deliveryStatus}` : ''}
+                              {po.name}
                             </option>
                           ))}
                         </select>

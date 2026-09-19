@@ -84,13 +84,20 @@ export default function AccountAddressesPage() {
         const stateName = data.state || '';
         const poList = data.postOffices;
 
-        setPostOffices(poList);
+        // Prioritize delivery post offices, then alphabetical
+        const sortedPOs = [...poList].sort((a: any, b: any) => {
+          if (a.deliveryStatus === 'Delivery' && b.deliveryStatus !== 'Delivery') return -1;
+          if (a.deliveryStatus !== 'Delivery' && b.deliveryStatus === 'Delivery') return 1;
+          return a.name.localeCompare(b.name);
+        });
+
+        setPostOffices(sortedPOs);
         if (district) setCity(district);
         if (stateName) setState(stateName);
 
-        if (poList.length === 1) {
-          setPostOffice(poList[0].name);
-        } else if (!poList.some((p: any) => p.name === postOffice)) {
+        if (sortedPOs.length === 1) {
+          setPostOffice(sortedPOs[0].name);
+        } else if (!sortedPOs.some((p: any) => p.name === postOffice)) {
           setPostOffice('');
         }
 
@@ -424,7 +431,7 @@ export default function AccountAddressesPage() {
                       </option>
                       {postOffices.map((po) => (
                         <option key={po.name} value={po.name} className="bg-neutral-900 text-white">
-                          {po.name} {po.branchType ? `(${po.branchType})` : ''}
+                          {po.name}
                         </option>
                       ))}
                     </select>
