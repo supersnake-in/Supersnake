@@ -85,10 +85,73 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
           </div>
         </div>
 
+        {/* Mobile Navigation Tab Bar (< lg) */}
+        <div className="lg:hidden border-b border-white/10 pb-2">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+            {ACCOUNT_NAV.map((item) => {
+              const Icon = item.icon;
+              const isActive = item.exact
+                ? pathname === item.href
+                : pathname.startsWith(item.href);
+
+              let badge = null;
+              if (item.href === '/account/orders' && orders.length > 0) {
+                badge = orders.length;
+              } else if (item.href === '/account/wishlist' && wishlist.length > 0) {
+                badge = wishlist.length;
+              }
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-2 px-3.5 py-2.5 rounded-sm text-xs font-mono tracking-wider whitespace-nowrap min-h-[44px] transition-all shrink-0 ${
+                    isActive
+                      ? 'bg-snake-green/10 text-snake-green font-semibold border border-snake-green/40 shadow-[0_0_10px_rgba(4,252,33,0.15)]'
+                      : 'text-neutral-400 hover:text-white bg-[#0a0a0a] border border-white/10'
+                  }`}
+                >
+                  <Icon size={14} />
+                  <span>{item.label}</span>
+                  {badge !== null && (
+                    <span
+                      className={`text-[9px] font-mono px-1.5 py-0.2 rounded-full ${
+                        isActive
+                          ? 'bg-snake-green text-black font-bold'
+                          : 'bg-white/10 text-neutral-400'
+                      }`}
+                    >
+                      {badge}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="flex items-center gap-2 px-3.5 py-2.5 rounded-sm text-xs font-mono tracking-wider whitespace-nowrap min-h-[44px] text-snake-green bg-snake-green/10 border border-snake-green/30 shrink-0 font-semibold"
+              >
+                <Shield size={14} />
+                <span>ADMIN</span>
+              </Link>
+            )}
+
+            <button
+              onClick={handleSignOut}
+              className="flex items-center gap-2 px-3.5 py-2.5 rounded-sm text-xs font-mono tracking-wider whitespace-nowrap min-h-[44px] text-neutral-400 hover:text-red-400 bg-[#0a0a0a] border border-white/10 shrink-0 transition-colors"
+            >
+              <LogOut size={14} />
+              <span>SIGN OUT</span>
+            </button>
+          </div>
+        </div>
+
         {/* Account Body Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
-          {/* Sidebar Navigation */}
-          <aside className="lg:col-span-1 bg-[#0a0a0a] border border-white/10 p-3 rounded-sm space-y-1">
+          {/* Sidebar Navigation (Desktop Locked) */}
+          <aside className="hidden lg:block lg:col-span-1 bg-[#0a0a0a] border border-white/10 p-3 rounded-sm space-y-1">
             <div className="px-3 py-2 text-[10px] font-mono tracking-widest text-neutral-500 uppercase border-b border-white/5 mb-1">
               NAVIGATION
             </div>

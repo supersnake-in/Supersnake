@@ -83,10 +83,10 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
           {product.gsm} GSM
         </div>
 
-        {/* Wishlist Button */}
+        {/* Wishlist Button - 44px min tap target */}
         <button
           onClick={handleWishlist}
-          className={`absolute top-3 right-3 p-2 rounded-full backdrop-blur-md transition-all duration-300 ${
+          className={`absolute top-2.5 right-2.5 sm:top-3 sm:right-3 p-2.5 sm:p-2 rounded-full backdrop-blur-md transition-all duration-300 z-10 active:scale-90 ${
             isFavorited
               ? 'bg-snake-green text-black scale-100'
               : 'bg-black/50 text-white hover:text-snake-green border border-white/10'
@@ -96,17 +96,26 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
           <Heart size={14} className={isFavorited ? 'fill-black' : ''} />
         </button>
 
-        {/* Floating Actions on Hover */}
-        <div className="absolute bottom-3 inset-x-3 flex gap-2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
+        {/* Mobile Quick Add Floating Button (touch-friendly, unobtrusive) */}
+        <button
+          onClick={handleQuickAdd}
+          className="lg:hidden absolute bottom-2.5 right-2.5 z-10 w-8 h-8 rounded-full bg-black/70 backdrop-blur-md border border-white/20 flex items-center justify-center text-white active:scale-90 active:bg-snake-green active:text-black transition-all shadow-md"
+          aria-label="Quick Add to Bag"
+        >
+          <Plus size={14} />
+        </button>
+
+        {/* Desktop Floating Actions on Hover (LOCKED & UNTOUCHED FOR lg: AND ABOVE) */}
+        <div className="hidden lg:flex absolute bottom-3 inset-x-3 gap-2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
           <button
             onClick={handleQuickAdd}
-            className="flex-1 py-2 px-3 bg-black/80 hover:bg-snake-green hover:text-black text-white backdrop-blur-md border border-white/20 hover:border-snake-green font-mono text-[10px] tracking-widest uppercase transition-all duration-200 flex items-center justify-center gap-1.5 shadow-lg"
+            className="flex-1 py-2 px-3 bg-black/80 hover:bg-snake-green hover:text-black text-white backdrop-blur-md border border-white/20 hover:border-snake-green font-mono text-[10px] tracking-widest uppercase transition-all duration-200 flex items-center justify-center gap-1.5 shadow-lg active:scale-98"
           >
             <Plus size={13} /> QUICK ADD
           </button>
           <button
             onClick={handleQuickView}
-            className="p-2 bg-black/80 hover:bg-white hover:text-black text-white backdrop-blur-md border border-white/20 font-mono text-[10px] uppercase transition-all duration-200 flex items-center justify-center shadow-lg"
+            className="p-2 bg-black/80 hover:bg-white hover:text-black text-white backdrop-blur-md border border-white/20 font-mono text-[10px] uppercase transition-all duration-200 flex items-center justify-center shadow-lg active:scale-98"
             aria-label="Quick View"
           >
             <Eye size={14} />
@@ -115,7 +124,7 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
       </Link>
 
       {/* Product Metadata */}
-      <div className="pt-3.5 pb-2 flex flex-col space-y-1">
+      <div className="pt-2.5 sm:pt-3.5 pb-2 flex flex-col space-y-1">
         <div className="flex justify-between items-baseline gap-2">
           <Link
             href={`/product/${product.slug}`}
@@ -128,7 +137,7 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
           </span>
         </div>
 
-        <div className="flex justify-between items-center text-[10px] font-mono text-neutral-500">
+        <div className="flex justify-between items-center text-[9px] sm:text-[10px] font-mono text-neutral-500">
           <span>{product.fit} Fit • {product.gender.toUpperCase()}</span>
           <span className="line-through text-neutral-600">{formatPrice(product.mrp)}</span>
         </div>
@@ -139,7 +148,7 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
             <span
               key={c.name}
               title={c.name}
-              className="w-2.5 h-2.5 rounded-full border border-white/20"
+              className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full border border-white/20"
               style={{ backgroundColor: c.hex }}
             />
           ))}

@@ -53,11 +53,23 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
 
   const isFavorited = isInWishlist(product.id);
 
+  const [sizeError, setSizeError] = useState(false);
+
   const handleAddToBag = () => {
+    if (!selectedSize) {
+      setSizeError(true);
+      return;
+    }
+    setSizeError(false);
     addToCart(product, selectedSize, selectedColor, quantity);
   };
 
   const handleBuyNow = () => {
+    if (!selectedSize) {
+      setSizeError(true);
+      return;
+    }
+    setSizeError(false);
     addToCart(product, selectedSize, selectedColor, quantity);
     router.push('/checkout');
   };
@@ -66,72 +78,134 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
   const relatedProducts = products.filter((p) => p.id !== product.id).slice(0, 4);
 
   return (
-    <div className="bg-black text-white min-h-screen pt-28 pb-24 px-4 sm:px-6 md:px-12">
+    <div className="bg-black text-white min-h-screen pt-28 pb-32 lg:pb-24 px-4 sm:px-6 md:px-12">
       <div className="max-w-7xl mx-auto">
-        {/* Breadcrumb Navigation */}
-        <nav className="flex items-center gap-2 text-[11px] font-mono tracking-wider text-neutral-500 mb-8 uppercase">
+        {/* Breadcrumb Navigation - scroll-safe on mobile */}
+        <nav className="flex items-center gap-2 text-[10px] sm:text-[11px] font-mono tracking-wider text-neutral-500 mb-6 sm:mb-8 uppercase overflow-x-auto whitespace-nowrap pb-1">
           <Link href="/" className="hover:text-white transition-colors">HOME</Link>
           <span>/</span>
           <Link href="/shop" className="hover:text-white transition-colors">T-SHIRTS</Link>
           <span>/</span>
           <Link href={`/${product.gender}`} className="hover:text-white transition-colors">{product.gender}</Link>
           <span>/</span>
-          <span className="text-neutral-300 font-semibold">{product.name}</span>
+          <span className="text-neutral-300 font-semibold truncate">{product.name}</span>
         </nav>
 
         {/* Main Product Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-start">
           {/* ============================================================
-              LEFT: MASSIVE IMAGE GALLERY
+              LEFT: IMAGE GALLERY (MOBILE SWIPEABLE + DESKTOP MASTER)
               ============================================================ */}
           <div className="lg:col-span-7 space-y-4">
-            {/* Active Hero Image with Zoom trigger */}
-            <div className="relative aspect-[4/5] w-full rounded bg-[#0c0c0c] border border-white/10 overflow-hidden group">
-              <Image
-                src={activeImage.url}
-                alt={activeImage.alt}
-                fill
-                priority
-                sizes="(max-width: 1024px) 100vw, 60vw"
-                className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-              />
-
-              {/* Angle Tag */}
-              <div className="absolute top-4 left-4 px-2.5 py-1 bg-black/70 backdrop-blur-md border border-white/10 text-[10px] font-mono tracking-widest text-neutral-300 uppercase">
-                {product.gsm} GSM • {activeImage.angle || 'STUDIO'}
+            {/* MOBILE & TABLET SWIPEABLE CAROUSEL (< lg) */}
+            <div className="lg:hidden relative aspect-[4/5] w-full rounded bg-[#0c0c0c] border border-white/10 overflow-hidden">
+              <div
+                className="flex w-full h-full overflow-x-auto snap-x snap-mandatory scroll-smooth"
+                onScroll={(e) => {
+                  const el = e.currentTarget;
+                  const newIndex = Math.round(el.scrollLeft / el.clientWidth);
+                  if (newIndex !== activeImageIndex && newIndex >= 0 && newIndex < product.images.length) {
+                    setActiveImageIndex(newIndex);
+                  }
+                }}
+              >
+                {product.images.map((img, idx) => (
+                  <div key={idx} className="relative w-full h-full flex-shrink-0 snap-center">
+                    <Image
+                      src={img.url}
+                      alt={img.alt}
+                      fill
+                      priority={idx === 0}
+                      sizes="(max-width: 1024px) 100vw, 60vw"
+                      className="object-cover"
+                    />
+                  </div>
+                ))}
               </div>
 
-              {/* Lightbox Expander */}
+              {/* Floating Counter & GSM badge */}
+              <div className="absolute top-3 left-3 px-2.5 py-1 bg-black/75 backdrop-blur-md border border-white/10 text-[9px] font-mono tracking-widest text-neutral-200 uppercase flex items-center gap-2">
+                <span className="text-snake-green font-bold">
+                  {String(activeImageIndex + 1).padStart(2, '0')} / {String(product.images.length).padStart(2, '0')}
+                </span>
+                <span>•</span>
+                <span>{product.gsm} GSM</span>
+              </div>
+
+              {/* Lightbox Trigger */}
               <button
                 onClick={() => setLightboxOpen(true)}
-                className="absolute top-4 right-4 p-2 bg-black/60 backdrop-blur-md border border-white/10 rounded-full text-neutral-300 hover:text-white hover:border-snake-green transition-all"
+                className="absolute top-3 right-3 p-2 bg-black/70 backdrop-blur-md border border-white/10 rounded-full text-neutral-300 active:scale-90 transition-transform"
                 aria-label="View Fullscreen"
               >
-                <Maximize2 size={16} />
+                <Maximize2 size={15} />
               </button>
+
+              {/* Pagination Dots */}
+              <div className="absolute bottom-3 inset-x-0 flex justify-center gap-1.5 pointer-events-none">
+                {product.images.map((_, idx) => (
+                  <span
+                    key={idx}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${
+                      activeImageIndex === idx
+                        ? 'w-5 bg-snake-green'
+                        : 'w-1.5 bg-white/30'
+                    }`}
+                  />
+                ))}
+              </div>
             </div>
 
-            {/* Thumbnail Strip */}
-            <div className="grid grid-cols-4 gap-3">
-              {product.images.map((img, idx) => (
+            {/* DESKTOP GALLERY (LOCKED & UNTOUCHED FOR lg: AND ABOVE) */}
+            <div className="hidden lg:block space-y-4">
+              {/* Active Hero Image with Zoom trigger */}
+              <div className="relative aspect-[4/5] w-full rounded bg-[#0c0c0c] border border-white/10 overflow-hidden group">
+                <Image
+                  src={activeImage.url}
+                  alt={activeImage.alt}
+                  fill
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 60vw"
+                  className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                />
+
+                {/* Angle Tag */}
+                <div className="absolute top-4 left-4 px-2.5 py-1 bg-black/70 backdrop-blur-md border border-white/10 text-[10px] font-mono tracking-widest text-neutral-300 uppercase">
+                  {product.gsm} GSM • {activeImage.angle || 'STUDIO'}
+                </div>
+
+                {/* Lightbox Expander */}
                 <button
-                  key={idx}
-                  onClick={() => setActiveImageIndex(idx)}
-                  className={`relative aspect-square rounded overflow-hidden bg-neutral-900 border transition-all ${
-                    activeImageIndex === idx
-                      ? 'border-snake-green ring-1 ring-snake-green scale-[1.02]'
-                      : 'border-white/10 opacity-60 hover:opacity-100'
-                  }`}
+                  onClick={() => setLightboxOpen(true)}
+                  className="absolute top-4 right-4 p-2 bg-black/60 backdrop-blur-md border border-white/10 rounded-full text-neutral-300 hover:text-white hover:border-snake-green transition-all"
+                  aria-label="View Fullscreen"
                 >
-                  <Image
-                    src={img.url}
-                    alt={img.alt}
-                    fill
-                    sizes="120px"
-                    className="object-cover"
-                  />
+                  <Maximize2 size={16} />
                 </button>
-              ))}
+              </div>
+
+              {/* Thumbnail Strip */}
+              <div className="grid grid-cols-4 gap-3">
+                {product.images.map((img, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setActiveImageIndex(idx)}
+                    className={`relative aspect-square rounded overflow-hidden bg-neutral-900 border transition-all ${
+                      activeImageIndex === idx
+                        ? 'border-snake-green ring-1 ring-snake-green scale-[1.02]'
+                        : 'border-white/10 opacity-60 hover:opacity-100'
+                    }`}
+                  >
+                    <Image
+                      src={img.url}
+                      alt={img.alt}
+                      fill
+                      sizes="120px"
+                      className="object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -226,7 +300,9 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
             {/* Size Selection */}
             <div className="space-y-3">
               <div className="flex justify-between items-center text-xs font-mono tracking-wider">
-                <span className="text-neutral-400 uppercase">SIZE:</span>
+                <span className="text-neutral-400 uppercase">
+                  SIZE: {sizeError && <span className="text-snake-green font-semibold ml-2 animate-pulse">— PLEASE SELECT A SIZE</span>}
+                </span>
                 <button
                   onClick={() => setSizeGuideOpen(true)}
                   className="text-snake-green hover:underline flex items-center gap-1 uppercase"
@@ -241,8 +317,11 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
                   return (
                     <button
                       key={size}
-                      onClick={() => setSelectedSize(size)}
-                      className={`py-3 text-xs font-mono border rounded transition-all ${
+                      onClick={() => {
+                        setSelectedSize(size);
+                        setSizeError(false);
+                      }}
+                      className={`py-3.5 sm:py-3 text-xs font-mono border rounded transition-all active:scale-95 ${
                         isSelected
                           ? 'border-snake-green bg-snake-green/10 text-white font-bold'
                           : 'border-white/15 text-neutral-400 hover:border-white/40 hover:text-white'
@@ -446,6 +525,25 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
           </div>
         </div>
       )}
+
+      {/* Sticky Bottom Purchase Bar (Mobile & Tablet, < lg) */}
+      <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-[#0a0a0a]/95 backdrop-blur-xl border-t border-white/10 p-3 sm:p-4 pb-[max(0.75rem,calc(env(safe-area-inset-bottom,0px)+0.5rem))] flex items-center justify-between gap-4 shadow-[0_-8px_25px_rgba(0,0,0,0.8)]">
+        <div>
+          <span className="text-[10px] font-mono text-neutral-400 block uppercase truncate max-w-[140px] sm:max-w-[220px]">
+            {selectedColor.name} • {selectedSize || 'CHOOSE SIZE'}
+          </span>
+          <span className="font-mono text-base font-bold text-white">
+            {formatPrice(product.price)}
+          </span>
+        </div>
+
+        <button
+          onClick={handleAddToBag}
+          className="px-6 py-3 bg-snake-green text-black font-mono text-xs tracking-widest font-bold uppercase rounded hover:bg-white active:scale-95 transition-all shadow-[0_0_15px_rgba(4,252,33,0.3)]"
+        >
+          ADD TO BAG
+        </button>
+      </div>
     </div>
   );
 }

@@ -60,7 +60,7 @@ export default function TrackOrderPage() {
         </div>
 
         {/* Tracking Form */}
-        <div className="bg-[#0a0a0a] border border-white/10 p-6 md:p-8 rounded-sm">
+        <div className="bg-[#0a0a0a] border border-white/10 p-5 md:p-8 rounded-sm">
           <form onSubmit={handleTrack} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -73,7 +73,7 @@ export default function TrackOrderPage() {
                   onChange={(e) => setOrderNumber(e.target.value)}
                   required
                   placeholder="e.g. SS-2026-1049"
-                  className="w-full bg-[#121212] border border-white/15 px-4 py-3 text-xs font-mono text-white placeholder:text-neutral-600 focus:outline-none focus:border-snake-green transition-colors"
+                  className="w-full min-h-[48px] bg-[#121212] border border-white/15 px-4 py-3 text-base sm:text-xs font-mono text-white placeholder:text-neutral-600 focus:outline-none focus:border-snake-green transition-colors"
                 />
               </div>
 
@@ -86,14 +86,14 @@ export default function TrackOrderPage() {
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   placeholder="e.g. patron@supersnake.in"
-                  className="w-full bg-[#121212] border border-white/15 px-4 py-3 text-xs font-mono text-white placeholder:text-neutral-600 focus:outline-none focus:border-snake-green transition-colors"
+                  className="w-full min-h-[48px] bg-[#121212] border border-white/15 px-4 py-3 text-base sm:text-xs font-mono text-white placeholder:text-neutral-600 focus:outline-none focus:border-snake-green transition-colors"
                 />
               </div>
             </div>
 
             <button
               type="submit"
-              className="w-full bg-white hover:bg-snake-green text-black font-mono text-xs uppercase tracking-widest py-3.5 px-6 font-semibold transition-all duration-300 flex items-center justify-center gap-2 group mt-2"
+              className="w-full min-h-[48px] bg-white hover:bg-snake-green text-black font-mono text-xs uppercase tracking-widest py-3.5 px-6 font-semibold active:scale-[0.99] transition-all duration-300 flex items-center justify-center gap-2 group mt-2"
             >
               <span>TRACK SHIPMENT</span>
               <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
@@ -104,7 +104,7 @@ export default function TrackOrderPage() {
         {/* Results */}
         {searched && (
           foundOrder ? (
-            <div className="bg-[#0a0a0a] border border-white/10 p-6 md:p-8 rounded-sm space-y-6">
+            <div className="bg-[#0a0a0a] border border-white/10 p-5 md:p-8 rounded-sm space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
                 <div className="space-y-1">
                   <span className="text-[10px] font-mono tracking-widest text-snake-green uppercase">
@@ -130,7 +130,8 @@ export default function TrackOrderPage() {
 
               {/* Progress Steps */}
               <div className="space-y-3 py-2">
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                {/* Desktop / Tablet Horizontal Timeline (sm+) */}
+                <div className="hidden sm:grid sm:grid-cols-6 gap-2">
                   {statusSteps.map((step, idx) => {
                     const currentIdx = statusSteps.indexOf(foundOrder.status);
                     const isPast = currentIdx >= idx;
@@ -153,6 +154,66 @@ export default function TrackOrderPage() {
                         >
                           {step}
                         </span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Mobile Vertical Timeline (< sm) */}
+                <div className="sm:hidden space-y-4 py-2 pl-2">
+                  {statusSteps.map((step, idx) => {
+                    const currentIdx = statusSteps.indexOf(foundOrder.status);
+                    const isPast = currentIdx >= idx;
+                    const isCurrent = currentIdx === idx;
+                    const isLast = idx === statusSteps.length - 1;
+
+                    return (
+                      <div key={step} className="flex items-start gap-4 relative">
+                        {/* Connecting Line */}
+                        {!isLast && (
+                          <div
+                            className={`absolute left-[9px] top-4 bottom-[-16px] w-[2px] ${
+                              currentIdx > idx ? 'bg-snake-green' : 'bg-white/10'
+                            }`}
+                          />
+                        )}
+
+                        {/* Step Dot */}
+                        <div
+                          className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 z-10 ${
+                            isCurrent
+                              ? 'bg-snake-green text-black ring-4 ring-snake-green/20'
+                              : isPast
+                              ? 'bg-snake-green text-black'
+                              : 'bg-[#1a1a1a] border border-white/20 text-neutral-600'
+                          }`}
+                        >
+                          {isPast ? (
+                            <CheckCircle2 size={12} className="stroke-[3]" />
+                          ) : (
+                            <span className="w-1.5 h-1.5 rounded-full bg-neutral-600" />
+                          )}
+                        </div>
+
+                        {/* Step Details */}
+                        <div className="flex-1 pb-1">
+                          <p
+                            className={`text-xs font-mono uppercase tracking-wider ${
+                              isCurrent
+                                ? 'text-snake-green font-bold'
+                                : isPast
+                                ? 'text-white font-medium'
+                                : 'text-neutral-500'
+                            }`}
+                          >
+                            {step}
+                          </p>
+                          {isCurrent && (
+                            <p className="text-[10px] font-mono text-neutral-400 mt-0.5">
+                              Current stage • Updated in real-time
+                            </p>
+                          )}
+                        </div>
                       </div>
                     );
                   })}

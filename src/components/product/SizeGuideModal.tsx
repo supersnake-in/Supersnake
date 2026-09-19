@@ -26,7 +26,7 @@ export function SizeGuideModal({ isOpen, onClose, fitType }: SizeGuideModalProps
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -36,22 +36,26 @@ export function SizeGuideModal({ isOpen, onClose, fitType }: SizeGuideModalProps
         />
 
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 10 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 10 }}
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 30 }}
           transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          className="relative z-10 w-full max-w-xl bg-[#0e0e0e] border border-white/10 rounded-lg p-6 sm:p-8 shadow-2xl text-neutral-200"
+          className="relative z-10 w-full max-w-xl bg-[#0e0e0e] border-t sm:border border-white/10 rounded-t-2xl sm:rounded-lg p-5 sm:p-8 shadow-2xl text-neutral-200 max-h-[90vh] sm:max-h-auto overflow-y-auto pb-[max(1.5rem,calc(env(safe-area-inset-bottom,0px)+1rem))]"
         >
+          {/* Mobile Bottom Sheet Pull Indicator */}
+          <div className="sm:hidden w-10 h-1 bg-white/20 rounded-full mx-auto mb-4" />
+
           <div className="flex justify-between items-center border-b border-white/10 pb-4 mb-6">
             <div className="flex items-center gap-2.5">
               <Ruler size={18} className="text-snake-green" />
-              <h3 className="font-mono text-sm tracking-widest uppercase text-white font-bold">
+              <h3 className="font-mono text-xs sm:text-sm tracking-widest uppercase text-white font-bold">
                 SIZE GUIDE — {fitType.toUpperCase()} FIT
               </h3>
             </div>
             <button
               onClick={onClose}
               className="p-1.5 text-neutral-400 hover:text-white transition-colors"
+              aria-label="Close size guide"
             >
               <X size={18} />
             </button>

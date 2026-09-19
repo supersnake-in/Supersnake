@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ShieldCheck, ArrowRight, Lock, CheckCircle2, CreditCard, Smartphone, Building, Wallet, AlertCircle, RefreshCw } from 'lucide-react';
+import { ShieldCheck, ArrowRight, Lock, CheckCircle2, CreditCard, Smartphone, Building, Wallet, AlertCircle, RefreshCw, ShoppingBag, ChevronDown, ChevronUp } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useAuth } from '@/lib/auth-context';
 import { formatPrice, BRAND } from '@/lib/design-tokens';
@@ -17,6 +17,7 @@ export default function CheckoutPage() {
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [showMobileSummary, setShowMobileSummary] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -140,7 +141,7 @@ export default function CheckoutPage() {
     <div className="bg-black text-white min-h-screen pt-28 pb-24 px-4 sm:px-6 md:px-12">
       <div className="max-w-6xl mx-auto">
         {/* Checkout Header */}
-        <div className="border-b border-white/10 pb-6 mb-10 flex items-center justify-between">
+        <div className="border-b border-white/10 pb-6 mb-8 md:mb-10 flex items-center justify-between">
           <div>
             <span className="text-[10px] font-mono tracking-mega text-snake-green uppercase">
               SECURE TRANSACTION
@@ -156,8 +157,81 @@ export default function CheckoutPage() {
           </div>
         </div>
 
+        {/* Mobile Collapsible Order Summary */}
+        <div className="lg:hidden mb-6 bg-[#0c0c0c] border border-white/10 rounded-lg overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setShowMobileSummary(!showMobileSummary)}
+            className="w-full p-4 flex items-center justify-between text-xs font-mono bg-neutral-950 hover:bg-neutral-900 transition-colors"
+          >
+            <div className="flex items-center gap-2 text-snake-green">
+              <ShoppingBag size={15} />
+              <span className="text-white font-medium">
+                {showMobileSummary ? 'Hide order summary' : 'Show order summary'}
+              </span>
+              <span className="text-neutral-500">({cart.length})</span>
+              {showMobileSummary ? <ChevronUp size={14} className="text-neutral-400" /> : <ChevronDown size={14} className="text-neutral-400" />}
+            </div>
+            <span className="text-white font-bold text-sm">
+              {formatPrice(cartTotal + (cartTotal >= BRAND.freeShippingThreshold ? 0 : 150))}
+            </span>
+          </button>
+
+          {showMobileSummary && (
+            <div className="p-4 border-t border-white/10 space-y-4">
+              <div className="space-y-3 max-h-60 overflow-y-auto divide-y divide-white/5 pr-1">
+                {cart.map((item) => (
+                  <div key={item.id} className="pt-2.5 first:pt-0 flex gap-3 items-center">
+                    <div className="relative w-12 h-14 bg-neutral-900 rounded overflow-hidden flex-shrink-0 border border-white/5">
+                      <Image
+                        src={item.product.images[0]?.url || ''}
+                        alt={item.product.name}
+                        fill
+                        sizes="50px"
+                        className="object-cover"
+                      />
+                    </div>
+                    <div className="flex-1 text-[11px] font-mono min-w-0">
+                      <p className="font-semibold text-white uppercase truncate">{item.product.name}</p>
+                      <p className="text-[10px] text-neutral-400">
+                        {item.selectedColor.name} • {item.selectedSize} × {item.quantity}
+                      </p>
+                    </div>
+                    <span className="font-mono text-xs text-white font-medium flex-shrink-0">
+                      {formatPrice(item.price * item.quantity)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-2 pt-3 border-t border-white/10 text-xs font-mono">
+                <div className="flex justify-between text-neutral-400">
+                  <span>SUBTOTAL</span>
+                  <span className="text-white">{formatPrice(cartTotal)}</span>
+                </div>
+                <div className="flex justify-between text-neutral-400">
+                  <span>EXPRESS SHIPPING</span>
+                  <span className="text-snake-green">
+                    {cartTotal >= BRAND.freeShippingThreshold ? 'FREE' : formatPrice(150)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-neutral-400">
+                  <span>TAXES (GST 5%)</span>
+                  <span className="text-white">INCLUDED</span>
+                </div>
+                <div className="flex justify-between text-sm font-semibold text-white pt-2 border-t border-white/10">
+                  <span>TOTAL DUE</span>
+                  <span className="text-base text-snake-green">
+                    {formatPrice(cartTotal + (cartTotal >= BRAND.freeShippingThreshold ? 0 : 150))}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Progress Tracker */}
-        <div className="grid grid-cols-3 gap-2 mb-10 text-xs font-mono">
+        <div className="grid grid-cols-3 gap-2 mb-8 md:mb-10 text-xs font-mono">
           <div
             className={`pb-2 border-b-2 transition-colors ${
               step >= 1 ? 'border-snake-green text-white font-semibold' : 'border-neutral-800 text-neutral-600'
@@ -182,9 +256,9 @@ export default function CheckoutPage() {
         </div>
 
         {/* Main Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
           {/* Left Form (Steps) */}
-          <div className="lg:col-span-7 bg-[#0c0c0c] border border-white/10 rounded-lg p-6 sm:p-8 space-y-8">
+          <div className="lg:col-span-7 bg-[#0c0c0c] border border-white/10 rounded-lg p-5 sm:p-8 space-y-8">
             {/* Step 1: Contact */}
             {step === 1 && (
               <form onSubmit={handleNextStep} className="space-y-6">
@@ -204,10 +278,12 @@ export default function CheckoutPage() {
                       type="email"
                       name="email"
                       required
+                      autoComplete="email"
+                      inputMode="email"
                       value={formData.email}
                       onChange={handleChange}
                       placeholder="e.g. aditya@example.com"
-                      className="w-full bg-black border border-white/15 px-4 py-3 text-white rounded focus:outline-none focus:border-snake-green"
+                      className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green"
                     />
                   </div>
 
@@ -217,17 +293,19 @@ export default function CheckoutPage() {
                       type="tel"
                       name="phone"
                       required
+                      autoComplete="tel"
+                      inputMode="tel"
                       value={formData.phone}
                       onChange={handleChange}
                       placeholder="+91 98765 43210"
-                      className="w-full bg-black border border-white/15 px-4 py-3 text-white rounded focus:outline-none focus:border-snake-green"
+                      className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green"
                     />
                   </div>
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full py-4 bg-snake-green text-black font-mono text-xs tracking-widest font-bold uppercase hover:bg-white transition-colors flex items-center justify-center gap-2"
+                  className="w-full min-h-[48px] py-4 bg-snake-green text-black font-mono text-xs tracking-widest font-bold uppercase hover:bg-white active:scale-[0.99] transition-all flex items-center justify-center gap-2"
                 >
                   CONTINUE TO DELIVERY <ArrowRight size={14} />
                 </button>
@@ -262,10 +340,11 @@ export default function CheckoutPage() {
                       type="text"
                       name="fullName"
                       required
+                      autoComplete="name"
                       value={formData.fullName}
                       onChange={handleChange}
                       placeholder="Full recipient name"
-                      className="w-full bg-black border border-white/15 px-4 py-3 text-white rounded focus:outline-none focus:border-snake-green"
+                      className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green"
                     />
                   </div>
 
@@ -275,10 +354,11 @@ export default function CheckoutPage() {
                       type="text"
                       name="street"
                       required
+                      autoComplete="street-address"
                       value={formData.street}
                       onChange={handleChange}
                       placeholder="Building, flat, and street details"
-                      className="w-full bg-black border border-white/15 px-4 py-3 text-white rounded focus:outline-none focus:border-snake-green"
+                      className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green"
                     />
                   </div>
 
@@ -291,7 +371,7 @@ export default function CheckoutPage() {
                         value={formData.landmark}
                         onChange={handleChange}
                         placeholder="Near Metro Station"
-                        className="w-full bg-black border border-white/15 px-4 py-3 text-white rounded focus:outline-none focus:border-snake-green"
+                        className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green"
                       />
                     </div>
 
@@ -301,10 +381,13 @@ export default function CheckoutPage() {
                         type="text"
                         name="postalCode"
                         required
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        autoComplete="postal-code"
                         value={formData.postalCode}
                         onChange={handleChange}
                         placeholder="560038"
-                        className="w-full bg-black border border-white/15 px-4 py-3 text-white rounded focus:outline-none focus:border-snake-green"
+                        className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green"
                       />
                     </div>
                   </div>
@@ -316,10 +399,11 @@ export default function CheckoutPage() {
                         type="text"
                         name="city"
                         required
+                        autoComplete="address-level2"
                         value={formData.city}
                         onChange={handleChange}
                         placeholder="Bengaluru"
-                        className="w-full bg-black border border-white/15 px-4 py-3 text-white rounded focus:outline-none focus:border-snake-green"
+                        className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green"
                       />
                     </div>
 
@@ -329,10 +413,11 @@ export default function CheckoutPage() {
                         type="text"
                         name="state"
                         required
+                        autoComplete="address-level1"
                         value={formData.state}
                         onChange={handleChange}
                         placeholder="Karnataka"
-                        className="w-full bg-black border border-white/15 px-4 py-3 text-white rounded focus:outline-none focus:border-snake-green"
+                        className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green"
                       />
                     </div>
                   </div>
@@ -342,13 +427,13 @@ export default function CheckoutPage() {
                   <button
                     type="button"
                     onClick={() => setStep(1)}
-                    className="py-4 px-6 border border-white/20 text-neutral-300 font-mono text-xs uppercase hover:border-white transition-colors"
+                    className="min-h-[48px] py-4 px-6 border border-white/20 text-neutral-300 font-mono text-xs uppercase hover:border-white active:scale-[0.99] transition-all"
                   >
                     BACK
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 py-4 bg-snake-green text-black font-mono text-xs tracking-widest font-bold uppercase hover:bg-white transition-colors flex items-center justify-center gap-2"
+                    className="flex-1 min-h-[48px] py-4 bg-snake-green text-black font-mono text-xs tracking-widest font-bold uppercase hover:bg-white active:scale-[0.99] transition-all flex items-center justify-center gap-2"
                   >
                     CONTINUE TO PAYMENT <ArrowRight size={14} />
                   </button>
@@ -378,7 +463,7 @@ export default function CheckoutPage() {
 
                 <div className="space-y-3 text-xs font-mono">
                   {/* UPI */}
-                  <label className="flex items-center justify-between p-4 border rounded border-snake-green bg-snake-green/5 cursor-pointer">
+                  <label className="flex items-center justify-between p-4 border rounded border-snake-green bg-snake-green/5 cursor-pointer active:scale-[0.99] transition-all">
                     <div className="flex items-center gap-3">
                       <input
                         type="radio"
@@ -388,17 +473,17 @@ export default function CheckoutPage() {
                         onChange={handleChange}
                         className="accent-snake-green"
                       />
-                      <Smartphone size={18} className="text-snake-green" />
+                      <Smartphone size={18} className="text-snake-green shrink-0" />
                       <div>
                         <p className="font-semibold text-white">UPI (Google Pay, PhonePe, Paytm, CRED)</p>
                         <p className="text-[11px] text-neutral-400">Instant verification via QR code or VPA</p>
                       </div>
                     </div>
-                    <span className="text-[10px] text-snake-green font-bold uppercase">FASTEST</span>
+                    <span className="text-[10px] text-snake-green font-bold uppercase shrink-0">FASTEST</span>
                   </label>
 
                   {/* Cards */}
-                  <label className="flex items-center justify-between p-4 border rounded border-white/10 hover:border-white/30 cursor-pointer">
+                  <label className="flex items-center justify-between p-4 border rounded border-white/10 hover:border-white/30 cursor-pointer active:scale-[0.99] transition-all">
                     <div className="flex items-center gap-3">
                       <input
                         type="radio"
@@ -408,7 +493,7 @@ export default function CheckoutPage() {
                         onChange={handleChange}
                         className="accent-snake-green"
                       />
-                      <CreditCard size={18} className="text-neutral-400" />
+                      <CreditCard size={18} className="text-neutral-400 shrink-0" />
                       <div>
                         <p className="font-semibold text-white">Credit / Debit Card</p>
                         <p className="text-[11px] text-neutral-400">Visa, MasterCard, RuPay, Amex</p>
@@ -417,7 +502,7 @@ export default function CheckoutPage() {
                   </label>
 
                   {/* Net Banking */}
-                  <label className="flex items-center justify-between p-4 border rounded border-white/10 hover:border-white/30 cursor-pointer">
+                  <label className="flex items-center justify-between p-4 border rounded border-white/10 hover:border-white/30 cursor-pointer active:scale-[0.99] transition-all">
                     <div className="flex items-center gap-3">
                       <input
                         type="radio"
@@ -427,7 +512,7 @@ export default function CheckoutPage() {
                         onChange={handleChange}
                         className="accent-snake-green"
                       />
-                      <Building size={18} className="text-neutral-400" />
+                      <Building size={18} className="text-neutral-400 shrink-0" />
                       <div>
                         <p className="font-semibold text-white">Net Banking</p>
                         <p className="text-[11px] text-neutral-400">HDFC, ICICI, SBI, Axis & 50+ banks</p>
@@ -447,14 +532,14 @@ export default function CheckoutPage() {
                   <button
                     type="button"
                     onClick={() => setStep(2)}
-                    className="py-4 px-6 border border-white/20 text-neutral-300 font-mono text-xs uppercase hover:border-white transition-colors"
+                    className="min-h-[48px] py-4 px-6 border border-white/20 text-neutral-300 font-mono text-xs uppercase hover:border-white active:scale-[0.99] transition-all"
                   >
                     BACK
                   </button>
                   <button
                     onClick={handleCompletePayment}
                     disabled={isProcessing}
-                    className="flex-1 py-4 bg-snake-green text-black font-mono text-xs tracking-widest font-bold uppercase hover:bg-white transition-all duration-300 flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(4,252,33,0.3)] disabled:opacity-50"
+                    className="flex-1 min-h-[48px] py-4 bg-snake-green text-black font-mono text-xs tracking-widest font-bold uppercase hover:bg-white active:scale-[0.99] transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(4,252,33,0.3)] disabled:opacity-50"
                   >
                     {isProcessing ? 'PROCESSING SECURE TRANSACTION...' : `PAY ${formatPrice(cartTotal)} →`}
                   </button>
@@ -463,8 +548,8 @@ export default function CheckoutPage() {
             )}
           </div>
 
-          {/* Right: Order Summary Sidebar */}
-          <div className="lg:col-span-5 bg-[#0d0d0d] border border-white/10 rounded-lg p-6 space-y-6">
+          {/* Right: Order Summary Sidebar (Desktop locked) */}
+          <div className="hidden lg:block lg:col-span-5 bg-[#0d0d0d] border border-white/10 rounded-lg p-6 space-y-6">
             <h3 className="text-xs font-mono tracking-widest text-neutral-400 uppercase border-b border-white/10 pb-3">
               YOUR ORDER ({cart.length})
             </h3>

@@ -37,7 +37,7 @@ export function CartDrawer() {
             className="fixed top-0 right-0 bottom-0 z-50 w-full max-w-md bg-[#0a0a0a] border-l border-white/10 flex flex-col shadow-2xl text-neutral-200"
           >
             {/* Header */}
-            <div className="p-6 border-b border-white/10 flex items-center justify-between">
+            <div className="p-5 sm:p-6 pt-[max(1.25rem,calc(env(safe-area-inset-top,0px)+0.75rem))] border-b border-white/10 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <span className="font-mono text-xs tracking-widest text-snake-green font-semibold uppercase">
                   ADDED TO BAG ✓
@@ -46,7 +46,7 @@ export function CartDrawer() {
               </div>
               <button
                 onClick={closeCart}
-                className="p-1.5 text-neutral-400 hover:text-white transition-colors focus:outline-none"
+                className="p-2 text-neutral-400 hover:text-white transition-colors focus:outline-none active:scale-95"
                 aria-label="Close Bag"
               >
                 <X size={18} />
@@ -166,7 +166,7 @@ export function CartDrawer() {
 
             {/* Footer Summary & Checkout CTA */}
             {cart.length > 0 && (
-              <div className="p-6 bg-[#0c0c0c] border-t border-white/10 space-y-4">
+              <div className="p-5 sm:p-6 pb-[max(1.5rem,calc(env(safe-area-inset-bottom,0px)+1rem))] bg-[#0c0c0c] border-t border-white/10 space-y-4">
                 <div className="flex justify-between items-center text-xs font-mono tracking-wider">
                   <span className="text-neutral-400">SUBTOTAL</span>
                   <span className="text-white font-semibold text-sm">{formatPrice(cartTotal)}</span>
@@ -179,14 +179,14 @@ export function CartDrawer() {
                   <Link
                     href="/bag"
                     onClick={closeCart}
-                    className="py-3 px-4 border border-white/20 text-center font-mono text-xs tracking-widest text-neutral-200 hover:text-white hover:border-white transition-colors uppercase"
+                    className="py-3.5 sm:py-3 px-4 border border-white/20 text-center font-mono text-xs tracking-widest text-neutral-200 hover:text-white hover:border-white active:scale-95 transition-all uppercase"
                   >
                     VIEW BAG
                   </Link>
                   <Link
                     href="/checkout"
                     onClick={closeCart}
-                    className="py-3 px-4 bg-snake-green text-black text-center font-mono text-xs tracking-widest font-bold hover:bg-white transition-colors uppercase flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(4,252,33,0.3)]"
+                    className="py-3.5 sm:py-3 px-4 bg-snake-green text-black text-center font-mono text-xs tracking-widest font-bold hover:bg-white active:scale-95 transition-all uppercase flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(4,252,33,0.3)]"
                   >
                     CHECKOUT <ArrowRight size={14} />
                   </Link>
