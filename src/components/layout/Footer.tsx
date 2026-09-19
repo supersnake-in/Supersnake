@@ -40,9 +40,6 @@ export function Footer() {
       title: 'CUSTOMER CARE',
       links: [
         { label: 'CONTACT US', href: '/contact' },
-        ...(socialConfig?.contactPhone
-          ? [{ label: `TEL: ${socialConfig.contactPhone}`, href: `tel:${socialConfig.contactPhone.replace(/\s+/g, '')}` }]
-          : []),
         { label: 'FAQ', href: '/faq' },
         { label: 'SHIPPING & DELIVERY', href: '/shipping' },
         { label: 'RETURNS & DEFECTS', href: '/returns' },
