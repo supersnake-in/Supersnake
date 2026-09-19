@@ -11,7 +11,7 @@ function SignupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get('next') || searchParams.get('redirect') || '/account';
-  const { user, signUp, signInWithGoogle, isLoading } = useAuth();
+  const { user, signUp, signInWithGoogle, sendPhoneOtp, isLoading } = useAuth();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -61,22 +61,31 @@ function SignupContent() {
       return;
     }
 
-    if (password.length < 8) {
-      setError('Password must contain at least 8 characters.');
+    if (!phone.trim()) {
+      setError('Please provide a valid phone number for order SMS and verification.');
       return;
     }
 
     setIsSubmitting(true);
     const res = await signUp(email, password, fullName, phone);
-    setIsSubmitting(false);
 
     if (res.error) {
+      setIsSubmitting(false);
       setError(res.error);
-    } else if (res.requireVerification) {
-      router.push(`/verify-email?email=${encodeURIComponent(email)}`);
-    } else {
-      router.push(next);
+      return;
     }
+
+    // Trigger initial phone verification OTP
+    try {
+      await sendPhoneOtp(phone);
+    } catch (e) {}
+
+    setIsSubmitting(false);
+
+    // Always redirect to verification protocol to complete both email and phone verification
+    router.push(
+      `/verify-email?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}&name=${encodeURIComponent(fullName)}&next=${encodeURIComponent(next)}`
+    );
   };
 
   return (
@@ -188,6 +197,7 @@ function SignupContent() {
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
+                required
                 placeholder="+91 98765 43210"
                 className="w-full bg-[#121212] border border-white/15 px-4 py-3 text-sm font-mono text-white placeholder:text-neutral-600 focus:outline-none focus:border-snake-green transition-colors"
               />

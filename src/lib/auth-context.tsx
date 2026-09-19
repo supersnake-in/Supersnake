@@ -16,6 +16,8 @@ export interface UserProfile {
   preferredFit?: FitType;
   preferredSize?: string;
   genderInterest?: 'men' | 'women' | 'all';
+  isEmailVerified?: boolean;
+  isPhoneVerified?: boolean;
 }
 
 interface AuthContextType {
@@ -27,6 +29,10 @@ interface AuthContextType {
   signIn: (email: string, password?: string) => Promise<{ error?: string }>;
   signUp: (email: string, password: string, fullName?: string, phone?: string) => Promise<{ error?: string; requireVerification?: boolean }>;
   signInWithGoogle: (redirectTo?: string) => Promise<{ error?: string }>;
+  sendPhoneOtp: (phone: string) => Promise<{ error?: string; simulatedOtp?: string }>;
+  verifyPhoneOtp: (phone: string, code: string) => Promise<{ error?: string }>;
+  sendEmailOtp: (email: string) => Promise<{ error?: string; simulatedOtp?: string }>;
+  verifyEmailOtp: (email: string, code: string) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error?: string }>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<{ error?: string }>;
@@ -112,6 +118,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       preferredFit: meta.preferred_fit || 'Classic',
       preferredSize: meta.preferred_size || 'M',
       genderInterest: meta.gender_interest || 'all',
+      isEmailVerified: Boolean(currentUser.email_confirmed_at || meta.email_verified || meta.is_email_verified),
+      isPhoneVerified: Boolean(currentUser.phone_confirmed_at || meta.phone_verified || meta.is_phone_verified),
     };
 
     setProfile(loadedProfile);
@@ -132,6 +140,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           ...loadedProfile,
           fullName: dbProfile.full_name || loadedProfile.fullName,
           phone: dbProfile.phone || loadedProfile.phone,
+          isEmailVerified: dbProfile.is_email_verified ?? loadedProfile.isEmailVerified,
+          isPhoneVerified: dbProfile.is_phone_verified ?? loadedProfile.isPhoneVerified,
         };
         setProfile(loadedProfile);
         try {
@@ -274,6 +284,102 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const sendPhoneOtp = async (phone: string): Promise<{ error?: string; simulatedOtp?: string }> => {
+    try {
+      const res = await fetch('/api/auth/otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'send_phone', phone }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { error: data.error || 'Failed to dispatch phone verification code' };
+      return { simulatedOtp: data.simulatedOtp };
+    } catch (err: any) {
+      return { error: err.message || 'Phone verification dispatch error' };
+    }
+  };
+
+  const verifyPhoneOtp = async (phone: string, code: string): Promise<{ error?: string }> => {
+    try {
+      const res = await fetch('/api/auth/otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'verify_phone', phone, code }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { error: data.error || 'Incorrect phone verification code' };
+
+      // Update local profile and Supabase metadata
+      if (profile) {
+        const updated = { ...profile, isPhoneVerified: true, phone };
+        setProfile(updated);
+        try {
+          localStorage.setItem('supersnake_user_profile', JSON.stringify(updated));
+        } catch (e) {}
+      }
+
+      if (user) {
+        try {
+          await supabase.auth.updateUser({
+            data: { phone_verified: true, is_phone_verified: true, phone },
+          });
+        } catch (e) {}
+      }
+
+      return {};
+    } catch (err: any) {
+      return { error: err.message || 'Phone verification failed' };
+    }
+  };
+
+  const sendEmailOtp = async (email: string): Promise<{ error?: string; simulatedOtp?: string }> => {
+    try {
+      const res = await fetch('/api/auth/otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'send_email', email }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { error: data.error || 'Failed to dispatch email verification code' };
+      return { simulatedOtp: data.simulatedOtp };
+    } catch (err: any) {
+      return { error: err.message || 'Email verification dispatch error' };
+    }
+  };
+
+  const verifyEmailOtp = async (email: string, code: string): Promise<{ error?: string }> => {
+    try {
+      const res = await fetch('/api/auth/otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'verify_email', email, code }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { error: data.error || 'Incorrect email verification code' };
+
+      // Update local profile and Supabase metadata
+      if (profile) {
+        const updated = { ...profile, isEmailVerified: true };
+        setProfile(updated);
+        try {
+          localStorage.setItem('supersnake_user_profile', JSON.stringify(updated));
+        } catch (e) {}
+      }
+
+      if (user) {
+        try {
+          await supabase.auth.updateUser({
+            data: { email_verified: true, is_email_verified: true },
+          });
+        } catch (e) {}
+      }
+
+      return {};
+    } catch (err: any) {
+      return { error: err.message || 'Email verification failed' };
+    }
+  };
+
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
@@ -348,6 +454,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signIn,
         signUp,
         signInWithGoogle,
+        sendPhoneOtp,
+        verifyPhoneOtp,
+        sendEmailOtp,
+        verifyEmailOtp,
         signOut,
         resetPassword,
         updateProfile,
