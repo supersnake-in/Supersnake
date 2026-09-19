@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   ArrowRight,
   Plus,
+  Check,
 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { formatPrice } from '@/lib/design-tokens';
@@ -24,6 +25,24 @@ export default function AccountPage() {
   const [activeTab, setActiveTab] = useState<
     'overview' | 'orders' | 'wishlist' | 'addresses' | 'profile' | 'security'
   >('orders');
+
+  const latestOrder = orders[0];
+  const customerName = latestOrder?.customer?.name || '';
+  const customerEmail = latestOrder?.customer?.email || '';
+  const customerPhone = latestOrder?.customer?.phone || '';
+
+  const [profileName, setProfileName] = useState(customerName);
+  const [profileEmail, setProfileEmail] = useState(customerEmail);
+  const [profilePhone, setProfilePhone] = useState(customerPhone);
+  const [profileSaved, setProfileSaved] = useState(false);
+
+  const totalSpent = orders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+  const tierStatus =
+    orders.length > 0
+      ? totalSpent >= 5000
+        ? 'VIP INSTINCT MEMBER'
+        : 'ATELIER MEMBER'
+      : 'GUEST PATRON';
 
   const statusSteps: OrderStatus[] = [
     'Confirmed',
@@ -36,6 +55,12 @@ export default function AccountPage() {
 
   const getStepIndex = (status: OrderStatus) => {
     return statusSteps.indexOf(status);
+  };
+
+  const handleUpdateProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    setProfileSaved(true);
+    setTimeout(() => setProfileSaved(false), 2500);
   };
 
   return (
@@ -51,7 +76,14 @@ export default function AccountPage() {
               MY ACCOUNT
             </h1>
             <p className="text-xs font-mono text-neutral-400">
-              Aditya Sharma • aditya.sharma@example.com
+              {customerEmail ? (
+                <span>
+                  {customerName ? `${customerName} • ` : ''}
+                  {customerEmail}
+                </span>
+              ) : (
+                'GUEST PATRON • Complete an order or enter your details below'
+              )}
             </p>
           </div>
 
@@ -105,7 +137,7 @@ export default function AccountPage() {
                   </p>
                   <Link
                     href="/shop"
-                    className="inline-block mt-4 px-6 py-3 bg-snake-green text-black font-mono text-xs font-bold uppercase tracking-widest"
+                    className="inline-block mt-4 px-6 py-3 bg-snake-green text-black font-mono text-xs font-bold uppercase tracking-widest hover:bg-white transition-colors"
                   >
                     SHOP COLLECTION
                   </Link>
@@ -130,7 +162,12 @@ export default function AccountPage() {
                             </span>
                           </div>
                           <span className="text-[11px] text-neutral-500 mt-1 block">
-                            Placed on {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            Placed on{' '}
+                            {new Date(order.createdAt).toLocaleDateString('en-IN', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                            })}
                           </span>
                         </div>
 
@@ -178,16 +215,18 @@ export default function AccountPage() {
 
                       {/* Items in Order */}
                       <div className="divide-y divide-white/5 border-t border-white/10 pt-4 space-y-3">
-                        {order.items.map((item, i) => (
+                        {(order.items || []).map((item, i) => (
                           <div key={i} className="pt-3 first:pt-0 flex gap-4 items-center">
                             <div className="relative w-14 h-16 bg-neutral-900 rounded overflow-hidden flex-shrink-0 border border-white/5">
-                              <Image
-                                src={item.imageUrl}
-                                alt={item.productName}
-                                fill
-                                sizes="60px"
-                                className="object-cover"
-                              />
+                              {item.imageUrl && (
+                                <Image
+                                  src={item.imageUrl}
+                                  alt={item.productName}
+                                  fill
+                                  sizes="60px"
+                                  className="object-cover"
+                                />
+                              )}
                             </div>
                             <div className="flex-1">
                               <p className="font-semibold text-white uppercase">{item.productName}</p>
@@ -205,16 +244,23 @@ export default function AccountPage() {
                       {/* Address & Tracking footer */}
                       <div className="pt-4 border-t border-white/10 flex flex-col sm:flex-row justify-between text-[11px] text-neutral-400 gap-4">
                         <div>
-                          <span className="text-white font-semibold block uppercase">SHIPPING ADDRESS:</span>
+                          <span className="text-white font-semibold block uppercase">
+                            SHIPPING ADDRESS:
+                          </span>
                           <p>
-                            {order.shippingAddress.fullName}, {order.shippingAddress.street},{' '}
-                            {order.shippingAddress.city}, {order.shippingAddress.postalCode}
+                            {order.shippingAddress?.fullName || 'Client'},{' '}
+                            {order.shippingAddress?.street || ''},{' '}
+                            {order.shippingAddress?.city || ''},{' '}
+                            {order.shippingAddress?.postalCode || ''}
                           </p>
                         </div>
                         <div>
-                          <span className="text-white font-semibold block uppercase">COURIER PARTNER:</span>
+                          <span className="text-white font-semibold block uppercase">
+                            COURIER PARTNER:
+                          </span>
                           <p>
-                            {order.tracking?.carrier || 'Blue Dart Express'} (AWB: {order.tracking?.trackingNumber || 'SS-EXP-2819'})
+                            {order.tracking?.carrier || 'Blue Dart Express'} (AWB:{' '}
+                            {order.tracking?.trackingNumber || 'SS-EXP-2819'})
                           </p>
                         </div>
                       </div>
@@ -231,15 +277,20 @@ export default function AccountPage() {
               {wishlist.length === 0 ? (
                 <div className="py-20 text-center space-y-2">
                   <p className="font-display text-xl text-white">YOUR WISHLIST IS EMPTY</p>
-                  <p className="text-xs font-mono text-neutral-500">Save items while browsing to view them here.</p>
+                  <p className="text-xs font-mono text-neutral-500">
+                    Save items while browsing to view them here.
+                  </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                   {wishlist.map(({ product }) => (
-                    <div key={product.id} className="bg-[#0c0c0c] border border-white/10 rounded p-4 space-y-3">
+                    <div
+                      key={product.id}
+                      className="bg-[#0c0c0c] border border-white/10 rounded p-4 space-y-3"
+                    >
                       <div className="relative aspect-[4/5] bg-neutral-900 rounded overflow-hidden">
                         <Image
-                          src={product.images[0]?.url || ''}
+                          src={product.images?.[0]?.url || ''}
                           alt={product.name}
                           fill
                           sizes="200px"
@@ -247,16 +298,24 @@ export default function AccountPage() {
                         />
                       </div>
                       <div>
-                        <h4 className="font-mono text-xs font-bold uppercase truncate">{product.name}</h4>
-                        <p className="font-mono text-xs text-snake-green">{formatPrice(product.price)}</p>
+                        <h4 className="font-mono text-xs font-bold uppercase truncate">
+                          {product.name}
+                        </h4>
+                        <p className="font-mono text-xs text-snake-green">
+                          {formatPrice(product.price)}
+                        </p>
                       </div>
                       <div className="flex gap-2">
                         <button
                           onClick={() => {
-                            addToCart(product, product.sizes[2] || 'L', product.colors[0]);
+                            addToCart(
+                              product,
+                              product.sizes?.[2] || product.sizes?.[0] || 'L',
+                              product.colors?.[0] || { name: 'Black', hex: '#000' }
+                            );
                             removeFromWishlist(product.id);
                           }}
-                          className="flex-1 py-2 bg-snake-green text-black font-mono text-[10px] font-bold uppercase"
+                          className="flex-1 py-2 bg-snake-green text-black font-mono text-[10px] font-bold uppercase hover:bg-white transition-colors"
                         >
                           ADD TO BAG
                         </button>
@@ -274,46 +333,80 @@ export default function AccountPage() {
             </div>
           )}
 
-          {/* OVERVIEW / PROFILE / ADDRESSES / SECURITY */}
+          {/* OVERVIEW */}
           {activeTab === 'overview' && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs font-mono">
               <div className="p-6 bg-[#0c0c0c] border border-white/10 rounded space-y-3">
-                <span className="text-[10px] tracking-widest text-snake-green uppercase">TOTAL ORDERS</span>
+                <span className="text-[10px] tracking-widest text-snake-green uppercase">
+                  TOTAL ORDERS
+                </span>
                 <p className="text-3xl font-bold font-mono text-white">{orders.length}</p>
                 <p className="text-neutral-500">Lifetime purchases</p>
               </div>
               <div className="p-6 bg-[#0c0c0c] border border-white/10 rounded space-y-3">
-                <span className="text-[10px] tracking-widest text-snake-green uppercase">SAVED FOR LATER</span>
+                <span className="text-[10px] tracking-widest text-snake-green uppercase">
+                  SAVED FOR LATER
+                </span>
                 <p className="text-3xl font-bold font-mono text-white">{wishlist.length}</p>
                 <p className="text-neutral-500">Items in private archive</p>
               </div>
               <div className="p-6 bg-[#0c0c0c] border border-white/10 rounded space-y-3">
-                <span className="text-[10px] tracking-widest text-snake-green uppercase">TIER STATUS</span>
-                <p className="text-xl font-bold font-mono text-white">VIP INSTINCT MEMBER</p>
-                <p className="text-neutral-500">Complimentary express shipping active</p>
+                <span className="text-[10px] tracking-widest text-snake-green uppercase">
+                  TIER STATUS
+                </span>
+                <p className="text-xl font-bold font-mono text-white">{tierStatus}</p>
+                <p className="text-neutral-500">
+                  {orders.length > 0
+                    ? 'Complimentary express shipping active'
+                    : 'Place your first order to activate VIP tier'}
+                </p>
               </div>
             </div>
           )}
 
+          {/* ADDRESSES TAB */}
           {activeTab === 'addresses' && (
             <div className="space-y-6 text-xs font-mono">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div className="p-6 bg-[#0c0c0c] border border-snake-green/40 rounded space-y-2 relative">
-                  <span className="px-2 py-0.5 bg-snake-green/10 text-snake-green border border-snake-green/30 text-[9px] uppercase font-bold">
-                    DEFAULT ADDRESS
-                  </span>
-                  <h4 className="text-white font-bold text-sm pt-2">Aditya Sharma</h4>
-                  <p className="text-neutral-400">
-                    Flat 402, Signature Towers, Indiranagar 100ft Rd, Near Metro Station, Bengaluru, Karnataka - 560038
-                  </p>
-                  <p className="text-neutral-400">Phone: +91 98765 43210</p>
+              {latestOrder?.shippingAddress?.street ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="p-6 bg-[#0c0c0c] border border-snake-green/40 rounded space-y-2 relative">
+                    <span className="px-2 py-0.5 bg-snake-green/10 text-snake-green border border-snake-green/30 text-[9px] uppercase font-bold">
+                      SAVED DELIVERY ADDRESS
+                    </span>
+                    <h4 className="text-white font-bold text-sm pt-2">
+                      {latestOrder.shippingAddress.fullName || customerName || 'Client'}
+                    </h4>
+                    <p className="text-neutral-400">
+                      {latestOrder.shippingAddress.street}
+                      {latestOrder.shippingAddress.landmark ? `, ${latestOrder.shippingAddress.landmark}` : ''}
+                    </p>
+                    <p className="text-neutral-400">
+                      {latestOrder.shippingAddress.city}, {latestOrder.shippingAddress.state} -{' '}
+                      {latestOrder.shippingAddress.postalCode}
+                    </p>
+                    <p className="text-neutral-400">
+                      Phone: {latestOrder.shippingAddress.phone || customerPhone || '—'}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="py-20 text-center space-y-3 bg-[#0c0c0c] border border-white/10 rounded p-8">
+                  <MapPin size={32} className="mx-auto text-neutral-600" />
+                  <p className="font-display text-xl text-white">NO SAVED ADDRESSES YET</p>
+                  <p className="text-xs font-mono text-neutral-500 max-w-sm mx-auto">
+                    Delivery addresses entered during checkout will automatically be preserved in your address book.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
+          {/* PROFILE TAB */}
           {activeTab === 'profile' && (
-            <div className="max-w-xl bg-[#0c0c0c] border border-white/10 rounded p-6 sm:p-8 space-y-4 text-xs font-mono">
+            <form
+              onSubmit={handleUpdateProfile}
+              className="max-w-xl bg-[#0c0c0c] border border-white/10 rounded p-6 sm:p-8 space-y-4 text-xs font-mono"
+            >
               <h3 className="text-sm font-bold uppercase text-white border-b border-white/10 pb-3">
                 PERSONAL INFORMATION
               </h3>
@@ -321,32 +414,50 @@ export default function AccountPage() {
                 <label className="text-neutral-400 uppercase">FULL NAME</label>
                 <input
                   type="text"
-                  defaultValue="Aditya Sharma"
-                  className="w-full bg-black border border-white/15 px-3 py-2 text-white rounded"
+                  value={profileName}
+                  onChange={(e) => setProfileName(e.target.value)}
+                  placeholder="Enter your full name"
+                  className="w-full bg-black border border-white/15 px-3 py-2 text-white rounded focus:border-snake-green"
                 />
               </div>
               <div className="space-y-1">
                 <label className="text-neutral-400 uppercase">EMAIL ADDRESS</label>
                 <input
                   type="email"
-                  defaultValue="aditya.sharma@example.com"
-                  className="w-full bg-black border border-white/15 px-3 py-2 text-white rounded"
+                  value={profileEmail}
+                  onChange={(e) => setProfileEmail(e.target.value)}
+                  placeholder="client@supersnake.in"
+                  className="w-full bg-black border border-white/15 px-3 py-2 text-white rounded focus:border-snake-green"
                 />
               </div>
               <div className="space-y-1">
                 <label className="text-neutral-400 uppercase">PHONE NUMBER</label>
                 <input
                   type="tel"
-                  defaultValue="+91 98765 43210"
-                  className="w-full bg-black border border-white/15 px-3 py-2 text-white rounded"
+                  value={profilePhone}
+                  onChange={(e) => setProfilePhone(e.target.value)}
+                  placeholder="+91 XXXXX XXXXX"
+                  className="w-full bg-black border border-white/15 px-3 py-2 text-white rounded focus:border-snake-green"
                 />
               </div>
-              <button className="px-6 py-3 bg-snake-green text-black font-bold uppercase mt-2">
-                UPDATE PROFILE
-              </button>
-            </div>
+
+              <div className="flex items-center justify-between pt-2">
+                {profileSaved && (
+                  <span className="text-snake-green flex items-center gap-1 font-bold">
+                    <Check size={14} /> PROFILE SAVED
+                  </span>
+                )}
+                <button
+                  type="submit"
+                  className="ml-auto px-6 py-3 bg-snake-green text-black font-bold uppercase hover:bg-white transition-colors"
+                >
+                  SAVE PROFILE
+                </button>
+              </div>
+            </form>
           )}
 
+          {/* SECURITY TAB */}
           {activeTab === 'security' && (
             <div className="max-w-xl bg-[#0c0c0c] border border-white/10 rounded p-6 sm:p-8 space-y-4 text-xs font-mono">
               <h3 className="text-sm font-bold uppercase text-white border-b border-white/10 pb-3">
@@ -357,7 +468,7 @@ export default function AccountPage() {
                 <input
                   type="password"
                   placeholder="••••••••••••"
-                  className="w-full bg-black border border-white/15 px-3 py-2 text-white rounded"
+                  className="w-full bg-black border border-white/15 px-3 py-2 text-white rounded focus:border-snake-green"
                 />
               </div>
               <div className="space-y-1">
@@ -365,10 +476,10 @@ export default function AccountPage() {
                 <input
                   type="password"
                   placeholder="Minimum 8 characters"
-                  className="w-full bg-black border border-white/15 px-3 py-2 text-white rounded"
+                  className="w-full bg-black border border-white/15 px-3 py-2 text-white rounded focus:border-snake-green"
                 />
               </div>
-              <button className="px-6 py-3 bg-snake-green text-black font-bold uppercase mt-2">
+              <button className="px-6 py-3 bg-snake-green text-black font-bold uppercase mt-2 hover:bg-white transition-colors">
                 CHANGE PASSWORD
               </button>
             </div>

@@ -250,7 +250,7 @@ export default function CheckoutPage() {
                       required
                       value={formData.fullName}
                       onChange={handleChange}
-                      placeholder="e.g. Aditya Sharma"
+                      placeholder="Full recipient name"
                       className="w-full bg-black border border-white/15 px-4 py-3 text-white rounded focus:outline-none focus:border-snake-green"
                     />
                   </div>
@@ -263,7 +263,7 @@ export default function CheckoutPage() {
                       required
                       value={formData.street}
                       onChange={handleChange}
-                      placeholder="Flat 402, Signature Towers, Indiranagar 100ft Rd"
+                      placeholder="Building, flat, and street details"
                       className="w-full bg-black border border-white/15 px-4 py-3 text-white rounded focus:outline-none focus:border-snake-green"
                     />
                   </div>
