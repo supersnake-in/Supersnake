@@ -491,29 +491,37 @@ function CheckoutContent() {
           {showMobileSummary && (
             <div className="p-4 border-t border-white/10 space-y-4">
               <div className="space-y-3 max-h-60 overflow-y-auto divide-y divide-white/5 pr-1">
-                {cart.map((item) => (
-                  <div key={item.id} className="pt-2.5 first:pt-0 flex gap-3 items-center">
-                    <div className="relative w-12 h-14 bg-neutral-900 rounded overflow-hidden flex-shrink-0 border border-white/5">
-                      <Image
-                        src={item.product.images[0]?.url || ''}
-                        alt={item.product.name}
-                        fill
-                        sizes="50px"
-                        unoptimized={Boolean(item.product.images[0]?.url?.startsWith('data:') || item.product.images[0]?.url?.startsWith('blob:'))}
-                        className="object-cover"
-                      />
+                {cart.map((item) => {
+                  const matched = products.find((p) => p.id === item.product?.id || p.slug === item.product?.slug);
+                  const imgUrl = item.product?.images?.[0]?.url || matched?.images?.[0]?.url || '';
+                  return (
+                    <div key={item.id} className="pt-2.5 first:pt-0 flex gap-3 items-center">
+                      <div className="relative w-12 h-14 bg-neutral-900 rounded overflow-hidden flex-shrink-0 border border-white/5 flex items-center justify-center">
+                        {imgUrl ? (
+                          <Image
+                            src={imgUrl}
+                            alt={item.product.name}
+                            fill
+                            sizes="50px"
+                            unoptimized={Boolean(imgUrl.startsWith('data:') || imgUrl.startsWith('blob:'))}
+                            className="object-cover"
+                          />
+                        ) : (
+                          <span className="text-[9px] font-mono text-neutral-600 uppercase">SS</span>
+                        )}
+                      </div>
+                      <div className="flex-1 text-[11px] font-mono min-w-0">
+                        <p className="font-semibold text-white uppercase truncate">{item.product.name}</p>
+                        <p className="text-[10px] text-neutral-400">
+                          {item.selectedColor.name} • {item.selectedSize} × {item.quantity}
+                        </p>
+                      </div>
+                      <span className="font-mono text-xs text-white font-medium flex-shrink-0">
+                        {formatPrice(item.price * item.quantity)}
+                      </span>
                     </div>
-                    <div className="flex-1 text-[11px] font-mono min-w-0">
-                      <p className="font-semibold text-white uppercase truncate">{item.product.name}</p>
-                      <p className="text-[10px] text-neutral-400">
-                        {item.selectedColor.name} • {item.selectedSize} × {item.quantity}
-                      </p>
-                    </div>
-                    <span className="font-mono text-xs text-white font-medium flex-shrink-0">
-                      {formatPrice(item.price * item.quantity)}
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <div className="space-y-2 pt-3 border-t border-white/10 text-xs font-mono">
@@ -878,29 +886,37 @@ function CheckoutContent() {
 
             {/* Item list */}
             <div className="space-y-4 max-h-72 overflow-y-auto pr-1 divide-y divide-white/5">
-              {cart.map((item) => (
-                <div key={item.id} className="pt-3 first:pt-0 flex gap-3.5 items-center">
-                  <div className="relative w-14 h-16 bg-neutral-900 rounded overflow-hidden flex-shrink-0 border border-white/5">
-                    <Image
-                      src={item.product.images[0]?.url || ''}
-                      alt={item.product.name}
-                      fill
-                      sizes="60px"
-                      unoptimized={Boolean(item.product.images[0]?.url?.startsWith('data:') || item.product.images[0]?.url?.startsWith('blob:'))}
-                      className="object-cover"
-                    />
+              {cart.map((item) => {
+                const matched = products.find((p) => p.id === item.product?.id || p.slug === item.product?.slug);
+                const imgUrl = item.product?.images?.[0]?.url || matched?.images?.[0]?.url || '';
+                return (
+                  <div key={item.id} className="pt-3 first:pt-0 flex gap-3.5 items-center">
+                    <div className="relative w-14 h-16 bg-neutral-900 rounded overflow-hidden flex-shrink-0 border border-white/5 flex items-center justify-center">
+                      {imgUrl ? (
+                        <Image
+                          src={imgUrl}
+                          alt={item.product.name}
+                          fill
+                          sizes="60px"
+                          unoptimized={Boolean(imgUrl.startsWith('data:') || imgUrl.startsWith('blob:'))}
+                          className="object-cover"
+                        />
+                      ) : (
+                        <span className="text-[9px] font-mono text-neutral-600 uppercase">SS</span>
+                      )}
+                    </div>
+                    <div className="flex-1 text-xs font-mono">
+                      <p className="font-semibold text-white uppercase">{item.product.name}</p>
+                      <p className="text-[11px] text-neutral-400">
+                        {item.selectedColor.name} • {item.selectedSize} × {item.quantity}
+                      </p>
+                    </div>
+                    <span className="font-mono text-xs text-white font-medium">
+                      {formatPrice(item.price * item.quantity)}
+                    </span>
                   </div>
-                  <div className="flex-1 text-xs font-mono">
-                    <p className="font-semibold text-white uppercase">{item.product.name}</p>
-                    <p className="text-[11px] text-neutral-400">
-                      {item.selectedColor.name} • {item.selectedSize} × {item.quantity}
-                    </p>
-                  </div>
-                  <span className="font-mono text-xs text-white font-medium">
-                    {formatPrice(item.price * item.quantity)}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Calculations */}

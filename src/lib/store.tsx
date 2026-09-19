@@ -360,6 +360,34 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     saveCartToStorage(cart);
   }, [cart, isLoaded]);
 
+  // Heal and rehydrate cart items if any item has missing or empty images
+  useEffect(() => {
+    if (products.length === 0 || cart.length === 0) return;
+    let needsHeal = false;
+    const healed = cart.map((item) => {
+      const hasImage = item.product?.images && item.product.images.length > 0 && Boolean(item.product.images[0]?.url);
+      if (!hasImage) {
+        const match = products.find((p) => p.id === item.product?.id || p.slug === item.product?.slug);
+        if (match && match.images && match.images.length > 0 && Boolean(match.images[0]?.url)) {
+          needsHeal = true;
+          return {
+            ...item,
+            product: {
+              ...item.product,
+              images: match.images,
+            },
+          };
+        }
+      }
+      return item;
+    });
+
+    if (needsHeal) {
+      setCart(healed);
+      saveCartToStorage(healed);
+    }
+  }, [products, cart]);
+
   useEffect(() => {
     if (!isLoaded) return;
     try {
@@ -390,11 +418,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     color: { name: string; hex: string },
     quantity: number = 1
   ) => {
+    // Guarantee product has valid images by checking products catalog if necessary
+    const resolvedProduct =
+      product.images && product.images.length > 0 && product.images[0]?.url
+        ? product
+        : products.find((p) => p.id === product.id || p.slug === product.slug) || product;
+
     // Read directly from storage or memory to guarantee synchronous, fresh state
     const currentCart = cart.length > 0 ? cart : loadCartFromStorageSync();
     const existingIndex = currentCart.findIndex(
       (item) =>
-        item.product.id === product.id &&
+        item.product.id === resolvedProduct.id &&
         item.selectedSize === size &&
         item.selectedColor.name === color.name
     );
@@ -405,15 +439,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       next[existingIndex] = {
         ...next[existingIndex],
         quantity: next[existingIndex].quantity + quantity,
+        product: resolvedProduct,
       };
     } else {
       const newItem: CartItem = {
-        id: `${product.id}-${color.name}-${size}-${Date.now()}`,
-        product,
+        id: `${resolvedProduct.id}-${color.name}-${size}-${Date.now()}`,
+        product: resolvedProduct,
         selectedColor: color,
         selectedSize: size,
         quantity,
-        price: product.price,
+        price: resolvedProduct.price,
       };
       next = [...currentCart, newItem];
     }

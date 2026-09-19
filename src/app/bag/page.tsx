@@ -8,7 +8,7 @@ import { useStore } from '@/lib/store';
 import { formatPrice, BRAND } from '@/lib/design-tokens';
 
 export default function BagPage() {
-  const { cart, removeFromCart, updateQuantity, cartTotal, isLoaded } = useStore();
+  const { cart, removeFromCart, updateQuantity, cartTotal, isLoaded, products } = useStore();
   const [couponCode, setCouponCode] = useState('');
   const [couponDiscount, setCouponDiscount] = useState(0);
   const [couponMessage, setCouponMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
@@ -90,19 +90,26 @@ export default function BagPage() {
 
               {/* Items Table */}
               <div className="divide-y divide-white/10 border-y border-white/10">
-                {cart.map((item) => (
-                  <div key={item.id} className="py-6 flex gap-6 items-center">
-                    {/* Image */}
-                    <div className="relative w-24 h-28 sm:w-28 sm:h-32 bg-neutral-900 rounded overflow-hidden flex-shrink-0 border border-white/10">
-                      <Image
-                        src={item.product.images[0]?.url || ''}
-                        alt={item.product.name}
-                        fill
-                        sizes="120px"
-                        unoptimized={Boolean(item.product.images[0]?.url?.startsWith('data:') || item.product.images[0]?.url?.startsWith('blob:'))}
-                        className="object-cover"
-                      />
-                    </div>
+                {cart.map((item) => {
+                  const matched = products.find((p) => p.id === item.product?.id || p.slug === item.product?.slug);
+                  const imgUrl = item.product?.images?.[0]?.url || matched?.images?.[0]?.url || '';
+                  return (
+                    <div key={item.id} className="py-6 flex gap-6 items-center">
+                      {/* Image */}
+                      <div className="relative w-24 h-28 sm:w-28 sm:h-32 bg-neutral-900 rounded overflow-hidden flex-shrink-0 border border-white/10 flex items-center justify-center">
+                        {imgUrl ? (
+                          <Image
+                            src={imgUrl}
+                            alt={item.product.name}
+                            fill
+                            sizes="120px"
+                            unoptimized={Boolean(imgUrl.startsWith('data:') || imgUrl.startsWith('blob:'))}
+                            className="object-cover"
+                          />
+                        ) : (
+                          <span className="text-xs font-mono text-neutral-600 uppercase">ATELIER</span>
+                        )}
+                      </div>
 
                     {/* Details */}
                     <div className="flex-1 space-y-2">
@@ -167,7 +174,8 @@ export default function BagPage() {
                       </div>
                     </div>
                   </div>
-                ))}
+                );
+              })}
               </div>
             </div>
 

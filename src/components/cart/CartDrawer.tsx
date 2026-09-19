@@ -9,7 +9,7 @@ import { useStore } from '@/lib/store';
 import { formatPrice, BRAND } from '@/lib/design-tokens';
 
 export function CartDrawer() {
-  const { cart, isCartOpen, closeCart, removeFromCart, updateQuantity, cartTotal } = useStore();
+  const { cart, isCartOpen, closeCart, removeFromCart, updateQuantity, cartTotal, products } = useStore();
 
   const freeShippingLeft = Math.max(0, BRAND.freeShippingThreshold - cartTotal);
   const progressPercent = Math.min(100, (cartTotal / BRAND.freeShippingThreshold) * 100);
@@ -23,92 +23,103 @@ export function CartDrawer() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
             onClick={closeCart}
-            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm cursor-pointer"
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 cursor-pointer"
           />
 
-          {/* Drawer Container */}
+          {/* Slide-over Drawer */}
           <motion.div
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
-            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed top-0 right-0 bottom-0 z-50 w-full max-w-md bg-[#0a0a0a] border-l border-white/10 flex flex-col shadow-2xl text-neutral-200"
+            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+            className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-[#0a0a0a] border-l border-white/10 shadow-2xl flex flex-col justify-between"
           >
-            {/* Header */}
-            <div className="p-5 sm:p-6 pt-[max(1.25rem,calc(env(safe-area-inset-top,0px)+0.75rem))] border-b border-white/10 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <span className="font-mono text-xs tracking-widest text-snake-green font-semibold uppercase">
-                  ADDED TO BAG ✓
+            {/* Drawer Header */}
+            <div className="p-6 border-b border-white/10 flex justify-between items-center bg-[#0c0c0c]">
+              <div className="space-y-1">
+                <span className="text-[10px] font-mono tracking-mega text-snake-green uppercase">
+                  ATELIER BAG
                 </span>
-                <span className="text-neutral-500 font-mono text-xs">({cart.length})</span>
+                <h3 className="text-xl font-display font-bold uppercase tracking-tight text-white">
+                  YOUR SELECTION ({cart.length})
+                </h3>
               </div>
               <button
                 onClick={closeCart}
-                className="p-2 text-neutral-400 hover:text-white transition-colors focus:outline-none active:scale-95"
-                aria-label="Close Bag"
+                className="p-2 text-neutral-400 hover:text-white transition-colors rounded-full hover:bg-white/5"
+                aria-label="Close cart"
               >
                 <X size={18} />
               </button>
             </div>
 
-            {/* Free Shipping Progress Indicator */}
-            <div className="px-6 py-3.5 bg-[#111111] border-b border-white/5">
-              <div className="flex justify-between items-center text-[11px] font-mono tracking-wider mb-1.5">
+            {/* Free Shipping Progress */}
+            <div className="p-4 bg-neutral-950/80 border-b border-white/5 space-y-2">
+              <div className="flex justify-between text-xs font-mono">
                 <span className="text-neutral-300">
                   {freeShippingLeft === 0 ? (
-                    <span className="text-snake-green font-semibold">FREE EXPRESS SHIPPING UNLOCKED</span>
+                    <span className="text-snake-green font-semibold">✓ FREE EXPRESS SHIPPING UNLOCKED</span>
                   ) : (
-                    <>Add <span className="text-white font-semibold">{formatPrice(freeShippingLeft)}</span> for complimentary delivery</>
+                    <>Add <span className="text-white font-bold">{formatPrice(freeShippingLeft)}</span> for free express shipping</>
                   )}
                 </span>
+                <span className="text-neutral-500">{Math.round(progressPercent)}%</span>
               </div>
               <div className="h-1 w-full bg-neutral-800 rounded-full overflow-hidden">
                 <motion.div
                   className="h-full bg-snake-green"
                   initial={{ width: 0 }}
                   animate={{ width: `${progressPercent}%` }}
-                  transition={{ duration: 0.6, ease: 'easeOut' }}
+                  transition={{ duration: 0.5 }}
                 />
               </div>
             </div>
 
-            {/* Cart Items List */}
+            {/* Items List */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               {cart.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-center space-y-4 py-16">
+                <div className="h-full flex flex-col items-center justify-center text-center space-y-4 py-12">
                   <div className="w-16 h-16 rounded-full border border-neutral-800 flex items-center justify-center text-neutral-600">
-                    <X size={24} />
+                    <span className="text-2xl font-mono">0</span>
                   </div>
                   <div className="space-y-1">
-                    <p className="font-display text-lg tracking-wider text-white">YOUR BAG IS WAITING.</p>
-                    <p className="text-xs font-mono text-neutral-500">Find something worth wearing.</p>
+                    <p className="font-mono text-sm uppercase text-neutral-300">YOUR BAG IS EMPTY</p>
+                    <p className="text-xs font-mono text-neutral-600">No garments currently reserved.</p>
                   </div>
                   <Link
                     href="/shop"
                     onClick={closeCart}
-                    className="inline-flex items-center gap-2 text-xs font-mono tracking-widest text-snake-green hover:underline uppercase pt-2"
+                    className="px-6 py-3 bg-snake-green text-black font-mono text-xs tracking-widest font-bold uppercase hover:bg-white transition-colors mt-2"
                   >
-                    SHOP T-SHIRTS <ArrowRight size={14} />
+                    EXPLORE COLLECTION
                   </Link>
                 </div>
               ) : (
-                cart.map((item) => (
+                cart.map((item) => {
+                  const matched = products.find((p) => p.id === item.product?.id || p.slug === item.product?.slug);
+                  const imgUrl = item.product?.images?.[0]?.url || matched?.images?.[0]?.url || '';
+                  return (
                   <div
                     key={item.id}
                     className="flex gap-4 pb-6 border-b border-white/5 last:border-0 group"
                   >
                     {/* Thumbnail */}
-                    <div className="relative w-20 h-24 bg-neutral-900 flex-shrink-0 overflow-hidden rounded border border-white/5">
-                      <Image
-                        src={item.product.images[0]?.url || ''}
-                        alt={item.product.name}
-                        fill
-                        sizes="80px"
-                        unoptimized={Boolean(item.product.images[0]?.url?.startsWith('data:') || item.product.images[0]?.url?.startsWith('blob:'))}
-                        className="object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
+                    <div className="relative w-20 h-24 bg-neutral-900 flex-shrink-0 overflow-hidden rounded border border-white/5 flex items-center justify-center">
+                      {imgUrl ? (
+                        <Image
+                          src={imgUrl}
+                          alt={item.product.name}
+                          fill
+                          sizes="80px"
+                          unoptimized={Boolean(imgUrl.startsWith('data:') || imgUrl.startsWith('blob:'))}
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                      ) : (
+                        <span className="text-[10px] font-mono text-neutral-600 uppercase text-center px-1">
+                          ATELIER
+                        </span>
+                      )}
                     </div>
 
                     {/* Details */}
@@ -161,8 +172,9 @@ export function CartDrawer() {
                       </div>
                     </div>
                   </div>
-                ))
-              )}
+                );
+              })
+            )}
             </div>
 
             {/* Footer Summary & Checkout CTA */}

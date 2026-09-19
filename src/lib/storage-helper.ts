@@ -60,9 +60,10 @@ export async function idbGet<T>(key: string): Promise<T | null> {
 }
 
 /**
- * Strips massive base64 payloads to guarantee localStorage quota (5MB) is never exceeded.
+ * Sanitizes cart items for storage by keeping only the primary image and omitting unneeded variants.
+ * Crucially, it NEVER wipes or blanks out the primary image URL.
  */
-export function sanitizeCartItem(item: CartItem, stripLargeDataUrls: boolean = false): CartItem {
+export function sanitizeCartItem(item: CartItem): CartItem {
   const p = item.product;
   if (!p) return item;
 
@@ -71,17 +72,12 @@ export function sanitizeCartItem(item: CartItem, stripLargeDataUrls: boolean = f
     images = [images[0]];
   }
 
-  if (stripLargeDataUrls && images.length > 0 && images[0]?.url?.startsWith('data:') && images[0].url.length > 10000) {
-    // If it's a huge base64 image, keep basic placeholder so storage quota isn't blown
-    images = [{ ...images[0], url: '' }];
-  }
-
   return {
     ...item,
     product: {
       ...p,
       images,
-      variants: [], // variants are not needed in cart
+      variants: [],
     },
   };
 }
@@ -89,26 +85,19 @@ export function sanitizeCartItem(item: CartItem, stripLargeDataUrls: boolean = f
 export function saveCartToStorage(cart: CartItem[]): void {
   if (typeof window === 'undefined') return;
 
-  // 1. Try saving sanitized cart (keeping primary image)
-  const sanitized = cart.map((item) => sanitizeCartItem(item, false));
-  let serialized = '';
+  const sanitized = cart.map((item) => sanitizeCartItem(item));
+  const serialized = JSON.stringify(sanitized);
+
+  // 1. Save to localStorage
   try {
-    serialized = JSON.stringify(sanitized);
     localStorage.setItem('supersnake_cart', serialized);
   } catch (e) {
-    // QuotaExceededError fallback: strip large data URLs from localStorage
-    try {
-      const lean = cart.map((item) => sanitizeCartItem(item, true));
-      serialized = JSON.stringify(lean);
-      localStorage.setItem('supersnake_cart', serialized);
-    } catch (e2) {
-      console.warn('localStorage cart save failed:', e2);
-    }
+    console.warn('localStorage cart save warning:', e);
   }
 
   // 2. Also mirror to sessionStorage (separate quota)
   try {
-    sessionStorage.setItem('supersnake_cart', serialized || JSON.stringify(cart));
+    sessionStorage.setItem('supersnake_cart', serialized);
   } catch (e) {}
 
   // 3. Persist complete unstripped cart to IndexedDB (virtually unlimited quota)
