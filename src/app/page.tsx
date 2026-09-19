@@ -84,6 +84,9 @@ export default function HomePage() {
                 }
                 className="object-cover object-[center_35%] lg:object-center"
               />
+              {/* Subtle black gradient & vignette overlay for text legibility */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent pointer-events-none" />
+              <div className="absolute inset-0 [background:radial-gradient(ellipse_at_center,transparent_50%,rgba(0,0,0,0.4)_100%)] pointer-events-none" />
             </motion.div>
           </AnimatePresence>
         </motion.div>
@@ -145,8 +148,8 @@ export default function HomePage() {
           </div>
         </motion.div>
 
-        {/* Carousel slide indicators and scroll arrow */}
-        <div className="absolute bottom-6 sm:bottom-8 right-4 sm:right-6 md:right-12 z-20 flex items-center gap-4">
+        {/* Carousel slide indicators and scroll arrow (hidden on mobile, visible on sm and up) */}
+        <div className="absolute bottom-6 sm:bottom-8 right-4 sm:right-6 md:right-12 z-20 hidden sm:flex items-center gap-4">
           {heroImages.length > 1 && (
             <div className="flex items-center gap-1.5 bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
               {heroImages.map((_, idx) => (
