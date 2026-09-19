@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, EyeOff, ArrowRight, ShieldCheck, Check, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { SuperSnakeLogo } from '@/components/brand/SuperSnakeLogo';
+import { GoogleAuthModal } from '@/components/auth/GoogleAuthModal';
 
 function SignupContent() {
   const router = useRouter();
@@ -25,6 +26,7 @@ function SignupContent() {
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
+  const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -42,9 +44,12 @@ function SignupContent() {
     setError(null);
     setIsGoogleSubmitting(true);
     const res = await signInWithGoogle(next);
-    if (res.error) {
+    setIsGoogleSubmitting(false);
+
+    if (res.unsupportedProvider) {
+      setIsGoogleModalOpen(true);
+    } else if (res.error) {
       setError(res.error);
-      setIsGoogleSubmitting(false);
     }
   };
 
@@ -491,6 +496,17 @@ function SignupContent() {
           <ShieldCheck size={14} className="text-snake-green" />
           <span>ZERO SPAM. STRICTLY CURATED COMMUNICATIONS.</span>
         </div>
+
+        <GoogleAuthModal
+          isOpen={isGoogleModalOpen}
+          onClose={() => setIsGoogleModalOpen(false)}
+          onSuccess={() => {
+            setIsGoogleModalOpen(false);
+            router.push(next);
+          }}
+          initialEmail={email}
+          nextUrl={next}
+        />
       </div>
     </div>
   );
