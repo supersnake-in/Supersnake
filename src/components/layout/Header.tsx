@@ -51,7 +51,6 @@ export function Header() {
     { label: 'SHOP', href: '/shop' },
     { label: 'MEN', href: '/men' },
     { label: 'WOMEN', href: '/women' },
-    { label: 'UNISEX', href: '/unisex' },
     { label: 'NEW DROPS', href: '/new-drops' },
   ];
 
@@ -347,7 +346,6 @@ export function Header() {
                 { label: 'SHOP', href: '/shop' },
                 { label: 'MEN', href: '/men' },
                 { label: 'WOMEN', href: '/women' },
-                { label: 'UNISEX', href: '/unisex' },
                 { label: 'NEW DROPS', href: '/new-drops' },
                 { label: 'BESTSELLERS', href: '/bestsellers' },
                 { label: 'ABOUT', href: '/about' },

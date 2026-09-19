@@ -101,21 +101,23 @@ export function ShopCatalog({
           </div>
 
           {/* Quick Gender Filter Pills */}
-          <div className="flex items-center gap-2 p-1 bg-neutral-900 border border-white/10 rounded-full">
-            {(['all', 'men', 'women', 'unisex'] as const).map((g) => (
-              <button
-                key={g}
-                onClick={() => setSelectedGender(g)}
-                className={`px-4 py-1.5 rounded-full text-xs font-mono tracking-wider uppercase transition-all ${
-                  selectedGender === g
-                    ? 'bg-snake-green text-black font-semibold'
-                    : 'text-neutral-400 hover:text-white'
-                }`}
-              >
-                {g}
-              </button>
-            ))}
-          </div>
+          {initialGender !== 'unisex' && (
+            <div className="flex items-center gap-2 p-1 bg-neutral-900 border border-white/10 rounded-full">
+              {(['all', 'men', 'women'] as const).map((g) => (
+                <button
+                  key={g}
+                  onClick={() => setSelectedGender(g)}
+                  className={`px-4 py-1.5 rounded-full text-xs font-mono tracking-wider uppercase transition-all ${
+                    selectedGender === g
+                      ? 'bg-snake-green text-black font-semibold'
+                      : 'text-neutral-400 hover:text-white'
+                  }`}
+                >
+                  {g}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Filter & Sort Bar */}

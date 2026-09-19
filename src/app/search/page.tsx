@@ -98,7 +98,7 @@ function SearchPageContent() {
             </div>
 
             <div className="flex items-center gap-1 bg-[#0a0a0a] border border-white/10 p-1 rounded text-xs font-mono">
-              {(['all', 'men', 'women', 'unisex'] as const).map((g) => (
+              {(['all', 'men', 'women'] as const).map((g) => (
                 <button
                   key={g}
                   onClick={() => setSelectedGender(g)}

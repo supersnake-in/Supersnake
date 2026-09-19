@@ -30,7 +30,6 @@ export function Footer() {
         { label: 'ALL T-SHIRTS', href: '/shop' },
         { label: 'MEN', href: '/men' },
         { label: 'WOMEN', href: '/women' },
-        { label: 'UNISEX', href: '/unisex' },
         { label: 'NEW DROPS', href: '/new-drops' },
         { label: 'BESTSELLERS', href: '/bestsellers' },
       ],
