@@ -528,6 +528,26 @@ export default function CheckoutPage() {
                   </span>
                 </div>
 
+                <div className="text-[11px] font-mono text-neutral-500 leading-relaxed pt-1">
+                  By completing this transaction, you agree to our{' '}
+                  <Link href="/terms" target="_blank" className="text-neutral-300 hover:text-snake-green underline underline-offset-2">
+                    Terms &amp; Conditions
+                  </Link>{' '}
+                  and{' '}
+                  <Link href="/privacy" target="_blank" className="text-neutral-300 hover:text-snake-green underline underline-offset-2">
+                    Privacy Policy
+                  </Link>
+                  , and acknowledge our{' '}
+                  <Link href="/shipping" target="_blank" className="text-neutral-300 hover:text-snake-green underline underline-offset-2">
+                    Shipping &amp; Delivery
+                  </Link>{' '}
+                  and{' '}
+                  <Link href="/returns" target="_blank" className="text-neutral-300 hover:text-snake-green underline underline-offset-2">
+                    Returns &amp; Defects
+                  </Link>{' '}
+                  policies.
+                </div>
+
                 <div className="flex gap-4 pt-2">
                   <button
                     type="button"

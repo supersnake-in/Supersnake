@@ -15,6 +15,7 @@ import {
   RotateCcw,
   HelpCircle,
   Package,
+  AlertCircle,
 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { formatPrice } from '@/lib/design-tokens';
@@ -27,7 +28,7 @@ export default function OrderDetailPage() {
   const orderId = params?.orderId as string;
   const order = getOrderById(orderId);
   const [returnModalOpen, setReturnModalOpen] = useState(false);
-  const [returnReason, setReturnReason] = useState('Fit too large');
+  const [returnReason, setReturnReason] = useState('Manufacturing defect or seam flaw');
   const [returnSubmitted, setReturnSubmitted] = useState(false);
 
   if (!order) {
@@ -98,8 +99,8 @@ export default function OrderDetailPage() {
             onClick={() => setReturnModalOpen(true)}
             className="px-3.5 py-1.5 bg-[#121212] hover:border-snake-green hover:text-snake-green border border-white/10 text-neutral-300 rounded text-xs font-mono uppercase tracking-wider transition-colors flex items-center gap-1.5"
           >
-            <RotateCcw size={13} />
-            <span>RETURN / EXCHANGE</span>
+            <AlertCircle size={13} />
+            <span>REPORT DEFECT</span>
           </button>
         </div>
       </div>
@@ -308,16 +309,16 @@ export default function OrderDetailPage() {
         </div>
       </div>
 
-      {/* Return Request Modal */}
+      {/* Defect / Damage Report Modal */}
       {returnModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#0a0a0a] border border-white/15 p-6 md:p-8 rounded-sm max-w-md w-full space-y-5">
             <div className="space-y-1">
               <span className="text-[10px] font-mono tracking-widest text-snake-green uppercase">
-                7-DAY POLICY
+                DEFECT RESOLUTION PROTOCOL
               </span>
               <h3 className="text-lg font-display font-medium text-white">
-                INITIATE RETURN / EXCHANGE
+                REPORT DEFECT OR DAMAGE
               </h3>
               <p className="text-xs font-mono text-neutral-400">
                 Order {order.orderNumber}
@@ -327,33 +328,41 @@ export default function OrderDetailPage() {
             {returnSubmitted ? (
               <div className="py-6 text-center space-y-3">
                 <CheckCircle2 size={32} className="text-snake-green mx-auto" />
-                <p className="text-sm font-display text-white">RETURN REQUEST REGISTERED</p>
-                <p className="text-xs font-mono text-neutral-400">
-                  Our logistics partner Blue Dart will contact you within 24 hours to schedule reverse pickup.
+                <p className="text-sm font-display text-white">CLAIM REGISTERED</p>
+                <p className="text-xs font-mono text-neutral-400 leading-relaxed">
+                  Our concierge team will review your report and reach out within 48 hours to coordinate inspection, replacement, or resolution.
                 </p>
               </div>
             ) : (
               <form onSubmit={handleReturnSubmit} className="space-y-4">
                 <div>
                   <label className="block text-[10px] font-mono uppercase tracking-widest text-neutral-400 mb-1.5">
-                    Reason for Return / Exchange
+                    Nature of Defect / Issue
                   </label>
                   <select
                     value={returnReason}
                     onChange={(e) => setReturnReason(e.target.value)}
                     className="w-full bg-[#121212] border border-white/15 px-3 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-snake-green"
                   >
-                    <option value="Fit too large">Fit too large (Request smaller size)</option>
-                    <option value="Fit too small">Fit too small (Request larger size)</option>
-                    <option value="Color nuance">Color nuance differing from display</option>
-                    <option value="Defect or seam flaw">Defect or seam flaw</option>
-                    <option value="Other">Other reason</option>
+                    <option value="Manufacturing defect or seam flaw">Manufacturing defect or seam flaw</option>
+                    <option value="Transit damage or package breach">Transit damage / packaging breach</option>
+                    <option value="Incorrect garment or size delivered">Incorrect item or size delivered</option>
+                    <option value="Fabric irregularity">Significant fabric irregularity</option>
+                    <option value="Other quality concern">Other quality concern</option>
                   </select>
                 </div>
 
-                <p className="text-[11px] font-mono text-neutral-500 leading-relaxed">
-                  Garments must be unworn, unwashed, and in their original packaging with atelier tags intact.
-                </p>
+                <div className="p-3 bg-white/[0.02] border border-white/10 rounded text-[11px] font-mono text-neutral-400 space-y-1.5 leading-relaxed">
+                  <p>
+                    SuperSnake operates a strict defect-only resolution policy. Ordinary returns for change of mind or sizing are not supported.
+                  </p>
+                  <p className="text-neutral-500">
+                    Claims require photographic evidence sent to our concierge team. Please consult our{' '}
+                    <Link href="/returns" className="text-snake-green hover:underline" target="_blank">
+                      Returns &amp; Defects Policy
+                    </Link>.
+                  </p>
+                </div>
 
                 <div className="flex items-center gap-3 pt-2">
                   <button
@@ -367,7 +376,7 @@ export default function OrderDetailPage() {
                     type="submit"
                     className="w-1/2 py-2.5 bg-snake-green hover:bg-white text-black font-mono text-xs font-semibold uppercase tracking-wider transition-colors"
                   >
-                    CONFIRM RETURN
+                    SUBMIT CLAIM
                   </button>
                 </div>
               </form>

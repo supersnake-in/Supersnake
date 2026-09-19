@@ -12,6 +12,11 @@ export default function AdminSettingsPage() {
   const [deliveryDays, setDeliveryDays] = useState('2-4 Business Days');
   const [courierPartner, setCourierPartner] = useState('Blue Dart Express / Delhivery');
   const [studioLocation, setStudioLocation] = useState('Bengaluru, Karnataka, India');
+  const [legalBusinessName, setLegalBusinessName] = useState('');
+  const [gstin, setGstin] = useState('');
+  const [grievanceOfficer, setGrievanceOfficer] = useState('');
+  const [grievanceEmail, setGrievanceEmail] = useState('');
+  const [jurisdiction, setJurisdiction] = useState('');
   const [adminPin, setAdminPin] = useState('••••');
 
   const handleSave = (e: React.FormEvent) => {
@@ -102,6 +107,67 @@ export default function AdminSettingsPage() {
                 type="text"
                 value={courierPartner}
                 onChange={(e) => setCourierPartner(e.target.value)}
+                className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Legal & Grievance Disclosures */}
+        <div className="bg-[#0d0d0d] border border-neutral-800/80 rounded-lg p-6 space-y-4">
+          <div className="flex items-center gap-2 text-white font-bold uppercase text-sm border-b border-neutral-800 pb-2">
+            <ShieldCheck size={16} className="text-snake-green" />
+            <span>LEGAL &amp; GRIEVANCE DISCLOSURES</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-neutral-400 uppercase">LEGAL BUSINESS ENTITY NAME</label>
+              <input
+                type="text"
+                value={legalBusinessName}
+                onChange={(e) => setLegalBusinessName(e.target.value)}
+                placeholder="e.g. SuperSnake Apparel Private Limited"
+                className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-neutral-400 uppercase">GSTIN (TAX IDENTIFIER)</label>
+              <input
+                type="text"
+                value={gstin}
+                onChange={(e) => setGstin(e.target.value)}
+                placeholder="e.g. 29ABCDE1234F1Z5"
+                className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-neutral-400 uppercase">GRIEVANCE OFFICER NAME</label>
+              <input
+                type="text"
+                value={grievanceOfficer}
+                onChange={(e) => setGrievanceOfficer(e.target.value)}
+                placeholder="Designated Officer Name"
+                className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-neutral-400 uppercase">GRIEVANCE EMAIL ADDRESS</label>
+              <input
+                type="email"
+                value={grievanceEmail}
+                onChange={(e) => setGrievanceEmail(e.target.value)}
+                placeholder="grievance@supersnake.in"
+                className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green"
+              />
+            </div>
+            <div className="space-y-1 sm:col-span-2">
+              <label className="text-neutral-400 uppercase">LEGAL JURISDICTION / REGISTERED OFFICE</label>
+              <input
+                type="text"
+                value={jurisdiction}
+                onChange={(e) => setJurisdiction(e.target.value)}
+                placeholder="e.g. Bengaluru, Karnataka, India"
                 className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green"
               />
             </div>

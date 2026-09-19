@@ -14,6 +14,7 @@ import {
   ChevronDown,
   Star,
   Check,
+  CheckCircle2,
   Ruler,
   ArrowRight,
   Maximize2,
@@ -383,11 +384,11 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
                 <span>FREE EXPRESS DELIVERY</span>
               </div>
               <div className="flex flex-col items-center gap-1.5">
-                <RotateCcw size={16} className="text-snake-green" />
-                <span>7-DAY EASY RETURNS</span>
+                <ShieldCheck size={16} className="text-snake-green" />
+                <span>ATELIER QUALITY CHECK</span>
               </div>
               <div className="flex flex-col items-center gap-1.5">
-                <ShieldCheck size={16} className="text-snake-green" />
+                <CheckCircle2 size={16} className="text-snake-green" />
                 <span>VERIFIED AUTHENTIC</span>
               </div>
             </div>
@@ -436,21 +437,27 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
                   />
                 </button>
                 {openAccordions.care && (
-                  <div className="p-4 pt-0 space-y-1.5 text-neutral-400 border-t border-white/5">
+                  <div className="p-4 pt-0 space-y-2 text-neutral-400 border-t border-white/5 text-xs font-mono">
                     {product.careInstructions.map((c, i) => (
                       <p key={i}>• {c}</p>
                     ))}
+                    <div className="pt-2">
+                      <Link href="/care-guide" className="text-snake-green hover:underline uppercase text-[11px] inline-flex items-center gap-1">
+                        <span>VIEW FULL CARE & PRESERVATION GUIDE</span>
+                        <ArrowRight size={11} />
+                      </Link>
+                    </div>
                   </div>
                 )}
               </div>
 
-              {/* Accordion 3: Shipping & Returns */}
+              {/* Accordion 3: Shipping & Returns Policy */}
               <div className="border border-white/10 rounded overflow-hidden">
                 <button
                   onClick={() => toggleAccordion('shipping')}
                   className="w-full p-4 flex justify-between items-center text-left hover:bg-white/[0.02] transition-colors"
                 >
-                  <span className="font-semibold text-white uppercase">COMPLIMENTARY SHIPPING & RETURNS</span>
+                  <span className="font-semibold text-white uppercase">SHIPPING & RETURNS POLICY</span>
                   <ChevronDown
                     size={16}
                     className={`transition-transform duration-300 ${
@@ -459,13 +466,59 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
                   />
                 </button>
                 {openAccordions.shipping && (
-                  <div className="p-4 pt-0 space-y-2 text-neutral-400 border-t border-white/5">
+                  <div className="p-4 pt-0 space-y-2 text-neutral-400 border-t border-white/5 text-xs font-mono">
                     <p>
-                      Orders placed before 2:00 PM IST dispatch the same business day from our Bengaluru studio via Blue Dart Air Express. Delivery within 2–4 business days across India.
+                      Orders dispatch swiftly from our studio via priority air express couriers. Full tracking milestones transmitted upon dispatch. View our full <Link href="/shipping" className="text-snake-green hover:underline">Shipping & Delivery</Link> terms.
                     </p>
                     <p>
-                      Enjoy a hassle-free 7-day return or exchange window. Free doorstep pickup available in all major metro cities.
+                      SuperSnake operates under a strict no-return policy for ordinary purchases (no returns for change of mind or incorrect size). If an item arrives damaged or defective, report it via our <Link href="/returns" className="text-snake-green hover:underline">Returns & Defects</Link> protocol.
                     </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Accordion 4: Mandatory Declarations (Legal Metrology) */}
+              <div className="border border-white/10 rounded overflow-hidden">
+                <button
+                  onClick={() => toggleAccordion('declarations')}
+                  className="w-full p-4 flex justify-between items-center text-left hover:bg-white/[0.02] transition-colors"
+                >
+                  <span className="font-semibold text-white uppercase">MANDATORY DECLARATIONS (LEGAL METROLOGY)</span>
+                  <ChevronDown
+                    size={16}
+                    className={`transition-transform duration-300 ${
+                      openAccordions.declarations ? 'rotate-180 text-snake-green' : 'text-neutral-500'
+                    }`}
+                  />
+                </button>
+                {openAccordions.declarations && (
+                  <div className="p-4 pt-0 space-y-2 text-neutral-400 border-t border-white/5 text-xs font-mono">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                      <div>
+                        <span className="text-neutral-500 uppercase block text-[10px]">GENERIC NAME</span>
+                        <span className="text-white">Men&apos;s / Unisex Heavyweight T-Shirt</span>
+                      </div>
+                      <div>
+                        <span className="text-neutral-500 uppercase block text-[10px]">NET QUANTITY</span>
+                        <span className="text-white">1 N (1 Piece)</span>
+                      </div>
+                      <div>
+                        <span className="text-neutral-500 uppercase block text-[10px]">COUNTRY OF ORIGIN</span>
+                        <span className="text-white">India 🇮🇳</span>
+                      </div>
+                      <div>
+                        <span className="text-neutral-500 uppercase block text-[10px]">MAXIMUM RETAIL PRICE (MRP)</span>
+                        <span className="text-white">Inclusive of all taxes (GST)</span>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <span className="text-neutral-500 uppercase block text-[10px]">MANUFACTURER / PACKER / IMPORTER DETAILS</span>
+                        <span className="text-neutral-400">[CONFIGURATION REQUIRED]</span>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <span className="text-neutral-500 uppercase block text-[10px]">CONSUMER CARE CONTACT</span>
+                        <span className="text-neutral-400">[CONFIGURATION REQUIRED] • Refer to <Link href="/contact" className="text-snake-green hover:underline">Contact Us</Link></span>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

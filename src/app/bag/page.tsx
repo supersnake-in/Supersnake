@@ -252,8 +252,8 @@ export default function BagPage() {
                   <span>Encrypted 256-Bit SSL Razorpay Checkout</span>
                 </div>
                 <div className="flex items-center gap-2.5">
-                  <RotateCcw size={16} className="text-snake-green flex-shrink-0" />
-                  <span>Complimentary 7-Day Returns & Exchanges</span>
+                  <ShieldCheck size={16} className="text-snake-green flex-shrink-0" />
+                  <span>Atelier Quality Check & Defect Protection</span>
                 </div>
                 <div className="flex items-center gap-2.5">
                   <Truck size={16} className="text-snake-green flex-shrink-0" />

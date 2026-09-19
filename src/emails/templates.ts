@@ -170,7 +170,7 @@ export function getDeliveredEmailHtml(order: Order): string {
           Your parcel was successfully handed over at ${order.shippingAddress.city}. We hope you appreciate the weight, drape, and tactile presence of the garment.
         </p>
         <p style="color: #a0a0a0; font-size: 13px; line-height: 1.7;">
-          Should you require any size adjustments, our complimentary 7-day exchange window is open through your account.
+          Should you experience any manufacturing defect or transit damage, please notify our concierge within 48 hours of delivery as outlined in our Returns &amp; Defects policy.
         </p>
         <div style="text-align: center; padding-top: 18px;">
           <a href="https://supersnake.in/account/orders/${order.id}" style="background-color: #ffffff; color: #000000; padding: 12px 24px; font-size: 11px; font-family: monospace; letter-spacing: 0.15em; text-decoration: none; font-weight: 700; text-transform: uppercase; display: inline-block;">

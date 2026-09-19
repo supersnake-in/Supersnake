@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Ruler, ArrowRight, Check } from 'lucide-react';
+import { PolicyLayout } from '@/components/legal/PolicyLayout';
+import { Ruler, ArrowRight, Check, AlertCircle } from 'lucide-react';
 import { Size } from '@/lib/types';
 
 interface MeasurementRow {
@@ -35,6 +36,20 @@ const WOMEN_MEASUREMENTS: MeasurementRow[] = [
   { size: 'XXL', chestIn: 47, chestCm: 119, lengthIn: 29, lengthCm: 74, shoulderIn: 21, shoulderCm: 53, sleeveIn: 9.5, sleeveCm: 24 },
 ];
 
+const TOC = [
+  { id: 'sizing-chart', title: '1. Standard Sizing Matrix' },
+  { id: 'how-to-measure', title: '2. How to Measure Your Best-Fitting Tee' },
+  { id: 'fit-silhouettes', title: '3. Silhouette Profiles (Oversized, Boxy, Relaxed)' },
+  { id: 'tolerance-disclaimer', title: '4. Manufacturing Tolerances & Product Pages' },
+];
+
+const RELATED = [
+  { label: 'Care Guide', href: '/care-guide' },
+  { label: 'Returns & Defects', href: '/returns' },
+  { label: 'Shipping & Delivery', href: '/shipping' },
+  { label: 'Contact Us', href: '/contact' },
+];
+
 export default function SizeGuidePage() {
   const [unit, setUnit] = useState<'in' | 'cm'>('in');
   const [gender, setGender] = useState<'men' | 'women'>('men');
@@ -42,22 +57,26 @@ export default function SizeGuidePage() {
   const data = gender === 'men' ? MEN_MEASUREMENTS : WOMEN_MEASUREMENTS;
 
   return (
-    <div className="bg-black text-white min-h-screen pt-32 pb-24 px-6 md:px-12 font-sans">
-      <div className="max-w-4xl mx-auto space-y-16">
-        {/* Header */}
-        <div className="text-center space-y-4 max-w-2xl mx-auto">
-          <span className="text-[10px] font-mono tracking-[0.3em] text-snake-green uppercase">
-            ARCHITECTURAL MEASUREMENTS
-          </span>
-          <h1 className="text-3xl md:text-5xl font-display font-medium uppercase tracking-tight text-white">
-            SIZE & FIT GUIDE
-          </h1>
-          <p className="text-xs md:text-sm font-mono text-neutral-400">
-            Engineered patterns based on anatomical proportions. All measurements represent finished garment dimensions.
-          </p>
+    <PolicyLayout
+      category="CUSTOMER CARE"
+      title="SIZE GUIDE"
+      description="Architectural garment measurements, silhouette contours, and measuring instructions to ensure the perfect fit before ordering."
+      tableOfContents={TOC}
+      relatedLinks={RELATED}
+    >
+      {/* Important Notice */}
+      <div className="p-4 bg-[#0e0e0e] border border-white/10 rounded-sm space-y-2">
+        <div className="flex items-center gap-2 text-snake-green text-xs font-semibold uppercase tracking-wider">
+          <AlertCircle size={15} />
+          <span>PRODUCT-SPECIFIC MEASUREMENTS</span>
         </div>
+        <p className="text-xs text-neutral-300 leading-relaxed">
+          Because SuperSnake follows a strict no-return policy for ordinary purchases and size selections, please check individual product pages for piece-specific garment dimensions before purchasing.
+        </p>
+      </div>
 
-        {/* Controls Bar */}
+      {/* Section 1: Sizing Chart */}
+      <section id="sizing-chart" className="space-y-6 pt-2">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
           {/* Gender Pills */}
           <div className="flex items-center gap-1 bg-[#0a0a0a] border border-white/10 p-1 rounded text-xs font-mono">
@@ -146,74 +165,75 @@ export default function SizeGuidePage() {
             </tbody>
           </table>
         </div>
+      </section>
 
-        {/* Measurement Guide Diagram Instructions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-          <div className="bg-[#0a0a0a] border border-white/10 p-6 md:p-8 rounded-sm space-y-4">
-            <h3 className="text-base font-display font-medium text-white uppercase tracking-wider">
-              HOW TO MEASURE YOUR BEST-FITTING TEE
-            </h3>
-            <p className="text-xs font-mono text-neutral-400 leading-relaxed">
-              For optimal accuracy, lay your favorite T-shirt flat on a hard surface and measure using a flexible tape:
+      {/* Section 2: How to Measure */}
+      <section id="how-to-measure" className="space-y-4 pt-4">
+        <h2 className="text-base sm:text-lg font-display font-medium text-white uppercase tracking-wider border-b border-white/10 pb-2">
+          2. How to Measure Your Best-Fitting Tee
+        </h2>
+        <p>
+          For maximum accuracy, lay your favorite T-shirt flat on a hard surface and measure using a flexible tailoring tape:
+        </p>
+        <div className="space-y-3 text-xs font-mono text-neutral-300 pt-2">
+          <div className="p-3 bg-[#0a0a0a] border border-white/5 rounded-sm">
+            <strong className="text-snake-green font-semibold">1. CHEST (PIT-TO-PIT): </strong>
+            <span>Measure straight across from underarm seam to underarm seam, then double the figure for full circumference.</span>
+          </div>
+          <div className="p-3 bg-[#0a0a0a] border border-white/5 rounded-sm">
+            <strong className="text-snake-green font-semibold">2. BODY LENGTH: </strong>
+            <span>Measure from the highest point of the shoulder seam where it meets the collar down to the bottom hemline.</span>
+          </div>
+          <div className="p-3 bg-[#0a0a0a] border border-white/5 rounded-sm">
+            <strong className="text-snake-green font-semibold">3. SHOULDER WIDTH: </strong>
+            <span>Measure horizontally across the back from the tip of one shoulder seam to the tip of the opposite shoulder seam.</span>
+          </div>
+          <div className="p-3 bg-[#0a0a0a] border border-white/5 rounded-sm">
+            <strong className="text-snake-green font-semibold">4. SLEEVE LENGTH: </strong>
+            <span>Measure from the outer shoulder seam point down to the edge of the sleeve cuff.</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Section 3: Fit Silhouettes */}
+      <section id="fit-silhouettes" className="space-y-4 pt-4">
+        <h2 className="text-base sm:text-lg font-display font-medium text-white uppercase tracking-wider border-b border-white/10 pb-2">
+          3. Silhouette Profiles
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-mono">
+          <div className="p-4 bg-[#0a0a0a] border border-white/10 rounded-sm space-y-1">
+            <span className="text-white font-medium block uppercase tracking-wider">OVERSIZED FIT</span>
+            <p className="text-neutral-400 text-[11px] leading-relaxed">
+              Dropped shoulders, elongated sleeves, expansive chest, and substantial vertical drape. Order true to size for signature drape.
             </p>
-            <div className="space-y-3 text-xs font-mono text-neutral-300 pt-2">
-              <div>
-                <span className="text-snake-green font-semibold">1. CHEST: </span>
-                <span>Measure straight across from underarm seam to underarm seam, then double the number.</span>
-              </div>
-              <div>
-                <span className="text-snake-green font-semibold">2. LENGTH: </span>
-                <span>Measure from the highest point of the shoulder seam down to the bottom hemline.</span>
-              </div>
-              <div>
-                <span className="text-snake-green font-semibold">3. SHOULDER: </span>
-                <span>Measure horizontally from shoulder seam point to shoulder seam point.</span>
-              </div>
-              <div>
-                <span className="text-snake-green font-semibold">4. SLEEVE: </span>
-                <span>Measure from the shoulder seam down to the sleeve edge.</span>
-              </div>
-            </div>
           </div>
-
-          <div className="bg-[#0a0a0a] border border-white/10 p-6 md:p-8 rounded-sm space-y-4">
-            <h3 className="text-base font-display font-medium text-white uppercase tracking-wider">
-              FIT MATRIX
-            </h3>
-            <div className="space-y-3 text-xs font-mono">
-              <div className="p-3 bg-[#121212] border border-white/5 rounded-sm">
-                <span className="text-white font-medium block">OVERSIZED FIT</span>
-                <p className="text-neutral-400 text-[11px] mt-0.5">
-                  Dropped shoulders, relaxed chest, heavier drape. Order true to size.
-                </p>
-              </div>
-              <div className="p-3 bg-[#121212] border border-white/5 rounded-sm">
-                <span className="text-white font-medium block">BOXY CUT</span>
-                <p className="text-neutral-400 text-[11px] mt-0.5">
-                  Slightly cropped torso, broader shoulder stance, street-inspired silhouette.
-                </p>
-              </div>
-              <div className="p-3 bg-[#121212] border border-white/5 rounded-sm">
-                <span className="text-white font-medium block">RELAXED ESSENTIAL</span>
-                <p className="text-neutral-400 text-[11px] mt-0.5">
-                  Balanced everyday comfort. Structured collar that stays crisp throughout the day.
-                </p>
-              </div>
-            </div>
+          <div className="p-4 bg-[#0a0a0a] border border-white/10 rounded-sm space-y-1">
+            <span className="text-white font-medium block uppercase tracking-wider">BOXY CUT</span>
+            <p className="text-neutral-400 text-[11px] leading-relaxed">
+              Slightly cropped torso, broader shoulder stance, structured neckline, street-inspired modern architecture.
+            </p>
+          </div>
+          <div className="p-4 bg-[#0a0a0a] border border-white/10 rounded-sm space-y-1">
+            <span className="text-white font-medium block uppercase tracking-wider">RELAXED ESSENTIAL</span>
+            <p className="text-neutral-400 text-[11px] leading-relaxed">
+              Balanced everyday silhouette. Ample room across chest and arms with classic body length.
+            </p>
           </div>
         </div>
+      </section>
 
-        {/* CTA */}
-        <div className="text-center pt-4">
-          <Link
-            href="/shop"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-white hover:bg-snake-green text-black font-mono text-xs uppercase tracking-widest font-semibold transition-colors"
-          >
-            <span>SHOP COLLECTION NOW</span>
-            <ArrowRight size={14} />
-          </Link>
-        </div>
-      </div>
-    </div>
+      {/* Section 4: Manufacturing Tolerances & Product Pages */}
+      <section id="tolerance-disclaimer" className="space-y-4 pt-4">
+        <h2 className="text-base sm:text-lg font-display font-medium text-white uppercase tracking-wider border-b border-white/10 pb-2">
+          4. Manufacturing Tolerances & Product Pages
+        </h2>
+        <p>
+          Garments are cut and sewn with precision; however, standard commercial textile tolerances of approximately +/- 0.5 inches (1.25 cm) may occur due to manual craftsmanship, seam tension, and natural organic cotton elasticity.
+        </p>
+        <p>
+          Individual product lines may feature unique tailoring variations or specialized silhouettes. Always consult the dedicated specifications on each product page prior to order confirmation.
+        </p>
+      </section>
+    </PolicyLayout>
   );
 }

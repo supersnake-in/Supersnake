@@ -2,130 +2,229 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Truck, ShieldCheck, Clock, MapPin, Package, ArrowRight } from 'lucide-react';
-import { BRAND } from '@/lib/design-tokens';
+import { PolicyLayout } from '@/components/legal/PolicyLayout';
+import { LEGAL_CONFIG, getLegalValue } from '@/lib/legal-config';
+import { Truck, ShieldCheck, Clock, MapPin, Package, ArrowRight, AlertCircle } from 'lucide-react';
+import { formatPrice } from '@/lib/design-tokens';
 
-export default function ShippingPage() {
+const TOC = [
+  { id: 'order-processing', title: '1. Order Processing' },
+  { id: 'dispatch', title: '2. Dispatch Protocol' },
+  { id: 'estimated-delivery', title: '3. Estimated Delivery Timelines' },
+  { id: 'shipping-charges', title: '4. Shipping Charges & Thresholds' },
+  { id: 'delivery-delays', title: '5. Delivery Delays & External Circumstances' },
+  { id: 'incorrect-address', title: '6. Accuracy of Shipping Information' },
+  { id: 'failed-attempts', title: '7. Failed Delivery Attempts & Non-Receipt' },
+  { id: 'damaged-shipment', title: '8. Package Inspection & Damaged Shipments' },
+  { id: 'order-tracking', title: '9. Live Order Tracking' },
+  { id: 'support-contact', title: '10. Logistics Support & Escalations' },
+];
+
+const RELATED = [
+  { label: 'Returns & Defects', href: '/returns' },
+  { label: 'Cancellation Policy', href: '/cancellation' },
+  { label: 'FAQ', href: '/faq' },
+  { label: 'Contact Us', href: '/contact' },
+];
+
+export default function ShippingAndDeliveryPage() {
+  const processingTime = LEGAL_CONFIG.shippingProcessingTime || getLegalValue(null, 'SHIPPING_PROCESSING_TIME');
+  const deliveryEstimate = LEGAL_CONFIG.deliveryEstimate || getLegalValue(null, 'DELIVERY_ESTIMATE');
+  const shippingProvider = LEGAL_CONFIG.shippingProvider || getLegalValue(null, 'SHIPPING_CARRIER');
+  const freeThreshold = LEGAL_CONFIG.freeShippingThreshold;
+  const standardFee = LEGAL_CONFIG.standardShippingFee;
+
   return (
-    <div className="bg-black text-white min-h-screen pt-32 pb-24 px-6 md:px-12 font-sans">
-      <div className="max-w-4xl mx-auto space-y-16">
-        {/* Header */}
-        <div className="text-center space-y-4 max-w-2xl mx-auto">
-          <span className="text-[10px] font-mono tracking-[0.3em] text-snake-green uppercase">
-            LOGISTICS PROTOCOL
-          </span>
-          <h1 className="text-3xl md:text-5xl font-display font-medium uppercase tracking-tight text-white">
-            SHIPPING & TRANSIT
-          </h1>
-          <p className="text-xs md:text-sm font-mono text-neutral-400">
-            Engineered dispatches from our Bengaluru atelier to your doorstep via Blue Dart Air Express.
+    <PolicyLayout
+      category="CUSTOMER CARE"
+      title="SHIPPING & DELIVERY"
+      description="Detailed disclosures regarding order fulfillment, courier transit, delivery estimates, logistics fees, and package inspection."
+      tableOfContents={TOC}
+      relatedLinks={RELATED}
+    >
+      {/* Overview Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 not-prose">
+        <div className="bg-[#0a0a0a] border border-white/10 p-5 rounded-sm space-y-2">
+          <div className="flex items-center justify-between text-neutral-500">
+            <span className="text-[10px] uppercase tracking-widest text-snake-green">PROCESSING WINDOW</span>
+            <Clock size={16} className="text-snake-green" />
+          </div>
+          <p className="text-sm sm:text-base font-display font-medium text-white">
+            {processingTime}
+          </p>
+          <p className="text-[11px] text-neutral-400">
+            Following successful payment verification.
           </p>
         </div>
 
-        {/* Shipping Tiers */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-[#0a0a0a] border border-white/10 p-8 rounded-sm space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-mono text-snake-green uppercase tracking-widest">
-                STANDARD COMPLIMENTARY
-              </span>
-              <Truck size={18} className="text-snake-green" />
-            </div>
-            <h3 className="text-2xl font-display font-medium text-white">FREE EXPRESS</h3>
-            <p className="text-xs font-mono text-neutral-400 leading-relaxed">
-              Applicable to all orders totaling ₹1,999 or greater. Dispatched via priority air cargo with full transit tracking.
-            </p>
-            <div className="pt-2 text-xs font-mono text-neutral-300">
-              Transit: <span className="text-white font-semibold">2–4 Business Days</span>
-            </div>
+        <div className="bg-[#0a0a0a] border border-white/10 p-5 rounded-sm space-y-2">
+          <div className="flex items-center justify-between text-neutral-500">
+            <span className="text-[10px] uppercase tracking-widest text-snake-green">TRANSIT PARTNER</span>
+            <Truck size={16} className="text-snake-green" />
           </div>
-
-          <div className="bg-[#0a0a0a] border border-white/10 p-8 rounded-sm space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-mono text-neutral-500 uppercase tracking-widest">
-                BELOW THRESHOLD
-              </span>
-              <Package size={18} className="text-neutral-500" />
-            </div>
-            <h3 className="text-2xl font-display font-medium text-white">₹99 FLAT LOGISTICS</h3>
-            <p className="text-xs font-mono text-neutral-400 leading-relaxed">
-              For single-item or orders below ₹1,999. Includes high-durability matte black packaging and door-to-door insurance.
-            </p>
-            <div className="pt-2 text-xs font-mono text-neutral-300">
-              Transit: <span className="text-white font-semibold">2–4 Business Days</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Delivery Zones Table */}
-        <div className="bg-[#0a0a0a] border border-white/10 p-6 md:p-8 rounded-sm space-y-6">
-          <h3 className="text-lg font-display font-medium text-white uppercase tracking-wider">
-            DOMESTIC ESTIMATED TRANSIT TIMES
-          </h3>
-          <div className="divide-y divide-white/5 text-xs font-mono">
-            <div className="py-3 flex justify-between items-center">
-              <span className="text-neutral-300">Bengaluru & Karnataka</span>
-              <span className="text-snake-green font-semibold">1–2 Business Days</span>
-            </div>
-            <div className="py-3 flex justify-between items-center">
-              <span className="text-neutral-300">Tier-1 Metros (Mumbai, Delhi NCR, Hyderabad, Chennai)</span>
-              <span className="text-white font-medium">2–3 Business Days</span>
-            </div>
-            <div className="py-3 flex justify-between items-center">
-              <span className="text-neutral-300">Tier-2 Cities & State Capitals</span>
-              <span className="text-white font-medium">3–4 Business Days</span>
-            </div>
-            <div className="py-3 flex justify-between items-center">
-              <span className="text-neutral-300">Northeast, Jammu & Kashmir, Remote Outposts</span>
-              <span className="text-neutral-400">4–6 Business Days</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Packaging & Inspection Standards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs font-mono">
-          <div className="bg-[#0a0a0a] border border-white/10 p-6 rounded-sm space-y-3">
-            <ShieldCheck size={18} className="text-snake-green" />
-            <h4 className="text-sm font-display font-medium text-white">REINFORCED PACKAGING</h4>
-            <p className="text-neutral-400 leading-relaxed">
-              Every SuperSnake piece is vacuum-sealed in recyclable matte black protective pouches to prevent moisture and transit friction.
-            </p>
-          </div>
-
-          <div className="bg-[#0a0a0a] border border-white/10 p-6 rounded-sm space-y-3">
-            <Clock size={18} className="text-snake-green" />
-            <h4 className="text-sm font-display font-medium text-white">SAME-DAY DISPATCH</h4>
-            <p className="text-neutral-400 leading-relaxed">
-              Orders placed before 2:00 PM IST on business days are tailored, inspected, and handed to Blue Dart on the same calendar day.
-            </p>
-          </div>
-
-          <div className="bg-[#0a0a0a] border border-white/10 p-6 rounded-sm space-y-3">
-            <MapPin size={18} className="text-snake-green" />
-            <h4 className="text-sm font-display font-medium text-white">AIR EXPRESS PARTNERSHIP</h4>
-            <p className="text-neutral-400 leading-relaxed">
-              Exclusively routed via Blue Dart and DTDC Premium Air to minimize road transit shock and ensure reliable tracking scans.
-            </p>
-          </div>
-        </div>
-
-        {/* Tracking Callout */}
-        <div className="border border-white/15 p-8 text-center space-y-4 bg-gradient-to-b from-neutral-900/50 to-black">
-          <h3 className="text-xl font-display font-medium text-white">HAVE AN ACTIVE ORDER NUMBER?</h3>
-          <p className="text-xs font-mono text-neutral-400 max-w-md mx-auto">
-            Input your order number and phone to view live courier milestones and estimated delivery hours.
+          <p className="text-sm sm:text-base font-display font-medium text-white">
+            {shippingProvider}
           </p>
-          <div className="pt-2">
-            <Link
-              href="/track-order"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-white hover:bg-snake-green text-black font-mono text-xs uppercase tracking-widest font-semibold transition-colors"
-            >
-              <span>TRACK YOUR ORDER</span>
-              <ArrowRight size={13} />
-            </Link>
-          </div>
+          <p className="text-[11px] text-neutral-400">
+            Estimated Delivery: {deliveryEstimate}
+          </p>
         </div>
       </div>
-    </div>
+
+      {/* Section 1: Order Processing */}
+      <section id="order-processing" className="space-y-4 pt-4">
+        <h2 className="text-base sm:text-lg font-display font-medium text-white uppercase tracking-wider border-b border-white/10 pb-2">
+          1. Order Processing
+        </h2>
+        <p>
+          All orders placed on SUPERSNAKE.IN are initiated after successful payment authorization and fraud-screening clearance. Order processing entails inventory reservation, physical garment inspection, folding, protective wrapping, and generation of the courier shipping waybill.
+        </p>
+        <p>
+          Processing typically takes <strong className="text-white font-normal">{processingTime}</strong> during regular business days (excluding national holidays, state holidays, and Sundays). Orders placed on non-business days or after cut-off hours enter processing on the next immediate business day.
+        </p>
+      </section>
+
+      {/* Section 2: Dispatch Protocol */}
+      <section id="dispatch" className="space-y-4 pt-4">
+        <h2 className="text-base sm:text-lg font-display font-medium text-white uppercase tracking-wider border-b border-white/10 pb-2">
+          2. Dispatch Protocol
+        </h2>
+        <p>
+          Once processed, garments are sealed in protective packaging and handed over to our appointed logistics partner (<strong className="text-white font-normal">{shippingProvider}</strong>). At the time of handover, a unique consignment tracking/waybill number is generated.
+        </p>
+        <p>
+          An electronic dispatch confirmation is sent to your registered email address and contact telephone number, containing direct courier tracking links.
+        </p>
+      </section>
+
+      {/* Section 3: Estimated Delivery Timelines */}
+      <section id="estimated-delivery" className="space-y-4 pt-4">
+        <h2 className="text-base sm:text-lg font-display font-medium text-white uppercase tracking-wider border-b border-white/10 pb-2">
+          3. Estimated Delivery Timelines
+        </h2>
+        <p>
+          Estimated delivery timelines generally range within <strong className="text-white font-normal">{deliveryEstimate}</strong> following the date of dispatch, subject to destination pin code:
+        </p>
+        <ul className="list-disc pl-5 space-y-1.5 text-neutral-400">
+          <li><strong className="text-white font-normal">Metro Destinations:</strong> Typically delivered within 2–3 business days post-dispatch.</li>
+          <li><strong className="text-white font-normal">Tier-2 / Regional Centers:</strong> Typically delivered within 3–5 business days post-dispatch.</li>
+          <li><strong className="text-white font-normal">Remote, Island or Special Security Outposts:</strong> May require 5–7 business days depending on surface or feeder connectivity.</li>
+        </ul>
+        <p className="text-neutral-400 text-xs italic">
+          Delivery timelines are estimates only and are not guaranteed delivery dates. Actual transit speed may fluctuate based on operational contingencies, courier hub volume, weather anomalies, or local restrictions.
+        </p>
+      </section>
+
+      {/* Section 4: Shipping Charges & Thresholds */}
+      <section id="shipping-charges" className="space-y-4 pt-4">
+        <h2 className="text-base sm:text-lg font-display font-medium text-white uppercase tracking-wider border-b border-white/10 pb-2">
+          4. Shipping Charges & Thresholds
+        </h2>
+        <p>
+          Shipping charges, if applicable, are transparently displayed during checkout prior to final payment submission:
+        </p>
+        <ul className="list-disc pl-5 space-y-1.5 text-neutral-400">
+          <li>
+            <strong className="text-white font-normal">Orders Totaling {freeThreshold ? formatPrice(freeThreshold) : '[THRESHOLD]'} or Above:</strong> Complimentary express domestic shipping.
+          </li>
+          <li>
+            <strong className="text-white font-normal">Orders Below {freeThreshold ? formatPrice(freeThreshold) : '[THRESHOLD]'}:</strong> Subject to a standard logistics fee of {standardFee ? formatPrice(standardFee) : '[FEE]'} to cover priority courier handling and reinforced protective packaging.
+          </li>
+        </ul>
+      </section>
+
+      {/* Section 5: Delivery Delays */}
+      <section id="delivery-delays" className="space-y-4 pt-4">
+        <h2 className="text-base sm:text-lg font-display font-medium text-white uppercase tracking-wider border-b border-white/10 pb-2">
+          5. Delivery Delays & External Circumstances
+        </h2>
+        <p>
+          While we make reasonable commercial efforts to ensure timely fulfillment, SuperSnake shall not be held liable for delivery delays arising from factors outside reasonable control, including but not limited to:
+        </p>
+        <ul className="list-disc pl-5 space-y-1 text-neutral-400">
+          <li>Severe weather, cyclones, floods, or natural events;</li>
+          <li>Regional transport strikes, civil disruptions, or road blockages;</li>
+          <li>Operational disruptions or flight delays affecting air-cargo lanes;</li>
+          <li>Local government curfews, elections, or regulatory containment zones.</li>
+        </ul>
+      </section>
+
+      {/* Section 6: Accuracy of Shipping Information */}
+      <section id="incorrect-address" className="space-y-4 pt-4">
+        <h2 className="text-base sm:text-lg font-display font-medium text-white uppercase tracking-wider border-b border-white/10 pb-2">
+          6. Accuracy of Shipping Information
+        </h2>
+        <p>
+          Customers must ensure that the shipping address, contact telephone number, PIN code, and recipient name provided at checkout are complete and accurate.
+        </p>
+        <p>
+          SuperSnake is not responsible for non-delivery, misdelivery, or re-routing delays resulting from incomplete addresses, missing flat/building numbers, incorrect pin codes, or unreachable customer contact numbers. Any reshipment fees necessitated by incorrect address details may be chargeable.
+        </p>
+      </section>
+
+      {/* Section 7: Failed Delivery Attempts */}
+      <section id="failed-attempts" className="space-y-4 pt-4">
+        <h2 className="text-base sm:text-lg font-display font-medium text-white uppercase tracking-wider border-b border-white/10 pb-2">
+          7. Failed Delivery Attempts & Non-Receipt
+        </h2>
+        <p>
+          Our courier partners make up to three (3) delivery attempts before marking a shipment as undeliverable. If the recipient is unavailable, the courier typically contacts the registered phone number or leaves a notice for re-delivery.
+        </p>
+        <p>
+          If a parcel is returned to our studio (Return to Origin — RTO) due to non-availability, refusal of delivery, or an unreachable recipient, our customer care desk will contact you to arrange re-dispatch.
+        </p>
+      </section>
+
+      {/* Section 8: Package Inspection & Damaged Shipments */}
+      <section id="damaged-shipment" className="space-y-4 pt-4">
+        <h2 className="text-base sm:text-lg font-display font-medium text-white uppercase tracking-wider border-b border-white/10 pb-2">
+          8. Package Inspection & Damaged Shipments
+        </h2>
+        <div className="p-4 bg-[#0e0e0e] border border-white/10 rounded-sm space-y-2">
+          <div className="flex items-center gap-2 text-snake-green font-semibold text-xs uppercase">
+            <ShieldCheck size={16} />
+            <span>DELIVERY INSPECTION GUIDELINE</span>
+          </div>
+          <p className="text-xs text-neutral-300 leading-relaxed">
+            Upon delivery, please inspect the external packaging before accepting the consignment. If the outer carton or protective tamper-evident polybag appears visibly torn, punctured, heavily crushed, or resealed:
+          </p>
+          <ul className="list-disc pl-5 space-y-1 text-neutral-400 text-xs">
+            <li>Note the damage on the delivery partner&apos;s physical or digital proof-of-delivery acknowledgement;</li>
+            <li>Take photographs of the exterior condition prior to opening;</li>
+            <li>Promptly notify our support desk via our <Link href="/returns" className="text-snake-green hover:underline">Returns & Defects</Link> protocol.</li>
+          </ul>
+        </div>
+      </section>
+
+      {/* Section 9: Live Order Tracking */}
+      <section id="order-tracking" className="space-y-4 pt-4">
+        <h2 className="text-base sm:text-lg font-display font-medium text-white uppercase tracking-wider border-b border-white/10 pb-2">
+          9. Live Order Tracking
+        </h2>
+        <p>
+          Patrons can track the live status of active dispatches using our dedicated order tracking interface:
+        </p>
+        <div className="pt-2">
+          <Link
+            href="/track-order"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-[#111] hover:bg-neutral-800 border border-white/15 text-white font-mono text-xs uppercase tracking-widest rounded-sm transition-colors"
+          >
+            <Truck size={14} className="text-snake-green" />
+            <span>LAUNCH LIVE ORDER TRACKER</span>
+            <ArrowRight size={13} />
+          </Link>
+        </div>
+      </section>
+
+      {/* Section 10: Logistics Support & Escalations */}
+      <section id="support-contact" className="space-y-4 pt-4">
+        <h2 className="text-base sm:text-lg font-display font-medium text-white uppercase tracking-wider border-b border-white/10 pb-2">
+          10. Logistics Support & Escalations
+        </h2>
+        <p>
+          For queries regarding shipment milestones, address modifications prior to dispatch, or delayed consignments, contact our concierge team at <strong className="text-white font-normal">{getLegalValue(LEGAL_CONFIG.supportEmail, 'SUPPORT_EMAIL')}</strong> or submit an inquiry through our <Link href="/contact" className="text-snake-green hover:underline">Contact Us</Link> portal.
+        </p>
+      </section>
+    </PolicyLayout>
   );
 }

@@ -27,28 +27,27 @@ const NAV_COLUMNS: NavColumn[] = [
     ],
   },
   {
-    id: 'support',
+    id: 'customer-care',
     number: '02',
-    title: 'SUPPORT',
+    title: 'CUSTOMER CARE',
     links: [
-      { label: 'ORDER TRACKING', href: '/track-order' },
-      { label: 'SHIPPING', href: '/shipping' },
-      { label: 'RETURNS', href: '/returns' },
-      { label: 'SIZE GUIDE', href: '/size-guide' },
+      { label: 'CONTACT US', href: '/contact' },
       { label: 'FAQ', href: '/faq' },
-      { label: 'CONTACT', href: '/contact' },
+      { label: 'SHIPPING & DELIVERY', href: '/shipping' },
+      { label: 'RETURNS & DEFECTS', href: '/returns' },
+      { label: 'CANCELLATION POLICY', href: '/cancellation' },
+      { label: 'SIZE GUIDE', href: '/size-guide' },
+      { label: 'CARE GUIDE', href: '/care-guide' },
     ],
   },
   {
-    id: 'company',
+    id: 'legal',
     number: '03',
-    title: 'COMPANY',
+    title: 'LEGAL',
     links: [
-      { label: 'OUR STORY', href: '/about' },
-      { label: 'MATERIALS', href: '/collection/heavyweight' },
-      { label: 'CARE GUIDE', href: '/care-guide' },
-      { label: 'JOURNAL', href: '/about' },
-      { label: 'CONTACT', href: '/contact' },
+      { label: 'PRIVACY POLICY', href: '/privacy' },
+      { label: 'TERMS & CONDITIONS', href: '/terms' },
+      { label: 'GRIEVANCE REDRESSAL', href: '/grievance' },
     ],
   },
   {
@@ -59,7 +58,6 @@ const NAV_COLUMNS: NavColumn[] = [
       { label: 'INSTAGRAM', href: 'https://instagram.com/supersnake.in', external: true },
       { label: 'X', href: 'https://x.com/supersnake_in', external: true },
       { label: 'YOUTUBE', href: 'https://youtube.com/@supersnake_in', external: true },
-      { label: 'PINTEREST', href: 'https://pinterest.com/supersnake_in', external: true },
     ],
   },
 ];
@@ -386,11 +384,11 @@ export function Footer() {
             </div>
             <div className="flex items-center gap-1.5 text-neutral-400">
               <span className="w-1 h-1 rounded-full bg-snake-green/80" />
-              <span>7-DAY HASSLE-FREE RETURNS</span>
+              <span>ATELIER QUALITY CHECKS</span>
             </div>
             <div className="flex items-center gap-1.5 text-neutral-400">
               <span className="w-1 h-1 rounded-full bg-snake-green/80" />
-              <span>BLUE DART AIR EXPRESS</span>
+              <span>PRIORITY AIR EXPRESS</span>
             </div>
             <div className="flex items-center gap-1.5 text-neutral-400">
               <span className="w-1 h-1 rounded-full bg-snake-green/80" />
@@ -423,13 +421,13 @@ export function Footer() {
           {/* Center: Legal Directives */}
           <div className="flex items-center gap-6 order-1 md:order-2">
             <Link href="/privacy" className="hover:text-white transition-colors">
-              PRIVACY & TERMS
+              PRIVACY POLICY
             </Link>
-            <Link href="/cookies" className="hover:text-white transition-colors">
-              COOKIE POLICY
+            <Link href="/terms" className="hover:text-white transition-colors">
+              TERMS & CONDITIONS
             </Link>
-            <Link href="/shop" className="hover:text-white transition-colors">
-              SITEMAP
+            <Link href="/grievance" className="hover:text-white transition-colors">
+              GRIEVANCE REDRESSAL
             </Link>
           </div>
 

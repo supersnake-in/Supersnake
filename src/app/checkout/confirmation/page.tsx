@@ -97,6 +97,21 @@ function OrderConfirmationContent() {
             CONTINUE BROWSING
           </Link>
         </div>
+
+        {/* Customer Care Directives */}
+        <div className="pt-6 border-t border-white/10 flex flex-wrap items-center justify-center gap-6 text-[11px] font-mono text-neutral-500">
+          <Link href="/shipping" className="hover:text-white transition-colors">
+            Shipping &amp; Delivery
+          </Link>
+          <span>•</span>
+          <Link href="/returns" className="hover:text-white transition-colors">
+            Returns &amp; Defects
+          </Link>
+          <span>•</span>
+          <Link href="/contact" className="hover:text-white transition-colors">
+            Contact Us
+          </Link>
+        </div>
       </div>
     </div>
   );

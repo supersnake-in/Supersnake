@@ -199,8 +199,8 @@ export function CartDrawer() {
                     <span>SECURE CHECKOUT</span>
                   </div>
                   <div className="flex flex-col items-center gap-1">
-                    <RotateCcw size={14} className="text-snake-green" />
-                    <span>7-DAY RETURNS</span>
+                    <ShieldCheck size={14} className="text-snake-green" />
+                    <span>QUALITY CHECK</span>
                   </div>
                   <div className="flex flex-col items-center gap-1">
                     <Truck size={14} className="text-snake-green" />
