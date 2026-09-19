@@ -223,10 +223,10 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
                 <button
                   onClick={() => toggleWishlist(product)}
                   className={`flex items-center gap-1.5 text-xs font-mono tracking-wider transition-colors ${
-                    isFavorited ? 'text-snake-green' : 'text-neutral-400 hover:text-white'
+                    isFavorited ? 'text-red-500 hover:text-red-400' : 'text-neutral-400 hover:text-white'
                   }`}
                 >
-                  <Heart size={15} className={isFavorited ? 'fill-snake-green' : ''} />
+                  <Heart size={15} className={`transition-all duration-200 ${isFavorited ? 'fill-red-500 text-red-500 scale-110' : ''}`} />
                   <span>{isFavorited ? 'SAVED' : 'SAVE FOR LATER'}</span>
                 </button>
               </div>
