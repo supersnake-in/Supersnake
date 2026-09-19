@@ -598,9 +598,9 @@ export default function HomePage() {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+          <div className="flex md:grid md:grid-cols-3 gap-5 sm:gap-8 overflow-x-auto md:overflow-visible pb-4 md:pb-0 -mx-4 sm:-mx-6 md:mx-0 px-4 sm:px-6 md:px-0 no-scrollbar snap-x snap-mandatory">
             {/* Pillar 1 */}
-            <div className="space-y-3 sm:space-y-4 group">
+            <div className="w-[82vw] sm:w-[340px] md:w-auto shrink-0 md:shrink space-y-3 sm:space-y-4 group snap-center">
               <div className="relative aspect-[4/5] rounded overflow-hidden bg-neutral-900 border border-white/10">
                 <Image
                   src="https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?q=80&w=800&auto=format&fit=crop"
@@ -620,7 +620,7 @@ export default function HomePage() {
             </div>
 
             {/* Pillar 2 */}
-            <div className="space-y-3 sm:space-y-4 group">
+            <div className="w-[82vw] sm:w-[340px] md:w-auto shrink-0 md:shrink space-y-3 sm:space-y-4 group snap-center">
               <div className="relative aspect-[4/5] rounded overflow-hidden bg-neutral-900 border border-white/10">
                 <Image
                   src="https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?q=80&w=800&auto=format&fit=crop"
@@ -640,7 +640,7 @@ export default function HomePage() {
             </div>
 
             {/* Pillar 3 */}
-            <div className="space-y-3 sm:space-y-4 group">
+            <div className="w-[82vw] sm:w-[340px] md:w-auto shrink-0 md:shrink space-y-3 sm:space-y-4 group snap-center">
               <div className="relative aspect-[4/5] rounded overflow-hidden bg-neutral-900 border border-white/10">
                 <Image
                   src="https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=800&auto=format&fit=crop"
