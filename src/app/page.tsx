@@ -5,7 +5,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { ArrowRight, ArrowDown, Sparkles } from 'lucide-react';
-import { PRODUCTS, getSpotlightProduct, getNewDrops, getBestsellers } from '@/lib/data/products';
 import { ProductCard } from '@/components/product/ProductCard';
 import { SuperSnakeLogo } from '@/components/brand/SuperSnakeLogo';
 import { formatPrice } from '@/lib/design-tokens';
@@ -304,63 +303,67 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
-            {newDrops.map((product, idx) => (
-              <ProductCard key={product.id} product={product} priority={idx < 2} />
-            ))}
-          </div>
+          {newDrops.length === 0 ? (
+            <div className="py-12 text-center text-xs font-mono text-neutral-500">
+              No new drops currently available. Check back soon for the next atelier run.
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
+              {newDrops.map((product, idx) => (
+                <ProductCard key={product.id} product={product} priority={idx < 2} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
       {/* ============================================================
           05 — PRODUCT SPOTLIGHT (IMMERSIVE FULL-SCREEN PRESENTATION)
           ============================================================ */}
-      <section className="relative min-h-[750px] md:min-h-[900px] w-full border-t border-white/[0.06] overflow-hidden flex items-center px-6 md:px-16 py-20 bg-black">
-        <div className="absolute inset-0 z-0">
-          <Image
-            src={spotlightProduct.images[0]?.url || ''}
-            alt={spotlightProduct.name}
-            fill
-            sizes="100vw"
-            className="object-cover object-center brightness-50 contrast-125"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent" />
-        </div>
-
-        <div className="relative z-10 max-w-2xl space-y-8">
-          <div className="space-y-2">
-            <span className="text-[10px] font-mono tracking-mega text-snake-green uppercase">
-              SPOTLIGHT CAMPAIGN
-            </span>
-            <h2 className="text-5xl sm:text-7xl md:text-8xl font-display font-black tracking-tighter uppercase leading-[0.9] text-white">
-              THE
-              <br />
-              SIGNATURE
-              <br />
-              TEE.
-            </h2>
+      {spotlightProduct && (
+        <section className="relative min-h-[750px] md:min-h-[900px] w-full border-t border-white/[0.06] overflow-hidden flex items-center px-6 md:px-16 py-20 bg-black">
+          <div className="absolute inset-0 z-0">
+            <Image
+              src={spotlightProduct.images?.[0]?.url || ''}
+              alt={spotlightProduct.name}
+              fill
+              sizes="100vw"
+              className="object-cover object-center brightness-50 contrast-125"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent" />
           </div>
 
-          <div className="space-y-2">
-            <span className="font-mono text-2xl md:text-3xl text-white font-semibold">
-              {formatPrice(spotlightProduct.price)}
-            </span>
-            <p className="text-xs md:text-sm font-mono text-neutral-400 max-w-md leading-relaxed">
-              {spotlightProduct.description}
-            </p>
-          </div>
+          <div className="relative z-10 max-w-2xl space-y-8">
+            <div className="space-y-2">
+              <span className="text-[10px] font-mono tracking-mega text-snake-green uppercase">
+                SPOTLIGHT CAMPAIGN
+              </span>
+              <h2 className="text-5xl sm:text-7xl md:text-8xl font-display font-black tracking-tighter uppercase leading-[0.9] text-white">
+                {spotlightProduct.name}
+              </h2>
+            </div>
 
-          <div className="flex flex-wrap gap-4 pt-4">
-            <Link
-              href={`/product/${spotlightProduct.slug}`}
-              className="px-8 py-4 bg-snake-green text-black font-mono text-xs tracking-widest font-bold uppercase transition-all duration-300 hover:bg-white hover:shadow-[0_0_30px_rgba(4,252,33,0.5)] flex items-center gap-2"
-            >
-              <span>SHOP NOW</span>
-              <ArrowRight size={14} />
-            </Link>
+            <div className="space-y-2">
+              <span className="font-mono text-2xl md:text-3xl text-white font-semibold">
+                {formatPrice(spotlightProduct.price)}
+              </span>
+              <p className="text-xs md:text-sm font-mono text-neutral-400 max-w-md leading-relaxed">
+                {spotlightProduct.description}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-4 pt-4">
+              <Link
+                href={`/product/${spotlightProduct.slug}`}
+                className="px-8 py-4 bg-snake-green text-black font-mono text-xs tracking-widest font-bold uppercase transition-all duration-300 hover:bg-white hover:shadow-[0_0_30px_rgba(4,252,33,0.5)] flex items-center gap-2"
+              >
+                <span>SHOP NOW</span>
+                <ArrowRight size={14} />
+              </Link>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ============================================================
           06 — QUALITY & CRAFTSMANSHIP (MACRO PHOTOGRAPHY)

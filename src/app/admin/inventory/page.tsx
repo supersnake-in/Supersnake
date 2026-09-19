@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useStore } from '@/lib/store';
-import { AlertTriangle, CheckCircle, Plus, Minus, Search, RefreshCw } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Plus, Minus, Search, RefreshCw, Package } from 'lucide-react';
 import { formatPrice } from '@/lib/design-tokens';
 
 interface InventoryItem {
@@ -143,7 +144,24 @@ export default function AdminInventoryPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-800/60">
-            {filtered.map((item) => {
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="py-16 text-center text-neutral-500">
+                  <Package size={36} className="mx-auto text-neutral-600 mb-2" />
+                  <p className="text-xs uppercase font-bold text-neutral-400">NO INVENTORY SKUS FOUND</p>
+                  <p className="text-[11px] text-neutral-600 mt-1 max-w-sm mx-auto">
+                    Garments and variants created through the Product Atelier will dynamically stream here with live stock controls.
+                  </p>
+                  <Link
+                    href="/admin/products"
+                    className="inline-block mt-4 px-4 py-2 bg-snake-green text-black font-bold uppercase text-[10px] tracking-wider rounded hover:bg-white transition-colors"
+                  >
+                    + CREATE PRODUCT
+                  </Link>
+                </td>
+              </tr>
+            ) : (
+              filtered.map((item) => {
               const isLow = item.stock > 0 && item.stock <= 10;
               const isOut = item.stock === 0;
 
@@ -194,7 +212,7 @@ export default function AdminInventoryPage() {
                   </td>
                 </tr>
               );
-            })}
+            }))}
           </tbody>
         </table>
       </div>

@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import { sanitizeString, sanitizeSlug, sanitizeNumber, isValidImageSource } from '@/lib/security';
 import { Product, ProductImage } from '@/lib/types';
-import { PRODUCTS } from '@/lib/data/products';
+import { fetchProductsFromSupabase } from '@/lib/supabase/db';
 
 export async function GET() {
+  const products = await fetchProductsFromSupabase();
   return NextResponse.json({
     success: true,
-    products: PRODUCTS,
+    products: products || [],
   });
 }
 

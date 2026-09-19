@@ -1,6 +1,5 @@
 import { supabase } from './client';
 import { Product, Order, ProductVariant, ProductImage } from '../types';
-import { PRODUCTS } from '../data/products';
 
 /**
  * FETCH PRODUCTS DYNAMICALLY FROM SUPABASE

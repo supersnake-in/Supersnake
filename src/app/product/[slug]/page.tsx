@@ -18,7 +18,6 @@ import {
   ArrowRight,
   Maximize2,
 } from 'lucide-react';
-import { getProductBySlug, PRODUCTS } from '@/lib/data/products';
 import { useStore } from '@/lib/store';
 import { formatPrice, BRAND } from '@/lib/design-tokens';
 import { Size, ProductImage } from '@/lib/types';
@@ -28,7 +27,7 @@ import { ProductCard } from '@/components/product/ProductCard';
 export default function ProductDetailPage({ params }: { params: { slug: string } }) {
   const router = useRouter();
   const { products, addToCart, isInWishlist, toggleWishlist } = useStore();
-  const product = products.find((p) => p.slug === params.slug) || getProductBySlug(params.slug);
+  const product = products.find((p) => p.slug === params.slug);
 
   if (!product) {
     notFound();

@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Product, CartItem, WishlistItem, Size, Order } from './types';
-import { PRODUCTS } from './data/products';
 import {
   fetchProductsFromSupabase,
   createProductInSupabase,
@@ -56,7 +55,7 @@ interface StoreContextType {
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
-  const [products, setProducts] = useState<Product[]>(PRODUCTS);
+  const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
@@ -71,7 +70,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const savedProducts = localStorage.getItem('supersnake_products');
       if (savedProducts) {
         const parsed = JSON.parse(savedProducts);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           setProducts(parsed);
         }
       }
@@ -89,15 +88,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
     setIsLoaded(true);
 
-    // Fetch dynamic products from Supabase
+    // Fetch dynamic products from Supabase (Single Source of Truth)
     fetchProductsFromSupabase()
       .then((supabaseProducts) => {
-        if (supabaseProducts && supabaseProducts.length > 0) {
+        if (supabaseProducts !== null) {
           setProducts(supabaseProducts);
         }
       })
       .catch((err) => {
-        console.warn('Supabase fetch failed, continuing with cached/fallback products:', err);
+        console.warn('Supabase fetch failed:', err);
       });
 
     // Fetch dynamic orders from Supabase

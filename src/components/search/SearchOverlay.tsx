@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search as SearchIcon, X, ArrowRight } from 'lucide-react';
 import { useStore } from '@/lib/store';
-import { PRODUCTS } from '@/lib/data/products';
 import { formatPrice } from '@/lib/design-tokens';
 import { Product } from '@/lib/types';
 

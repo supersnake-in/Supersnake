@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { SlidersHorizontal, X, ArrowUpDown } from 'lucide-react';
 import { Product, FitType, Size, Gender } from '@/lib/types';
 import { ProductCard } from '@/components/product/ProductCard';
-import { PRODUCTS } from '@/lib/data/products';
 import { useStore } from '@/lib/store';
 
 interface ShopCatalogProps {
