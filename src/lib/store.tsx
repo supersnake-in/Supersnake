@@ -197,15 +197,31 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   // Sync from localStorage & Supabase
   useEffect(() => {
     try {
-      // Purge any legacy mock products from browser storage
+      // Purge any legacy mock products from browser storage & deduplicate images
       const savedProducts = localStorage.getItem('supersnake_products');
       if (savedProducts) {
-        const parsed = JSON.parse(savedProducts);
-        if (Array.isArray(parsed)) {
-          const realProducts = parsed.filter((p) => !p.id?.startsWith('prod-0'));
-          setProducts(realProducts);
-          localStorage.setItem('supersnake_products', JSON.stringify(realProducts));
-        }
+        try {
+          const parsed = JSON.parse(savedProducts);
+          if (Array.isArray(parsed)) {
+            const realProducts = parsed
+              .filter((p) => !p.id?.startsWith('prod-0'))
+              .map((p) => {
+                const seen = new Set<string>();
+                return {
+                  ...p,
+                  images: Array.isArray(p.images)
+                    ? p.images.filter((img: any) => {
+                        if (!img?.url || seen.has(img.url)) return false;
+                        seen.add(img.url);
+                        return true;
+                      })
+                    : [],
+                };
+              });
+            setProducts(realProducts);
+            saveProductsToLocalStorage(realProducts);
+          }
+        } catch (e) {}
       }
 
       const syncCart = loadCartFromStorageSync();
@@ -283,7 +299,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     fetchProductsFromSupabase()
       .then((supabaseProducts) => {
         if (supabaseProducts !== null) {
-          setProducts(supabaseProducts);
+          const deduplicated = supabaseProducts.map((p) => {
+            const seen = new Set<string>();
+            return {
+              ...p,
+              images: (p.images || []).filter((img) => {
+                if (!img?.url || seen.has(img.url)) return false;
+                seen.add(img.url);
+                return true;
+              }),
+            };
+          });
+          setProducts(deduplicated);
+          saveProductsToLocalStorage(deduplicated);
         }
       })
       .catch((err) => {
@@ -632,23 +660,41 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addProduct = (newProduct: Product) => {
+    const seen = new Set<string>();
+    const cleanProduct: Product = {
+      ...newProduct,
+      images: (newProduct.images || []).filter((img) => {
+        if (!img?.url || seen.has(img.url)) return false;
+        seen.add(img.url);
+        return true;
+      }),
+    };
     setProducts((prev) => {
-      const next = [newProduct, ...prev];
+      const next = [cleanProduct, ...prev];
       saveProductsToLocalStorage(next);
       return next;
     });
-    createProductInSupabase(newProduct).catch((err) => {
+    createProductInSupabase(cleanProduct).catch((err) => {
       console.warn('Could not sync product to Supabase:', err);
     });
   };
 
   const updateProduct = (updatedProduct: Product) => {
+    const seen = new Set<string>();
+    const cleanProduct: Product = {
+      ...updatedProduct,
+      images: (updatedProduct.images || []).filter((img) => {
+        if (!img?.url || seen.has(img.url)) return false;
+        seen.add(img.url);
+        return true;
+      }),
+    };
     setProducts((prev) => {
-      const next = prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p));
+      const next = prev.map((p) => (p.id === cleanProduct.id ? cleanProduct : p));
       saveProductsToLocalStorage(next);
       return next;
     });
-    updateProductInSupabase(updatedProduct).catch((err) => {
+    updateProductInSupabase(cleanProduct).catch((err) => {
       console.warn('Could not sync product update to Supabase:', err);
     });
   };

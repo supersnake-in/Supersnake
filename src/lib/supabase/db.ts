@@ -30,11 +30,40 @@ export async function fetchProductsFromSupabase(): Promise<Product[] | null> {
         (a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0)
       );
 
-      const images: ProductImage[] = sortedImages.map((img: any) => ({
+      // Deduplicate images by URL to guarantee no repeated shots
+      const seenUrls = new Set<string>();
+      const deduplicatedImages = sortedImages.filter((img: any) => {
+        if (!img.url || seenUrls.has(img.url)) return false;
+        seenUrls.add(img.url);
+        return true;
+      });
+
+      // Self-heal Supabase if duplicate rows exist in product_images
+      if (sortedImages.length > deduplicatedImages.length && row.id) {
+        (async () => {
+          try {
+            await supabase.from('product_images').delete().eq('product_id', row.id);
+            const cleanedRows = deduplicatedImages.map((img: any, idx: number) => ({
+              product_id: row.id,
+              url: img.url,
+              alt: img.alt || `${row.name} view ${idx + 1}`,
+              angle: img.angle || 'front',
+              display_order: idx,
+            }));
+            for (const cRow of cleanedRows) {
+              await supabase.from('product_images').insert(cRow);
+            }
+          } catch (e) {
+            console.warn('Could not auto-clean duplicate product images:', e);
+          }
+        })();
+      }
+
+      const images: ProductImage[] = deduplicatedImages.map((img: any, idx: number) => ({
         url: img.url,
-        alt: img.alt || row.name,
-        angle: img.angle || 'front',
-        isPrimary: img.display_order === 0,
+        alt: img.alt || `${row.name} view ${idx + 1}`,
+        angle: img.angle || (idx === 0 ? 'front' : idx === 1 ? 'model' : 'fabric'),
+        isPrimary: idx === 0,
       }));
 
       const variants: ProductVariant[] = (row.variants || []).map((v: any) => ({
@@ -165,9 +194,17 @@ export async function createProductInSupabase(product: Product): Promise<boolean
 
     const productId = insertedProduct.id;
 
-    // 3. Insert images
+    // 3. Insert images (deduplicated by URL)
     if (product.images && product.images.length > 0) {
-      const imageRows = product.images.map((img, idx) => {
+      // Ensure unique images by URL
+      const uniqueImages = Array.from(
+        new Map(product.images.map((img) => [img.url, img])).values()
+      );
+
+      // Clean existing images for this product ID first
+      await supabase.from('product_images').delete().eq('product_id', productId);
+
+      const imageRows = uniqueImages.map((img, idx) => {
         const rawAngle = (img.angle || '').toLowerCase();
         const angle = ['front', 'back', 'detail', 'model', 'fabric', 'studio', 'side'].includes(rawAngle)
           ? rawAngle
@@ -299,10 +336,15 @@ export async function updateProductInSupabase(product: Product): Promise<boolean
       }
     }
 
-    // 2. Update product images (delete old & insert new)
+    // 2. Update product images (delete old & insert new unique images)
     if (product.images && product.images.length > 0) {
+      // Ensure unique images by URL
+      const uniqueImages = Array.from(
+        new Map(product.images.map((img) => [img.url, img])).values()
+      );
+
       await supabase.from('product_images').delete().eq('product_id', targetId);
-      const imageRows = product.images.map((img, idx) => {
+      const imageRows = uniqueImages.map((img, idx) => {
         const rawAngle = (img.angle || '').toLowerCase();
         const angle = ['front', 'back', 'detail', 'model', 'fabric', 'studio', 'side'].includes(rawAngle)
           ? rawAngle

@@ -427,15 +427,6 @@ export default function AdminProductsPage() {
       setNotification(`PUBLISHED: "${cleanName}" IS NOW LIVE ON STOREFRONT`);
     }
 
-    // Call server API for background sync
-    try {
-      await fetch('/api/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(productPayload),
-      });
-    } catch (e) {}
-
     setIsModalOpen(false);
     setTimeout(() => setNotification(null), 5000);
   };

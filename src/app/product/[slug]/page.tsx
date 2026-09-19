@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound, useRouter } from 'next/navigation';
@@ -42,16 +42,27 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const mobileCarouselRef = useRef<HTMLDivElement>(null);
 
+  // Deduplicate product images by URL to ensure no repeated shots are ever displayed
+  const uniqueImages = useMemo(() => {
+    if (!product?.images || product.images.length === 0) return [];
+    const seen = new Set<string>();
+    return product.images.filter((img) => {
+      if (!img.url || seen.has(img.url)) return false;
+      seen.add(img.url);
+      return true;
+    });
+  }, [product?.images]);
+
   // Auto-slide images every 10 seconds if multiple images exist
   useEffect(() => {
-    if (!product?.images || product.images.length <= 1 || lightboxOpen) return;
+    if (!uniqueImages || uniqueImages.length <= 1 || lightboxOpen) return;
 
     const timer = setInterval(() => {
-      setActiveImageIndex((prev) => (prev + 1) % product.images.length);
+      setActiveImageIndex((prev) => (prev + 1) % uniqueImages.length);
     }, 10000);
 
     return () => clearInterval(timer);
-  }, [product?.images, activeImageIndex, lightboxOpen]);
+  }, [uniqueImages, activeImageIndex, lightboxOpen]);
 
   // Synchronize mobile carousel scroll position when activeImageIndex changes
   useEffect(() => {
@@ -118,7 +129,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
     router.push(`/checkout?${query.toString()}`);
   };
 
-  const activeImage = product.images[activeImageIndex] || product.images[0];
+  const activeImage = uniqueImages[activeImageIndex] || uniqueImages[0];
   const relatedProducts = products.filter((p) => p.id !== product.id).slice(0, 4);
 
   return (
@@ -149,12 +160,12 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
                 onScroll={(e) => {
                   const el = e.currentTarget;
                   const newIndex = Math.round(el.scrollLeft / el.clientWidth);
-                  if (newIndex !== activeImageIndex && newIndex >= 0 && newIndex < product.images.length) {
+                  if (newIndex !== activeImageIndex && newIndex >= 0 && newIndex < uniqueImages.length) {
                     setActiveImageIndex(newIndex);
                   }
                 }}
               >
-                {product.images.map((img, idx) => (
+                {uniqueImages.map((img, idx) => (
                   <div key={idx} className="relative w-full h-full flex-shrink-0 snap-center">
                     <Image
                       src={img.url}
@@ -172,7 +183,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
               {/* Floating Counter & Tagline badge */}
               <div className="absolute top-3 left-3 px-2.5 py-1 bg-black/75 backdrop-blur-md border border-white/10 text-[9px] font-mono tracking-widest text-neutral-200 uppercase flex items-center gap-2 max-w-[85%]">
                 <span className="text-snake-green font-bold flex-shrink-0">
-                  {String(activeImageIndex + 1).padStart(2, '0')} / {String(product.images.length).padStart(2, '0')}
+                  {String(activeImageIndex + 1).padStart(2, '0')} / {String(uniqueImages.length).padStart(2, '0')}
                 </span>
                 <span>•</span>
                 <span className="truncate">{product.tagline || `${product.gsm} GSM`}</span>
@@ -189,7 +200,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
 
               {/* Pagination Dots */}
               <div className="absolute bottom-3 inset-x-0 flex justify-center gap-1.5 pointer-events-none">
-                {product.images.map((_, idx) => (
+                {uniqueImages.map((_, idx) => (
                   <span
                     key={idx}
                     className={`h-1.5 rounded-full transition-all duration-300 ${
@@ -244,7 +255,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
 
               {/* Thumbnail Strip */}
               <div className="grid grid-cols-4 gap-3">
-                {product.images.map((img, idx) => (
+                {uniqueImages.map((img, idx) => (
                   <button
                     key={idx}
                     onClick={() => setActiveImageIndex(idx)}
