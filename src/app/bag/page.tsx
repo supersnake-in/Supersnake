@@ -225,11 +225,6 @@ export default function BagPage() {
                   </span>
                 </div>
 
-                <div className="flex justify-between text-neutral-400">
-                  <span>ESTIMATED TAX (GST 5%)</span>
-                  <span className="text-white">INCLUDED</span>
-                </div>
-
                 <div className="flex justify-between text-sm font-semibold text-white pt-3 border-t border-white/10">
                   <span>ESTIMATED TOTAL</span>
                   <span className="text-base text-snake-green">

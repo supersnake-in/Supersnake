@@ -437,10 +437,6 @@ export default function CheckoutPage() {
                     {cartTotal >= BRAND.freeShippingThreshold ? 'FREE' : formatPrice(150)}
                   </span>
                 </div>
-                <div className="flex justify-between text-neutral-400">
-                  <span>TAXES (GST 5%)</span>
-                  <span className="text-white">INCLUDED</span>
-                </div>
                 <div className="flex justify-between text-sm font-semibold text-white pt-2 border-t border-white/10">
                   <span>TOTAL DUE</span>
                   <span className="text-base text-snake-green">
@@ -828,10 +824,6 @@ export default function CheckoutPage() {
                 <span className="text-snake-green">
                   {cartTotal >= BRAND.freeShippingThreshold ? 'FREE' : formatPrice(150)}
                 </span>
-              </div>
-              <div className="flex justify-between text-neutral-400">
-                <span>TAXES (GST 5%)</span>
-                <span className="text-white">INCLUDED</span>
               </div>
               <div className="flex justify-between text-sm font-semibold text-white pt-3 border-t border-white/10">
                 <span>TOTAL DUE</span>
