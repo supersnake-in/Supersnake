@@ -5,6 +5,7 @@ import { Product, CartItem, WishlistItem, Size, Order, SocialConfig, NewsletterS
 import {
   fetchProductsFromSupabase,
   createProductInSupabase,
+  updateProductInSupabase,
   deleteProductFromSupabase,
   createOrderInSupabase,
   fetchOrdersFromSupabase,
@@ -459,20 +460,39 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   // Product actions
   const addProduct = (newProduct: Product) => {
-    setProducts((prev) => [newProduct, ...prev]);
+    setProducts((prev) => {
+      const next = [newProduct, ...prev];
+      try {
+        localStorage.setItem('supersnake_products', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
     createProductInSupabase(newProduct).catch((err) => {
       console.warn('Could not sync product to Supabase:', err);
     });
   };
 
   const updateProduct = (updatedProduct: Product) => {
-    setProducts((prev) =>
-      prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p))
-    );
+    setProducts((prev) => {
+      const next = prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p));
+      try {
+        localStorage.setItem('supersnake_products', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+    updateProductInSupabase(updatedProduct).catch((err) => {
+      console.warn('Could not sync product update to Supabase:', err);
+    });
   };
 
   const deleteProduct = (productId: string) => {
-    setProducts((prev) => prev.filter((p) => p.id !== productId));
+    setProducts((prev) => {
+      const next = prev.filter((p) => p.id !== productId);
+      try {
+        localStorage.setItem('supersnake_products', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
     deleteProductFromSupabase(productId).catch((err) => {
       console.warn('Could not delete product from Supabase:', err);
     });

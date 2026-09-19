@@ -14,7 +14,7 @@ export default function HomePage() {
   const heroRef = useRef<HTMLDivElement>(null);
   const { products, homepageConfig, socialConfig } = useStore();
   const spotlightProduct = products.find((p) => p.isSpotlight) || products[0];
-  const newDrops = products.filter((p) => p.isNew).slice(0, 4);
+  const newDrops = products.filter((p) => p.isNew);
   const bestsellers = products.filter((p) => p.isBestseller).slice(0, 4);
 
   // Hero Background Images & 3-second auto-scroll

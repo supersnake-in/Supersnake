@@ -173,6 +173,30 @@ export async function deleteProductFromSupabase(productId: string): Promise<bool
 }
 
 /**
+ * UPDATE PRODUCT IN SUPABASE (e.g. is_new status)
+ */
+export async function updateProductInSupabase(product: Product): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('products')
+      .update({
+        is_new: Boolean(product.isNew),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', product.id);
+
+    if (error) {
+      console.warn('Supabase update product error:', error.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('Supabase update product failed:', err);
+    return false;
+  }
+}
+
+/**
  * CREATE ORDER IN SUPABASE
  */
 export async function createOrderInSupabase(order: Order): Promise<boolean> {

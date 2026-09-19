@@ -287,7 +287,7 @@ export default function AdminProductsPage() {
       colors: selectedColors,
       sizes: selectedSizes,
       variants,
-      isNew: true,
+      isNew: editingProductId ? (products.find((p) => p.id === editingProductId)?.isNew ?? true) : true,
       rating: 5.0,
       reviewsCount: 0,
       createdAt: new Date().toISOString(),
@@ -393,6 +393,9 @@ export default function AdminProductsPage() {
         <table className="w-full text-left text-xs border-collapse">
           <thead>
             <tr className="border-b border-neutral-800 text-neutral-400 uppercase text-[10px] tracking-wider">
+              <th className="py-3 px-3 w-12 text-center" title="Check to show in New Drops section">
+                <span className="text-[9px] font-bold text-snake-green block">NEW DROP</span>
+              </th>
               <th className="py-3 px-4">GARMENT</th>
               <th className="py-3 px-4">GSM & FABRIC</th>
               <th className="py-3 px-4">COLORS</th>
@@ -405,6 +408,24 @@ export default function AdminProductsPage() {
           <tbody className="divide-y divide-neutral-800/60">
             {filtered.map((prod) => (
               <tr key={prod.id} className="hover:bg-white/[0.02] transition-colors">
+                <td className="py-3 px-3 text-center">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(prod.isNew)}
+                    onChange={(e) => {
+                      const updated = { ...prod, isNew: e.target.checked };
+                      updateProduct(updated);
+                      setNotification(
+                        e.target.checked
+                          ? `ADDED TO NEW DROPS: "${prod.name}"`
+                          : `REMOVED FROM NEW DROPS: "${prod.name}"`
+                      );
+                      setTimeout(() => setNotification(null), 3000);
+                    }}
+                    title={prod.isNew ? 'Currently in New Drops (click to uncheck)' : 'Add to New Drops section'}
+                    className="w-4 h-4 rounded border-neutral-700 bg-neutral-900 text-snake-green focus:ring-snake-green focus:ring-offset-0 accent-snake-green cursor-pointer"
+                  />
+                </td>
                 <td className="py-3 px-4">
                   <div className="flex items-center gap-3">
                     <div className="relative w-10 h-12 bg-neutral-900 rounded overflow-hidden flex-shrink-0 border border-neutral-800">
