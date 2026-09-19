@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound, useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Heart,
   Share2,
@@ -40,6 +40,32 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
   const [quantity, setQuantity] = useState(1);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const mobileCarouselRef = useRef<HTMLDivElement>(null);
+
+  // Auto-slide images every 10 seconds if multiple images exist
+  useEffect(() => {
+    if (!product?.images || product.images.length <= 1 || lightboxOpen) return;
+
+    const timer = setInterval(() => {
+      setActiveImageIndex((prev) => (prev + 1) % product.images.length);
+    }, 10000);
+
+    return () => clearInterval(timer);
+  }, [product?.images, activeImageIndex, lightboxOpen]);
+
+  // Synchronize mobile carousel scroll position when activeImageIndex changes
+  useEffect(() => {
+    if (mobileCarouselRef.current) {
+      const container = mobileCarouselRef.current;
+      const targetLeft = activeImageIndex * container.clientWidth;
+      if (Math.abs(container.scrollLeft - targetLeft) > 10) {
+        container.scrollTo({
+          left: targetLeft,
+          behavior: 'smooth',
+        });
+      }
+    }
+  }, [activeImageIndex]);
 
   // Accordion open states
   const [openAccordions, setOpenAccordions] = useState<{ [key: string]: boolean }>({
@@ -118,6 +144,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
             {/* MOBILE & TABLET SWIPEABLE CAROUSEL (< lg) */}
             <div className="lg:hidden relative aspect-[4/5] w-full rounded bg-[#0c0c0c] border border-white/10 overflow-hidden">
               <div
+                ref={mobileCarouselRef}
                 className="flex w-full h-full overflow-x-auto snap-x snap-mandatory scroll-smooth"
                 onScroll={(e) => {
                   const el = e.currentTarget;
@@ -177,27 +204,38 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
 
             {/* DESKTOP GALLERY (LOCKED & UNTOUCHED FOR lg: AND ABOVE) */}
             <div className="hidden lg:block space-y-4">
-              {/* Active Hero Image with Zoom trigger */}
+              {/* Active Hero Image with Zoom trigger and 10s Auto-Slide Crossfade */}
               <div className="relative aspect-[4/5] w-full rounded bg-[#0c0c0c] border border-white/10 overflow-hidden group">
-                <Image
-                  src={activeImage.url}
-                  alt={activeImage.alt}
-                  fill
-                  priority
-                  sizes="(max-width: 1024px) 100vw, 60vw"
-                  unoptimized={Boolean(activeImage.url.startsWith('data:') || activeImage.url.startsWith('blob:'))}
-                  className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                />
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeImageIndex}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                    className="absolute inset-0"
+                  >
+                    <Image
+                      src={activeImage.url}
+                      alt={activeImage.alt}
+                      fill
+                      priority
+                      sizes="(max-width: 1024px) 100vw, 60vw"
+                      unoptimized={Boolean(activeImage.url.startsWith('data:') || activeImage.url.startsWith('blob:'))}
+                      className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                    />
+                  </motion.div>
+                </AnimatePresence>
 
                 {/* Tagline / Subtitle Badge on Hero Image */}
-                <div className="absolute top-4 left-4 px-2.5 py-1 bg-black/70 backdrop-blur-md border border-white/10 text-[10px] font-mono tracking-widest text-neutral-300 uppercase max-w-[80%] truncate">
+                <div className="absolute top-4 left-4 z-10 px-2.5 py-1 bg-black/70 backdrop-blur-md border border-white/10 text-[10px] font-mono tracking-widest text-neutral-300 uppercase max-w-[80%] truncate">
                   {product.tagline || `${product.gsm} GSM`}
                 </div>
 
                 {/* Lightbox Expander */}
                 <button
                   onClick={() => setLightboxOpen(true)}
-                  className="absolute top-4 right-4 p-2 bg-black/60 backdrop-blur-md border border-white/10 rounded-full text-neutral-300 hover:text-white hover:border-snake-green transition-all"
+                  className="absolute top-4 right-4 z-10 p-2 bg-black/60 backdrop-blur-md border border-white/10 rounded-full text-neutral-300 hover:text-white hover:border-snake-green transition-all"
                   aria-label="View Fullscreen"
                 >
                   <Maximize2 size={16} />
