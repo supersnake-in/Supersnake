@@ -69,7 +69,7 @@ export default function RootLayout({
               <BrandReveal />
               <CustomCursor />
               <Header />
-              <main className="min-h-screen relative">{children}</main>
+              <main className="min-h-screen relative bg-black">{children}</main>
               <CartDrawer />
               <SearchOverlay />
               <QuickViewModal />

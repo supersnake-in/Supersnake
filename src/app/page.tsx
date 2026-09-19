@@ -57,12 +57,12 @@ export default function HomePage() {
           ============================================================ */}
       <section
         ref={heroRef}
-        className="relative min-h-[100dvh] lg:min-h-screen w-full overflow-hidden flex flex-col justify-end pt-28 sm:pt-32 lg:pt-36 pb-8 sm:pb-12 md:pb-16 px-4 sm:px-6 md:px-12"
+        className="relative bg-black min-h-[100dvh] lg:min-h-screen w-full overflow-hidden flex flex-col justify-end pt-28 sm:pt-32 lg:pt-36 pb-8 sm:pb-12 md:pb-16 px-4 sm:px-6 md:px-12"
       >
         {/* Background Image Carousel with 3-second auto-scroll & smooth crossfade */}
         <motion.div
           style={{ scale: heroImageScale }}
-          className="absolute inset-0 z-0 will-change-transform overflow-hidden"
+          className="absolute inset-0 z-0 bg-black will-change-transform overflow-hidden"
         >
           <AnimatePresence mode="popLayout">
             <motion.div

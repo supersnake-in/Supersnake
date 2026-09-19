@@ -59,7 +59,7 @@ export function Header() {
       <header
         className={`fixed top-0 inset-x-0 z-40 transition-all duration-500 ${
           scrolled
-            ? 'bg-black/80 backdrop-blur-md border-b border-white/5 py-3.5'
+            ? 'bg-black/80 backdrop-blur-md py-3.5'
             : 'bg-gradient-to-b from-black/80 via-black/40 to-transparent py-5'
         }`}
       >
