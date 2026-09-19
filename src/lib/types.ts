@@ -22,6 +22,15 @@ export interface ProductImage {
   angle?: 'front' | 'back' | 'detail' | 'model' | 'fabric';
 }
 
+export interface HomepageConfig {
+  heroImages: string[];
+  heroIntervalSeconds: number;
+  heroHeadline: string;
+  heroSupportingCopy: string;
+  spotlightProductId: string;
+  brandStatement: string;
+}
+
 export interface Product {
   id: string;
   name: string;

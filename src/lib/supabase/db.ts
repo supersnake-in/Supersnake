@@ -1,5 +1,5 @@
 import { supabase } from './client';
-import { Product, Order, ProductVariant, ProductImage } from '../types';
+import { Product, Order, ProductVariant, ProductImage, HomepageConfig } from '../types';
 
 /**
  * FETCH PRODUCTS DYNAMICALLY FROM SUPABASE
@@ -290,6 +290,67 @@ export async function subscribeNewsletterInSupabase(email: string): Promise<bool
       .insert({ email });
     return !error;
   } catch (err) {
+    return false;
+  }
+}
+
+/**
+ * FETCH HOMEPAGE CONFIG FROM SUPABASE
+ */
+export async function fetchHomepageConfigFromSupabase(): Promise<HomepageConfig | null> {
+  try {
+    const { data, error } = await supabase
+      .from('homepage_config')
+      .select('*')
+      .eq('id', 'default')
+      .single();
+
+    if (error || !data) {
+      return null;
+    }
+
+    return {
+      heroImages: Array.isArray(data.hero_images) && data.hero_images.length > 0 ? data.hero_images : [],
+      heroIntervalSeconds: Number(data.hero_interval_seconds || 3),
+      heroHeadline: data.hero_headline || '',
+      heroSupportingCopy: data.hero_supporting_copy || '',
+      spotlightProductId: data.spotlight_product_id || '',
+      brandStatement: data.brand_statement || '',
+    };
+  } catch (err) {
+    console.warn('Supabase homepage config fetch failed:', err);
+    return null;
+  }
+}
+
+/**
+ * SAVE HOMEPAGE CONFIG TO SUPABASE
+ */
+export async function saveHomepageConfigToSupabase(config: HomepageConfig): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('homepage_config')
+      .upsert(
+        {
+          id: 'default',
+          hero_images: config.heroImages,
+          hero_interval_seconds: config.heroIntervalSeconds,
+          hero_headline: config.heroHeadline,
+          hero_supporting_copy: config.heroSupportingCopy,
+          spotlight_product_id: config.spotlightProductId,
+          brand_statement: config.brandStatement,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'id' }
+      );
+
+    if (error) {
+      console.warn('Supabase homepage config save error:', error.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('Supabase homepage config save failed:', err);
     return false;
   }
 }

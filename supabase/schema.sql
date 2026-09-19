@@ -478,5 +478,50 @@ VALUES
 ('00000000-0000-0000-0000-000000000004', 'SS-MIN-OLV-M', 'Sage Olive', '#3d4a3e', 'M', 22, 1599, 2499),
 ('00000000-0000-0000-0000-000000000005', 'SS-CRP-BLK-S', 'Obsidian Black', '#0a0a0a', 'S', 20, 1399, 2199),
 ('00000000-0000-0000-0000-000000000005', 'SS-CRP-BLK-M', 'Obsidian Black', '#0a0a0a', 'M', 30, 1399, 2199)
-ON CONFLICT (sku) DO NOTHING;
+-- 11. Homepage Configuration Table
+CREATE TABLE IF NOT EXISTS public.homepage_config (
+  id TEXT PRIMARY KEY DEFAULT 'default',
+  hero_images TEXT[] NOT NULL DEFAULT '{}',
+  hero_interval_seconds INTEGER DEFAULT 3,
+  hero_headline TEXT DEFAULT 'WEAR YOUR INSTINCT.',
+  hero_supporting_copy TEXT DEFAULT 'Premium T-shirts. Designed for your everyday. Engineered for presence.',
+  spotlight_product_id TEXT DEFAULT 'the-signature-tee',
+  brand_statement TEXT DEFAULT 'NOT MADE TO BLEND IN.',
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
 
+-- Enable RLS
+ALTER TABLE public.homepage_config ENABLE ROW LEVEL SECURITY;
+
+-- Allow public read access (for storefront)
+CREATE POLICY "Allow public read homepage_config"
+  ON public.homepage_config
+  FOR SELECT
+  TO public
+  USING (true);
+
+-- Allow public/authenticated insert or update
+CREATE POLICY "Allow public all homepage_config"
+  ON public.homepage_config
+  FOR ALL
+  TO public
+  USING (true)
+  WITH CHECK (true);
+
+-- Insert default row
+INSERT INTO public.homepage_config (id, hero_images, hero_interval_seconds, hero_headline, hero_supporting_copy, spotlight_product_id, brand_statement)
+VALUES (
+  'default',
+  ARRAY[
+    'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=2400&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=2400&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&w=2400&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?q=80&w=2400&auto=format&fit=crop'
+  ],
+  3,
+  'WEAR YOUR INSTINCT.',
+  'Premium T-shirts. Designed for your everyday. Engineered for presence.',
+  'the-signature-tee',
+  'NOT MADE TO BLEND IN.'
+)
+ON CONFLICT (id) DO NOTHING;

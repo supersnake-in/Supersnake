@@ -8,6 +8,8 @@ import {
   deleteProductFromSupabase,
   createOrderInSupabase,
   fetchOrdersFromSupabase,
+  fetchHomepageConfigFromSupabase,
+  saveHomepageConfigToSupabase,
 } from './supabase/db';
 
 export interface HomepageConfig {
@@ -76,7 +78,7 @@ interface StoreContextType {
 
   // Homepage Configuration
   homepageConfig: HomepageConfig;
-  updateHomepageConfig: (config: Partial<HomepageConfig>) => void;
+  updateHomepageConfig: (config: Partial<HomepageConfig>) => Promise<boolean>;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -163,6 +165,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       })
       .catch((err) => {
         console.warn('Supabase orders fetch failed:', err);
+      });
+
+    // Fetch dynamic homepage config from Supabase
+    fetchHomepageConfigFromSupabase()
+      .then((supabaseHomepage) => {
+        if (supabaseHomepage !== null && supabaseHomepage.heroImages.length > 0) {
+          setHomepageConfig(supabaseHomepage);
+          try {
+            localStorage.setItem('supersnake_homepage_config', JSON.stringify(supabaseHomepage));
+          } catch (e) {}
+        }
+      })
+      .catch((err) => {
+        console.warn('Supabase homepage config fetch failed:', err);
       });
   }, []);
 
@@ -354,14 +370,26 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return products.find((p) => p.slug === slug);
   };
 
-  const updateHomepageConfig = (config: Partial<HomepageConfig>) => {
+  const updateHomepageConfig = async (config: Partial<HomepageConfig>): Promise<boolean> => {
+    let nextConfig: HomepageConfig = DEFAULT_HOMEPAGE_CONFIG;
     setHomepageConfig((prev) => {
       const next = { ...prev, ...config };
+      nextConfig = next;
       try {
         localStorage.setItem('supersnake_homepage_config', JSON.stringify(next));
-      } catch (e) {}
+      } catch (e) {
+        console.warn('LocalStorage save failed:', e);
+      }
       return next;
     });
+
+    try {
+      const supabaseSuccess = await saveHomepageConfigToSupabase(nextConfig);
+      return supabaseSuccess;
+    } catch (err) {
+      console.warn('Supabase homepage config sync error:', err);
+      return false;
+    }
   };
 
   return (
