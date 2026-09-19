@@ -371,17 +371,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateHomepageConfig = async (config: Partial<HomepageConfig>): Promise<boolean> => {
-    let nextConfig: HomepageConfig = DEFAULT_HOMEPAGE_CONFIG;
-    setHomepageConfig((prev) => {
-      const next = { ...prev, ...config };
-      nextConfig = next;
-      try {
-        localStorage.setItem('supersnake_homepage_config', JSON.stringify(next));
-      } catch (e) {
-        console.warn('LocalStorage save failed:', e);
-      }
-      return next;
-    });
+    const nextConfig: HomepageConfig = {
+      ...homepageConfig,
+      ...config,
+    };
+
+    setHomepageConfig(nextConfig);
+
+    try {
+      localStorage.setItem('supersnake_homepage_config', JSON.stringify(nextConfig));
+    } catch (e) {
+      console.warn('LocalStorage save failed:', e);
+    }
 
     try {
       const supabaseSuccess = await saveHomepageConfigToSupabase(nextConfig);

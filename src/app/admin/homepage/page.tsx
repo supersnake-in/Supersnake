@@ -102,9 +102,12 @@ export default function AdminHomepageConfigPage() {
   const [showSql, setShowSql] = useState(false);
   const [copiedSql, setCopiedSql] = useState(false);
 
-  // Sync state if store updates from persistence
+  const hasInitialized = useRef(false);
+  const isDirty = useRef(false);
+
+  // Sync state if store updates from persistence on initial load only
   useEffect(() => {
-    if (homepageConfig) {
+    if (!hasInitialized.current && homepageConfig) {
       if (homepageConfig.heroImages && homepageConfig.heroImages.length > 0) {
         setHeroImages(homepageConfig.heroImages);
       }
@@ -123,6 +126,7 @@ export default function AdminHomepageConfigPage() {
       if (homepageConfig.brandStatement) {
         setBrandStatement(homepageConfig.brandStatement);
       }
+      hasInitialized.current = true;
     }
   }, [homepageConfig]);
 
@@ -167,6 +171,7 @@ export default function AdminHomepageConfigPage() {
     if (!files || files.length === 0) return;
 
     setIsUploading(true);
+    isDirty.current = true;
     try {
       const newImages: string[] = [];
       for (const file of Array.from(files)) {
@@ -197,6 +202,7 @@ export default function AdminHomepageConfigPage() {
       alert('Please enter a valid image URL starting with https://');
       return;
     }
+    isDirty.current = true;
     setHeroImages((prev) => [...prev, trimmed]);
     setNewImageUrl('');
   };
@@ -205,6 +211,7 @@ export default function AdminHomepageConfigPage() {
   const moveImage = (index: number, direction: 'up' | 'down') => {
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
     if (targetIndex < 0 || targetIndex >= heroImages.length) return;
+    isDirty.current = true;
     const updated = [...heroImages];
     const temp = updated[index];
     updated[index] = updated[targetIndex];
@@ -214,12 +221,14 @@ export default function AdminHomepageConfigPage() {
 
   // Remove
   const removeImage = (index: number) => {
-    if (heroImages.length <= 1) {
-      if (!confirm('Removing all images will revert to the default hero campaign. Continue?')) {
-        return;
-      }
-    }
+    isDirty.current = true;
     setHeroImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Clear all images
+  const clearAllImages = () => {
+    isDirty.current = true;
+    setHeroImages([]);
   };
 
   // Add Preset
@@ -228,6 +237,7 @@ export default function AdminHomepageConfigPage() {
       alert('This image is already in your hero campaign.');
       return;
     }
+    isDirty.current = true;
     setHeroImages((prev) => [...prev, url]);
   };
 
@@ -237,7 +247,8 @@ export default function AdminHomepageConfigPage() {
     setIsSaving(true);
     setSaveStatus('idle');
 
-    const finalImages = heroImages.length > 0 ? heroImages : DEFAULT_HOMEPAGE_CONFIG.heroImages;
+    // Save EXACTLY what the user has configured in the editor
+    const finalImages = heroImages;
 
     try {
       const syncedToSupabase = await updateHomepageConfig({
@@ -251,6 +262,7 @@ export default function AdminHomepageConfigPage() {
 
       if (syncedToSupabase) {
         setSaveStatus('saved_supabase');
+        isDirty.current = false;
       } else {
         setSaveStatus('saved_local');
       }
@@ -418,9 +430,21 @@ export default function AdminHomepageConfigPage() {
 
           {/* Active Images Grid */}
           <div className="space-y-3">
-            <label className="text-[11px] text-neutral-400 uppercase font-semibold block">
-              ACTIVE CAMPAIGN SLIDES (DRAG / REORDER / DELETE)
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] text-neutral-400 uppercase font-semibold block">
+                ACTIVE CAMPAIGN SLIDES ({heroImages.length})
+              </label>
+              {heroImages.length > 0 && (
+                <button
+                  type="button"
+                  onClick={clearAllImages}
+                  className="text-[10px] text-red-400 hover:text-red-300 font-mono uppercase flex items-center gap-1 transition-colors px-2 py-0.5 rounded border border-red-900/40 bg-red-950/20"
+                >
+                  <Trash2 size={11} />
+                  <span>CLEAR ALL PREVIOUS IMAGES</span>
+                </button>
+              )}
+            </div>
 
             {heroImages.length === 0 ? (
               <div className="p-8 border border-dashed border-neutral-800 rounded text-center text-neutral-500 text-xs">
