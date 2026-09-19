@@ -95,6 +95,8 @@ export interface Address {
   city: string;
   state: string;
   postalCode: string;
+  postOffice?: string;
+  district?: string;
   isDefault?: boolean;
 }
 

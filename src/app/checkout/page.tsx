@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import Script from 'next/script';
 import { useRouter } from 'next/navigation';
-import { ShieldCheck, ArrowRight, Lock, CheckCircle2, CreditCard, Smartphone, Building, Wallet, AlertCircle, RefreshCw, ShoppingBag, ChevronDown, ChevronUp } from 'lucide-react';
+import { ShieldCheck, ArrowRight, Lock, CheckCircle2, CreditCard, Smartphone, Building, Wallet, AlertCircle, RefreshCw, ShoppingBag, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useAuth } from '@/lib/auth-context';
 import { formatPrice, BRAND } from '@/lib/design-tokens';
@@ -45,8 +45,13 @@ export default function CheckoutPage() {
     city: '',
     state: '',
     postalCode: '',
+    postOffice: '',
     paymentMethod: 'upi',
   });
+
+  const [postOffices, setPostOffices] = useState<Array<{ name: string; branchType?: string; deliveryStatus?: string }>>([]);
+  const [isFetchingPincode, setIsFetchingPincode] = useState(false);
+  const [pincodeMessage, setPincodeMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (profile || user) {
@@ -61,6 +66,100 @@ export default function CheckoutPage() {
 
   const [isProcessing, setIsProcessing] = useState(false);
 
+  const lookupPincode = async (code: string) => {
+    const cleanCode = code.trim();
+    if (!/^\d{6}$/.test(cleanCode)) {
+      setPostOffices([]);
+      setPincodeMessage(null);
+      return;
+    }
+
+    setIsFetchingPincode(true);
+    setPincodeMessage(null);
+
+    try {
+      let data: any = null;
+      try {
+        const res = await fetch(`/api/pincode/${cleanCode}`);
+        if (res.ok) {
+          data = await res.json();
+        }
+      } catch (err) {}
+
+      // Direct fallback if internal API route is unreachable
+      if (!data || !data.success) {
+        try {
+          const directRes = await fetch(`https://api.postalpincode.in/pincode/${cleanCode}`);
+          if (directRes.ok) {
+            const directData = await directRes.json();
+            if (Array.isArray(directData) && directData[0]?.Status === 'Success' && directData[0]?.PostOffice?.length) {
+              const rawPOs = directData[0].PostOffice;
+              data = {
+                success: true,
+                district: rawPOs[0].District || rawPOs[0].Division || '',
+                state: rawPOs[0].State || '',
+                postOffices: rawPOs.map((po: any) => ({
+                  name: po.Name,
+                  branchType: po.BranchType || '',
+                  deliveryStatus: po.DeliveryStatus || '',
+                })),
+              };
+            }
+          }
+        } catch (directErr) {}
+      }
+
+      if (data && data.success && Array.isArray(data.postOffices) && data.postOffices.length > 0) {
+        const district = data.district || '';
+        const state = data.state || '';
+        const poList = data.postOffices;
+
+        setPostOffices(poList);
+
+        // Auto-fill city/district and state
+        setFormData((prev) => {
+          const selectedPO =
+            poList.length === 1
+              ? poList[0].name
+              : poList.some((p: any) => p.name === prev.postOffice)
+              ? prev.postOffice
+              : '';
+          return {
+            ...prev,
+            city: district || prev.city,
+            state: state || prev.state,
+            postOffice: selectedPO,
+          };
+        });
+
+        if (poList.length > 1) {
+          setPincodeMessage(`${poList.length} post offices found. Select yours from the dropdown.`);
+        } else {
+          setPincodeMessage(null);
+        }
+      } else {
+        setPostOffices([]);
+        setPincodeMessage('PIN code not found. You can enter City and State manually.');
+      }
+    } catch (error) {
+      console.error('Failed to lookup PIN code:', error);
+      setPincodeMessage(null);
+    } finally {
+      setIsFetchingPincode(false);
+    }
+  };
+
+  const handlePincodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+    setFormData((prev) => ({ ...prev, postalCode: val }));
+    if (val.length === 6) {
+      lookupPincode(val);
+    } else {
+      if (postOffices.length > 0) setPostOffices([]);
+      if (pincodeMessage) setPincodeMessage(null);
+    }
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -72,6 +171,10 @@ export default function CheckoutPage() {
       setStep(2);
     } else if (step === 2) {
       if (!formData.fullName || !formData.street || !formData.city || !formData.postalCode) return;
+      if (postOffices.length > 1 && !formData.postOffice) {
+        setPincodeMessage('Please select your post office from the dropdown before continuing.');
+        return;
+      }
       setStep(3);
     }
   };
@@ -184,6 +287,7 @@ export default function CheckoutPage() {
                 city: formData.city,
                 state: formData.state || 'Karnataka',
                 postalCode: formData.postalCode,
+                postOffice: formData.postOffice || undefined,
               },
               payment: {
                 method: 'razorpay',
@@ -501,25 +605,93 @@ export default function CheckoutPage() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-neutral-400 uppercase">PINCODE *</label>
+                      <label className="text-neutral-400 uppercase flex items-center justify-between">
+                        <span>PINCODE *</span>
+                        {isFetchingPincode && (
+                          <span className="text-[10px] text-snake-green font-mono flex items-center gap-1">
+                            <Loader2 size={11} className="animate-spin" />
+                            DETECTING...
+                          </span>
+                        )}
+                      </label>
                       <input
                         type="text"
                         name="postalCode"
                         required
                         inputMode="numeric"
+                        maxLength={6}
                         pattern="[0-9]*"
                         autoComplete="postal-code"
                         value={formData.postalCode}
-                        onChange={handleChange}
-                        placeholder="560038"
-                        className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green"
+                        onChange={handlePincodeChange}
+                        placeholder="e.g. 560094"
+                        className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green font-mono"
                       />
+                      {pincodeMessage && (
+                        <p className={`text-[10px] font-mono ${postOffices.length > 1 ? 'text-snake-green' : 'text-neutral-400'}`}>
+                          {pincodeMessage}
+                        </p>
+                      )}
                     </div>
                   </div>
 
+                  {/* Post Office Dropdown when 2 or more exist */}
+                  {postOffices.length > 1 && (
+                    <div className="space-y-1.5 animate-fadeIn">
+                      <label className="text-neutral-400 uppercase flex items-center justify-between">
+                        <span className="text-white font-semibold">SELECT POST OFFICE / AREA *</span>
+                        <span className="text-[10px] text-snake-green font-mono">
+                          {postOffices.length} LOCATIONS IN THIS PINCODE
+                        </span>
+                      </label>
+                      <div className="relative">
+                        <select
+                          name="postOffice"
+                          required
+                          value={formData.postOffice}
+                          onChange={handleChange}
+                          className="w-full min-h-[48px] bg-[#111] border border-snake-green/60 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green appearance-none pr-10 cursor-pointer font-mono"
+                        >
+                          <option value="" disabled className="bg-black text-neutral-500">
+                            -- SELECT POST OFFICE --
+                          </option>
+                          {postOffices.map((po) => (
+                            <option key={po.name} value={po.name} className="bg-neutral-900 text-white py-1">
+                              {po.name} {po.branchType ? `(${po.branchType})` : ''} {po.deliveryStatus ? `• ${po.deliveryStatus}` : ''}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-snake-green pointer-events-none" />
+                      </div>
+                      <p className="text-[10px] font-mono text-neutral-400">
+                        Selected post office will be attached to your delivery address for accurate dispatch.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Single Post Office display if exactly 1 found */}
+                  {postOffices.length === 1 && (
+                    <div className="space-y-1.5 animate-fadeIn">
+                      <label className="text-neutral-400 uppercase flex items-center justify-between">
+                        <span>POST OFFICE / AREA</span>
+                        <span className="text-[10px] text-snake-green font-mono">AUTO-DETECTED</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="postOffice"
+                        value={formData.postOffice}
+                        onChange={handleChange}
+                        className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green font-mono"
+                      />
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-neutral-400 uppercase">CITY *</label>
+                      <label className="text-neutral-400 uppercase flex items-center justify-between">
+                        <span>CITY / DISTRICT *</span>
+                        {formData.city && <span className="text-[10px] text-snake-green font-mono">AUTO-FILLED</span>}
+                      </label>
                       <input
                         type="text"
                         name="city"
@@ -533,7 +705,10 @@ export default function CheckoutPage() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-neutral-400 uppercase">STATE *</label>
+                      <label className="text-neutral-400 uppercase flex items-center justify-between">
+                        <span>STATE *</span>
+                        {formData.state && <span className="text-[10px] text-snake-green font-mono">AUTO-FILLED</span>}
+                      </label>
                       <input
                         type="text"
                         name="state"
