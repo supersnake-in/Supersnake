@@ -67,11 +67,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   // Sync from localStorage & Supabase
   useEffect(() => {
     try {
+      // Purge any legacy mock products from browser storage
       const savedProducts = localStorage.getItem('supersnake_products');
       if (savedProducts) {
         const parsed = JSON.parse(savedProducts);
         if (Array.isArray(parsed)) {
-          setProducts(parsed);
+          const realProducts = parsed.filter((p) => !p.id?.startsWith('prod-0'));
+          setProducts(realProducts);
+          localStorage.setItem('supersnake_products', JSON.stringify(realProducts));
         }
       }
 
@@ -81,8 +84,21 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const savedWishlist = localStorage.getItem('supersnake_wishlist');
       if (savedWishlist) setWishlist(JSON.parse(savedWishlist));
 
+      // Purge any legacy mock orders from browser storage
       const savedOrders = localStorage.getItem('supersnake_orders');
-      if (savedOrders) setOrders(JSON.parse(savedOrders));
+      if (savedOrders) {
+        const parsed = JSON.parse(savedOrders);
+        if (Array.isArray(parsed)) {
+          const realOrders = parsed.filter(
+            (o) =>
+              o.id !== 'ord-8891' &&
+              o.orderNumber !== 'SS-2026-8891' &&
+              o.customer?.email !== 'aditya.sharma@example.com'
+          );
+          setOrders(realOrders);
+          localStorage.setItem('supersnake_orders', JSON.stringify(realOrders));
+        }
+      }
     } catch (e) {
       console.warn('Failed to load storage:', e);
     }
@@ -99,10 +115,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         console.warn('Supabase fetch failed:', err);
       });
 
-    // Fetch dynamic orders from Supabase
+    // Fetch dynamic orders from Supabase (Single Source of Truth)
     fetchOrdersFromSupabase()
       .then((supabaseOrders) => {
-        if (supabaseOrders && supabaseOrders.length > 0) {
+        if (supabaseOrders !== null) {
           setOrders(supabaseOrders);
         }
       })
