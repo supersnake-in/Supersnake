@@ -31,7 +31,7 @@ export default function CheckoutPage() {
   const { cart, cartTotal, createOrder } = useStore();
   const { user, profile } = useAuth();
 
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2>(1);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [showMobileSummary, setShowMobileSummary] = useState(false);
 
@@ -182,7 +182,7 @@ export default function CheckoutPage() {
         setPincodeMessage('Please select your post office from the dropdown before continuing.');
         return;
       }
-      setStep(3);
+      handleCompletePayment();
     }
   };
 
@@ -459,7 +459,7 @@ export default function CheckoutPage() {
         </div>
 
         {/* Progress Tracker */}
-        <div className="grid grid-cols-3 gap-2 mb-8 md:mb-10 text-xs font-mono">
+        <div className="grid grid-cols-2 gap-2 mb-8 md:mb-10 text-xs font-mono">
           <div
             className={`pb-2 border-b-2 transition-colors ${
               step >= 1 ? 'border-snake-green text-white font-semibold' : 'border-neutral-800 text-neutral-600'
@@ -472,14 +472,7 @@ export default function CheckoutPage() {
               step >= 2 ? 'border-snake-green text-white font-semibold' : 'border-neutral-800 text-neutral-600'
             }`}
           >
-            02. DELIVERY
-          </div>
-          <div
-            className={`pb-2 border-b-2 transition-colors ${
-              step >= 3 ? 'border-snake-green text-white font-semibold' : 'border-neutral-800 text-neutral-600'
-            }`}
-          >
-            03. PAYMENT
+            02. DELIVERY &amp; PAYMENT
           </div>
         </div>
 
@@ -732,6 +725,42 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
+                <div className="text-[11px] font-mono text-neutral-500 leading-relaxed pt-1">
+                  By completing this transaction, you agree to our{' '}
+                  <Link
+                    href="/terms"
+                    target="_blank"
+                    className="text-neutral-300 hover:text-snake-green underline underline-offset-2"
+                  >
+                    Terms &amp; Conditions
+                  </Link>{' '}
+                  and{' '}
+                  <Link
+                    href="/privacy"
+                    target="_blank"
+                    className="text-neutral-300 hover:text-snake-green underline underline-offset-2"
+                  >
+                    Privacy Policy
+                  </Link>
+                  , and acknowledge our{' '}
+                  <Link
+                    href="/shipping"
+                    target="_blank"
+                    className="text-neutral-300 hover:text-snake-green underline underline-offset-2"
+                  >
+                    Shipping &amp; Delivery
+                  </Link>{' '}
+                  and{' '}
+                  <Link
+                    href="/returns"
+                    target="_blank"
+                    className="text-neutral-300 hover:text-snake-green underline underline-offset-2"
+                  >
+                    Returns &amp; Defects
+                  </Link>
+                  .
+                </div>
+
                 <div className="flex gap-4 pt-2">
                   <button
                     type="button"
@@ -742,122 +771,22 @@ export default function CheckoutPage() {
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 min-h-[48px] py-4 bg-snake-green text-black font-mono text-xs tracking-widest font-bold uppercase hover:bg-white active:scale-[0.99] transition-all flex items-center justify-center gap-2"
-                  >
-                    CONTINUE TO PAYMENT <ArrowRight size={14} />
-                  </button>
-                </div>
-              </form>
-            )}
-
-            {/* Step 3: Payment */}
-            {step === 3 && (
-              <div className="space-y-6">
-                <div className="border-b border-white/10 pb-3 flex justify-between items-center">
-                  <div>
-                    <h3 className="text-sm font-mono tracking-widest text-white uppercase font-bold">
-                      PAYMENT CONFIRMATION
-                    </h3>
-                    <p className="text-[11px] font-mono text-neutral-500 mt-1">
-                      Secure checkout powered by Razorpay.
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setStep(2)}
-                    className="text-xs font-mono text-neutral-400 hover:text-white underline"
-                  >
-                    EDIT DELIVERY
-                  </button>
-                </div>
-
-                {/* Streamlined Razorpay Payment Banner */}
-                <div className="p-5 border border-snake-green/40 bg-gradient-to-br from-snake-green/10 via-black to-neutral-950 rounded-lg space-y-4 font-mono">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-snake-green animate-pulse" />
-                        <span className="text-xs text-white font-bold tracking-wider uppercase">
-                          RAZORPAY SECURE GATEWAY
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-neutral-400 max-w-md">
-                        Choose your preferred payment method directly in the secure gateway modal:
-                      </p>
-                    </div>
-                    <Lock size={16} className="text-snake-green shrink-0 mt-0.5" />
-                  </div>
-
-                  {/* Supported Instruments Grid */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
-                    <div className="p-2.5 bg-black/70 border border-white/10 rounded flex flex-col items-center justify-center text-center gap-1.5">
-                      <Smartphone size={16} className="text-snake-green" />
-                      <span className="text-[10px] text-neutral-300 font-semibold uppercase">UPI</span>
-                      <span className="text-[9px] text-neutral-500">GPay, PhonePe, Paytm</span>
-                    </div>
-                    <div className="p-2.5 bg-black/70 border border-white/10 rounded flex flex-col items-center justify-center text-center gap-1.5">
-                      <CreditCard size={16} className="text-snake-green" />
-                      <span className="text-[10px] text-neutral-300 font-semibold uppercase">CARDS</span>
-                      <span className="text-[9px] text-neutral-500">Visa, Master, RuPay</span>
-                    </div>
-                    <div className="p-2.5 bg-black/70 border border-white/10 rounded flex flex-col items-center justify-center text-center gap-1.5">
-                      <Building size={16} className="text-snake-green" />
-                      <span className="text-[10px] text-neutral-300 font-semibold uppercase">NET BANKING</span>
-                      <span className="text-[9px] text-neutral-500">50+ Indian Banks</span>
-                    </div>
-                    <div className="p-2.5 bg-black/70 border border-white/10 rounded flex flex-col items-center justify-center text-center gap-1.5">
-                      <Wallet size={16} className="text-snake-green" />
-                      <span className="text-[10px] text-neutral-300 font-semibold uppercase">WALLETS & CRED</span>
-                      <span className="text-[9px] text-neutral-500">Instant Checkout</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-4 bg-black/60 border border-white/10 rounded text-[11px] font-mono text-neutral-400 flex items-center gap-3">
-                  <ShieldCheck size={20} className="text-snake-green flex-shrink-0" />
-                  <span>
-                    Payments are encrypted with 256-bit SSL. SuperSnake never stores your raw payment cards or banking credentials.
-                  </span>
-                </div>
-
-                <div className="text-[11px] font-mono text-neutral-500 leading-relaxed pt-1">
-                  By completing this transaction, you agree to our{' '}
-                  <Link href="/terms" target="_blank" className="text-neutral-300 hover:text-snake-green underline underline-offset-2">
-                    Terms &amp; Conditions
-                  </Link>{' '}
-                  and{' '}
-                  <Link href="/privacy" target="_blank" className="text-neutral-300 hover:text-snake-green underline underline-offset-2">
-                    Privacy Policy
-                  </Link>
-                  , and acknowledge our{' '}
-                  <Link href="/shipping" target="_blank" className="text-neutral-300 hover:text-snake-green underline underline-offset-2">
-                    Shipping &amp; Delivery
-                  </Link>{' '}
-                  and{' '}
-                  <Link href="/returns" target="_blank" className="text-neutral-300 hover:text-snake-green underline underline-offset-2">
-                    Returns &amp; Defects
-                  </Link>{' '}
-                  policies.
-                </div>
-
-                <div className="flex gap-4 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setStep(2)}
-                    className="min-h-[48px] py-4 px-6 border border-white/20 text-neutral-300 font-mono text-xs uppercase hover:border-white active:scale-[0.99] transition-all"
-                  >
-                    BACK
-                  </button>
-                  <button
-                    onClick={handleCompletePayment}
                     disabled={isProcessing}
                     className="flex-1 min-h-[48px] py-4 bg-snake-green text-black font-mono text-xs tracking-widest font-bold uppercase hover:bg-white active:scale-[0.99] transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(4,252,33,0.3)] disabled:opacity-50"
                   >
-                    {isProcessing
-                      ? 'PROCESSING SECURE TRANSACTION...'
-                      : `PAY ${formatPrice(cartTotal + (cartTotal >= BRAND.freeShippingThreshold ? 0 : 150))} →`}
+                    {isProcessing ? (
+                      <>
+                        <span className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                        CONNECTING TO RAZORPAY...
+                      </>
+                    ) : (
+                      <>
+                        CONTINUE TO PAYMENT <ArrowRight size={14} />
+                      </>
+                    )}
                   </button>
                 </div>
-              </div>
+              </form>
             )}
           </div>
 
@@ -948,7 +877,7 @@ export default function CheckoutPage() {
                 onClick={() => setPaymentError(null)}
                 className="w-full py-2.5 border border-white/20 hover:border-white text-neutral-400 hover:text-white font-mono text-xs uppercase tracking-wider transition-colors"
               >
-                MODIFY PAYMENT METHOD
+                REVIEW DETAILS
               </button>
               <Link
                 href="/contact"
