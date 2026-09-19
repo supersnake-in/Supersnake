@@ -441,7 +441,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     };
 
     setOrders((prev) => [newOrder, ...prev]);
-    clearCart();
+    // Cart will be cleared upon payment completion
     createOrderInSupabase(newOrder).catch((err) => {
       console.warn('Could not sync order to Supabase:', err);
     });

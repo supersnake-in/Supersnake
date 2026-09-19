@@ -13,11 +13,13 @@ function OrderConfirmationContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get('orderId');
   const paymentId = searchParams.get('razorpay_payment_id');
-  const { getOrderById, updateOrder } = useStore();
+  const { getOrderById, updateOrder, clearCart } = useStore();
 
   const order = orderId ? getOrderById(orderId) : null;
 
   React.useEffect(() => {
+    clearCart();
+
     if (orderId && paymentId && order && order.payment?.status !== 'paid') {
       updateOrder(orderId, {
         status: 'Confirmed',
@@ -38,7 +40,7 @@ function OrderConfirmationContent() {
         colors: ['#04fc21', '#ffffff', '#000000'],
       });
     } catch (e) {}
-  }, [orderId, paymentId, order, updateOrder]);
+  }, [orderId, paymentId, order, updateOrder, clearCart]);
 
   return (
     <div className="bg-black text-white min-h-screen pt-32 pb-24 px-6 md:px-12 flex flex-col items-center">

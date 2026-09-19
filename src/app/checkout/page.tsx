@@ -28,7 +28,7 @@ const loadRazorpayScript = (): Promise<boolean> => {
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { cart, cartTotal, createOrder } = useStore();
+  const { cart, cartTotal, createOrder, updateOrder, clearCart } = useStore();
   const { user, profile } = useAuth();
 
   const [step, setStep] = useState<1 | 2>(1);
@@ -194,7 +194,15 @@ export default function CheckoutPage() {
     const amountInPaise = Math.round(totalOrderAmount * 100);
 
     try {
-      // 1. Create order in store before redirect
+      // 1. Ensure Razorpay Checkout SDK is loaded
+      const isScriptLoaded = await loadRazorpayScript();
+      if (!isScriptLoaded) {
+        throw new Error(
+          'Could not load Razorpay payment gateway. Please check your internet connection or disable ad-blockers and try again.'
+        );
+      }
+
+      // 2. Create order in store before payment
       const newOrder = createOrder({
         status: 'Confirmed',
         items: cart.map((c) => ({
@@ -234,7 +242,7 @@ export default function CheckoutPage() {
         },
       });
 
-      // 2. Call backend to create Razorpay Hosted Checkout session
+      // 3. Call backend to create Razorpay Order
       const orderRes = await fetch('/api/create-order', {
         method: 'POST',
         headers: {
@@ -249,7 +257,6 @@ export default function CheckoutPage() {
             phone: formData.phone,
           },
           orderId: newOrder.id,
-          origin: typeof window !== 'undefined' ? window.location.origin : undefined,
         }),
       });
 
@@ -259,12 +266,77 @@ export default function CheckoutPage() {
       }
 
       const orderData = await orderRes.json();
-      if (!orderData.payment_link_url) {
-        throw new Error('Payment session URL was not returned by Razorpay.');
+      if (!orderData.order_id) {
+        throw new Error('Order ID was not returned by payment gateway.');
       }
 
-      // 3. Direct redirect to Razorpay Hosted Checkout
-      window.location.href = orderData.payment_link_url;
+      // 4. Open Razorpay Standard Checkout
+      const options = {
+        key: orderData.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TdtCpOjDeqd3Mg',
+        amount: orderData.amount,
+        currency: orderData.currency || 'INR',
+        name: 'SuperSnake',
+        description: `Order #${newOrder.orderNumber}`,
+        order_id: orderData.order_id,
+        prefill: {
+          name: formData.fullName,
+          email: formData.email,
+          contact: formData.phone,
+        },
+        theme: {
+          color: '#04fc21',
+          backdrop_color: 'rgba(0, 0, 0, 0.85)',
+        },
+        handler: async function (response: any) {
+          try {
+            // Verify payment signature on server
+            const verifyRes = await fetch('/api/verify-payment', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+
+            const verifyData = await verifyRes.json();
+            if (verifyData.success) {
+              updateOrder(newOrder.id, {
+                status: 'Confirmed',
+                payment: {
+                  method: 'razorpay',
+                  transactionId: response.razorpay_payment_id,
+                  status: 'paid',
+                  paidAt: new Date().toISOString(),
+                },
+              });
+              clearCart();
+              router.push(`/checkout/confirmation?orderId=${newOrder.id}&razorpay_payment_id=${response.razorpay_payment_id}`);
+            } else {
+              setPaymentError('Payment verification failed. If your account was debited, please contact client concierge.');
+              setIsProcessing(false);
+            }
+          } catch (e: any) {
+            setPaymentError('Payment verification interrupted. Please contact client concierge.');
+            setIsProcessing(false);
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            setIsProcessing(false);
+          },
+        },
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on('payment.failed', function (response: any) {
+        setIsProcessing(false);
+        setPaymentError(response.error?.description || 'Payment was declined by your bank.');
+      });
+      rzp.open();
     } catch (err: any) {
       setIsProcessing(false);
       setPaymentError(err.message || 'Payment gateway connection interrupted. Please try again.');

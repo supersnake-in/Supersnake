@@ -22,38 +22,31 @@ export async function POST(request: Request) {
       key_secret,
     });
 
-    const hostOrigin = origin || request.headers.get('origin') || 'https://supersnake-xi.vercel.app';
-    const callbackUrl = `${hostOrigin}/checkout/confirmation?orderId=${orderId || ''}`;
-
     const cleanContact = customer?.phone ? customer.phone.replace(/\D/g, '').slice(-10) : undefined;
 
-    const paymentLink = await razorpay.paymentLink.create({
+    // Create core Razorpay Order for Standard Checkout
+    const order = await razorpay.orders.create({
       amount: Math.round(amount),
       currency: currency || 'INR',
-      accept_partial: false,
-      description: `SuperSnake Order ${orderId ? '#' + orderId.toUpperCase() : ''}`,
-      customer: {
-        name: customer?.name || 'Customer',
-        email: customer?.email || undefined,
-        contact: cleanContact && cleanContact.length === 10 ? cleanContact : undefined,
+      receipt: `rcpt_${orderId || Date.now()}`.slice(0, 40),
+      notes: {
+        orderId: orderId || '',
+        customerName: customer?.name || '',
+        customerEmail: customer?.email || '',
+        customerPhone: cleanContact || '',
       },
-      notify: {
-        sms: false,
-        email: false,
-      },
-      reminder_enable: false,
-      callback_url: callbackUrl,
-      callback_method: 'get',
     });
 
     return NextResponse.json({
-      payment_link_url: paymentLink.short_url,
-      payment_link_id: paymentLink.id,
-      amount: paymentLink.amount,
-      currency: paymentLink.currency,
+      success: true,
+      order_id: order.id,
+      id: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      key: key_id,
     });
   } catch (error: any) {
-    console.error('Razorpay payment link creation error:', error);
+    console.error('Razorpay order creation error:', error);
     if (error?.statusCode === 401) {
       return NextResponse.json(
         { error: 'Razorpay authentication failed. Invalid API credentials.' },
