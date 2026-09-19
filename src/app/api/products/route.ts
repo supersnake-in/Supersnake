@@ -24,6 +24,10 @@ export async function POST(request: Request) {
       mrp,
       gsm,
       fabric,
+      weightText,
+      careInstructions,
+      features,
+      shippingPolicy,
       images,
       colors,
       sizes,
@@ -90,7 +94,7 @@ export async function POST(request: Request) {
     );
 
     const newProduct: Product = {
-      id: `prod-${Date.now()}`,
+      id: body.id || `prod-${Date.now()}`,
       name: cleanName,
       slug: cleanSlug,
       tagline: sanitizeString(tagline || 'Engineered heavyweight luxury garment.'),
@@ -103,16 +107,22 @@ export async function POST(request: Request) {
       mrp: cleanMrp,
       gsm: cleanGsm,
       fabric: sanitizeString(fabric || `${cleanGsm} GSM Long-Staple Cotton`),
-      careInstructions: [
-        'Machine wash cold, inside out with like colors',
-        'Do not tumble dry',
-        'Lay flat to dry in shade',
-      ],
-      features: [
-        `${cleanGsm} GSM Heavyweight structure`,
-        'Zero-sag reinforced 1-inch collar',
-        'Pre-shrunk architectural geometry',
-      ],
+      weightText: typeof weightText === 'string' ? sanitizeString(weightText) : undefined,
+      careInstructions: Array.isArray(careInstructions)
+        ? careInstructions.map((c: any) => sanitizeString(String(c))).filter(Boolean)
+        : [
+            'Machine wash cold, inside out with like colors',
+            'Do not tumble dry',
+            'Lay flat to dry in shade',
+          ],
+      features: Array.isArray(features)
+        ? features.map((f: any) => sanitizeString(String(f))).filter(Boolean)
+        : [
+            `${cleanGsm} GSM Heavyweight structure`,
+            'Zero-sag reinforced 1-inch collar',
+            'Pre-shrunk architectural geometry',
+          ],
+      shippingPolicy: typeof shippingPolicy === 'string' ? sanitizeString(shippingPolicy) : undefined,
       images: cleanImages,
       colors: cleanColors,
       sizes: cleanSizes as any,

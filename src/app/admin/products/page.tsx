@@ -275,16 +275,8 @@ export default function AdminProductsPage() {
     setGender(prod.gender);
     setFabric(prod.fabric || `${prod.gsm} GSM 100% Long-Staple Supima® Cotton`);
     setWeightText(prod.weightText || `${prod.gsm} GSM Heavyweight Jersey`);
-    setSpecificationsText(
-      prod.features && prod.features.length > 0
-        ? prod.features.join('\n')
-        : `${prod.gsm} GSM Heavyweight structure\nZero-sag reinforced 1-inch collar\nPre-shrunk architectural geometry\nHigh-density luxury stitch finish`
-    );
-    setCareInstructionsText(
-      prod.careInstructions && prod.careInstructions.length > 0
-        ? prod.careInstructions.join('\n')
-        : 'Machine wash cold, inside out with like colors\nDo not tumble dry\nLay flat to dry in shade\nCool iron on reverse; avoid contact with prints/embroidery'
-    );
+    setSpecificationsText(Array.isArray(prod.features) ? prod.features.join('\n') : '');
+    setCareInstructionsText(Array.isArray(prod.careInstructions) ? prod.careInstructions.join('\n') : '');
     setShippingPolicy(
       prod.shippingPolicy ||
         'Orders dispatch swiftly from our studio via priority air express couriers. Full tracking milestones transmitted upon dispatch.\n\nSuperSnake operates under a strict no-return policy for ordinary purchases (no returns for change of mind or incorrect size). If an item arrives damaged or defective, report it via our Returns protocol.'
@@ -369,24 +361,8 @@ export default function AdminProductsPage() {
       gsm: cleanGsm,
       fabric: sanitizeString(fabric || `${cleanGsm} GSM 100% Long-Staple Supima® Cotton`),
       weightText: sanitizeString(weightText || `${cleanGsm} GSM Heavyweight Jersey`),
-      careInstructions:
-        parsedCare.length > 0
-          ? parsedCare
-          : [
-              'Machine wash cold, inside out with like colors',
-              'Do not tumble dry',
-              'Lay flat to dry in shade',
-              'Cool iron on reverse; avoid contact with prints/embroidery',
-            ],
-      features:
-        parsedFeatures.length > 0
-          ? parsedFeatures
-          : [
-              `${cleanGsm} GSM Heavyweight structure`,
-              'Zero-sag reinforced 1-inch collar',
-              'Pre-shrunk architectural geometry',
-              'High-density luxury stitch finish',
-            ],
+      careInstructions: parsedCare,
+      features: parsedFeatures,
       shippingPolicy: sanitizeString(
         shippingPolicy ||
           'Orders dispatch swiftly from our studio via priority air express couriers. Full tracking milestones transmitted upon dispatch.\n\nSuperSnake operates under a strict no-return policy for ordinary purchases (no returns for change of mind or incorrect size). If an item arrives damaged or defective, report it via our Returns protocol.'

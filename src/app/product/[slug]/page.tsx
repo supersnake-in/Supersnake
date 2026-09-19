@@ -407,13 +407,17 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
                 </button>
                 {openAccordions.fabric && (
                   <div className="p-4 pt-0 space-y-2 text-neutral-400 border-t border-white/5">
-                    <p><span className="text-white">Fabric:</span> {product.fabric}</p>
-                    <p><span className="text-white">Weight:</span> {product.weightText || `${product.gsm} GSM Heavyweight Jersey`}</p>
-                    <ul className="list-disc list-inside space-y-1 pt-1">
-                      {product.features.map((f, i) => (
-                        <li key={i}>{f}</li>
-                      ))}
-                    </ul>
+                    {product.fabric && <p><span className="text-white">Fabric:</span> {product.fabric}</p>}
+                    {(product.weightText || product.gsm) && (
+                      <p><span className="text-white">Weight:</span> {product.weightText || `${product.gsm} GSM Heavyweight Jersey`}</p>
+                    )}
+                    {Array.isArray(product.features) && product.features.length > 0 && (
+                      <ul className="list-disc list-inside space-y-1 pt-1">
+                        {product.features.map((f, i) => (
+                          <li key={i}>{f}</li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                 )}
               </div>
@@ -434,9 +438,13 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
                 </button>
                 {openAccordions.care && (
                   <div className="p-4 pt-0 space-y-2 text-neutral-400 border-t border-white/5 text-xs font-mono">
-                    {product.careInstructions.map((c, i) => (
-                      <p key={i}>• {c}</p>
-                    ))}
+                    {Array.isArray(product.careInstructions) && product.careInstructions.length > 0 ? (
+                      product.careInstructions.map((c, i) => (
+                        <p key={i}>• {c}</p>
+                      ))
+                    ) : (
+                      <p>Standard delicate garment care recommended.</p>
+                    )}
                     <div className="pt-2">
                       <Link href="/care-guide" className="text-snake-green hover:underline uppercase text-[11px] inline-flex items-center gap-1">
                         <span>VIEW FULL CARE & PRESERVATION GUIDE</span>
