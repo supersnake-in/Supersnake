@@ -34,7 +34,7 @@ export default function HomePage() {
           ============================================================ */}
       <section
         ref={heroRef}
-        className="relative h-[100dvh] min-h-[580px] lg:h-screen lg:min-h-[700px] w-full overflow-hidden flex items-end pb-12 sm:pb-16 md:pb-24 px-4 sm:px-6 md:px-12"
+        className="relative min-h-[100dvh] lg:min-h-screen w-full overflow-hidden flex flex-col justify-end pt-28 sm:pt-32 lg:pt-36 pb-8 sm:pb-12 md:pb-16 px-4 sm:px-6 md:px-12"
       >
         {/* Background Image with slow cinematic drift */}
         <motion.div
@@ -58,7 +58,7 @@ export default function HomePage() {
           style={{ y: heroTextY, opacity: heroOpacity }}
           className="relative z-10 max-w-7xl mx-auto w-full flex flex-col justify-end"
         >
-          <div className="max-w-3xl space-y-4 sm:space-y-6">
+          <div className="max-w-3xl space-y-3 sm:space-y-4 lg:space-y-5">
             {/* Subtle Brand pill */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -75,7 +75,7 @@ export default function HomePage() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 1, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              className="text-4xl xs:text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-display font-black tracking-tighter leading-[0.88] uppercase text-white"
+              className="text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-8xl 2xl:text-9xl font-display font-black tracking-tighter leading-[0.88] uppercase text-white"
             >
               WEAR
               <br />
