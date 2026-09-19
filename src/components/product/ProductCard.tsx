@@ -88,12 +88,12 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
           onClick={handleWishlist}
           className={`absolute top-2.5 right-2.5 sm:top-3 sm:right-3 p-2.5 sm:p-2 rounded-full backdrop-blur-md transition-all duration-300 z-10 active:scale-90 ${
             isFavorited
-              ? 'bg-snake-green text-black scale-100'
-              : 'bg-black/50 text-white hover:text-snake-green border border-white/10'
+              ? 'bg-red-600 text-white scale-100'
+              : 'bg-black/50 text-white hover:text-red-400 border border-white/10'
           }`}
           aria-label={isFavorited ? 'Remove from wishlist' : 'Save to wishlist'}
         >
-          <Heart size={14} className={isFavorited ? 'fill-black' : ''} />
+          <Heart size={14} className={isFavorited ? 'fill-white' : ''} />
         </button>
 
         {/* Mobile Quick Add Floating Button (touch-friendly, unobtrusive) */}
