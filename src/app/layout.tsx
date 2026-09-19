@@ -10,6 +10,7 @@ import { Footer } from '@/components/layout/Footer';
 import { CartDrawer } from '@/components/cart/CartDrawer';
 import { SearchOverlay } from '@/components/search/SearchOverlay';
 import { QuickViewModal } from '@/components/product/QuickViewModal';
+import { AuthHashNotice } from '@/components/auth/AuthHashNotice';
 
 export const metadata: Metadata = {
   title: 'SUPERSNAKE | Wear Your Instinct | Premium Heavyweight T-Shirts',
@@ -73,6 +74,7 @@ export default function RootLayout({
               <CartDrawer />
               <SearchOverlay />
               <QuickViewModal />
+              <AuthHashNotice />
               <Footer />
             </SmoothScroll>
           </AuthProvider>
