@@ -554,7 +554,9 @@ export default function HomePage() {
                     'https://images.unsplash.com/photo-1503342394128-c104d54dba01?q=80&w=600&auto=format&fit=crop',
                   ];
 
-            const hasMoreThanFour = communityImgs.length > 4;
+            const count = communityImgs.length;
+            const scrollOnMobile = count > 4;
+            const scrollOnDesktop = count > 8;
 
             return (
               <>
@@ -568,8 +570,8 @@ export default function HomePage() {
                     </h3>
                   </div>
                   <div className="flex items-center gap-3 sm:gap-4">
-                    {hasMoreThanFour && (
-                      <div className="flex items-center gap-1.5 border border-white/10 p-1 rounded bg-black/40">
+                    {scrollOnDesktop && (
+                      <div className="hidden md:flex items-center gap-1.5 border border-white/10 p-1 rounded bg-black/40">
                         <button
                           onClick={() => scrollCommunity('left')}
                           aria-label="Scroll left"
@@ -600,7 +602,8 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {hasMoreThanFour ? (
+                {scrollOnDesktop ? (
+                  // Desktop (>8) and Mobile (>4): Both scroll horizontally in 2 rows
                   <div
                     ref={communityScrollRef}
                     className="overflow-x-auto pb-4 no-scrollbar -mx-6 md:-mx-12 px-6 md:px-12 scroll-smooth"
@@ -626,7 +629,36 @@ export default function HomePage() {
                       ))}
                     </div>
                   </div>
+                ) : scrollOnMobile ? (
+                  // Mobile (>4): Scrolls horizontally in 2 rows
+                  // Desktop (<=8): Static grid-cols-4 (no horizontal scroll, fills the row)
+                  <div
+                    ref={communityScrollRef}
+                    className="overflow-x-auto md:overflow-visible pb-4 md:pb-0 no-scrollbar -mx-6 md:mx-0 px-6 md:px-0 scroll-smooth"
+                  >
+                    <div className="grid grid-rows-2 md:grid-rows-none grid-flow-col md:grid-flow-row md:grid-cols-4 gap-3 sm:gap-4 w-max md:w-full">
+                      {communityImgs.map((imgUrl, idx) => (
+                        <div
+                          key={`community-img-${idx}`}
+                          className="relative w-[calc(50vw-28px)] xs:w-[200px] sm:w-[240px] md:w-auto aspect-square bg-neutral-900 rounded overflow-hidden group shrink-0 md:shrink"
+                        >
+                          <Image
+                            src={imgUrl}
+                            alt={`#SUPERSNAKE 0${idx + 1}`}
+                            fill
+                            sizes="(max-width: 768px) 50vw, 25vw"
+                            unoptimized={
+                              imgUrl.startsWith('data:') ||
+                              !imgUrl.includes('unsplash.com')
+                            }
+                            className="object-cover transition-transform duration-700 group-hover:scale-105 brightness-90"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 ) : (
+                  // Mobile (<=4) and Desktop (<=4): Standard grid (2 cols mobile, 4 cols desktop)
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {communityImgs.map((imgUrl, idx) => (
                       <div key={`community-img-${idx}`} className="relative aspect-square bg-neutral-900 rounded overflow-hidden group">

@@ -248,7 +248,7 @@ export default function AdminSocialMediaPage() {
               </span>
             </div>
             <p className="text-xs text-neutral-400 mt-1">
-              These images are dynamically displayed on the homepage under the <strong>COMMUNITY &amp; EDITORIAL #SUPERSNAKE</strong> section. When more than 4 images are published, the gallery automatically arranges them in a two-tier horizontal scrolling showcase.
+              These images are dynamically displayed on the homepage under the <strong>COMMUNITY &amp; EDITORIAL #SUPERSNAKE</strong> section. On mobile devices, horizontal scrolling activates when more than 4 images are published; on larger screens, horizontal scrolling activates when more than 8 images are published.
             </p>
           </div>
 
