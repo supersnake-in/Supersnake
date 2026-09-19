@@ -194,13 +194,47 @@ export default function CheckoutPage() {
     const amountInPaise = Math.round(totalOrderAmount * 100);
 
     try {
-      // 1. Ensure Razorpay checkout script is loaded
-      const isLoaded = await loadRazorpayScript();
-      if (!isLoaded) {
-        throw new Error('Could not load Razorpay payment SDK. Please verify your internet connection and retry.');
-      }
+      // 1. Create order in store before redirect
+      const newOrder = createOrder({
+        status: 'Confirmed',
+        items: cart.map((c) => ({
+          productId: c.product.id,
+          productName: c.product.name,
+          color: c.selectedColor.name,
+          size: c.selectedSize,
+          quantity: c.quantity,
+          price: c.price,
+          imageUrl: c.product.images[0]?.url || '',
+        })),
+        subtotal: cartTotal,
+        discount: 0,
+        shipping: cartTotal >= BRAND.freeShippingThreshold ? 0 : 150,
+        tax: Math.round(cartTotal * 0.05),
+        total: totalOrderAmount,
+        customer: {
+          name: formData.fullName,
+          email: formData.email,
+          phone: formData.phone,
+        },
+        shippingAddress: {
+          fullName: formData.fullName,
+          phone: formData.phone,
+          street: formData.street,
+          landmark: formData.landmark,
+          city: formData.city,
+          state: formData.state || 'Karnataka',
+          postalCode: formData.postalCode,
+          postOffice: formData.postOffice || undefined,
+        },
+        payment: {
+          method: 'razorpay',
+          transactionId: '',
+          status: 'pending',
+          paidAt: '',
+        },
+      });
 
-      // 2. Call backend endpoint to create order
+      // 2. Call backend to create Razorpay Hosted Checkout session
       const orderRes = await fetch('/api/create-order', {
         method: 'POST',
         headers: {
@@ -209,152 +243,31 @@ export default function CheckoutPage() {
         body: JSON.stringify({
           amount: amountInPaise,
           currency: 'INR',
-          receipt: `rcpt_${Date.now().toString().slice(-8)}`,
+          customer: {
+            name: formData.fullName,
+            email: formData.email,
+            phone: formData.phone,
+          },
+          orderId: newOrder.id,
+          origin: typeof window !== 'undefined' ? window.location.origin : undefined,
         }),
       });
 
       if (!orderRes.ok) {
         const errData = await orderRes.json().catch(() => ({}));
-        throw new Error(errData.error || 'Failed to initialize payment order with server.');
+        throw new Error(errData.error || 'Failed to initialize payment session with server.');
       }
 
       const orderData = await orderRes.json();
-      const razorpayKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TdtCpOjDeqd3Mg';
-      const cleanPhone = formData.phone ? formData.phone.replace(/\D/g, '').slice(-10) : '';
+      if (!orderData.payment_link_url) {
+        throw new Error('Payment session URL was not returned by Razorpay.');
+      }
 
-      // 3. Open Razorpay Standard Checkout modal (explicitly force standard checkout)
-      const options: any = {
-        key: razorpayKey,
-        amount: orderData.amount,
-        currency: orderData.currency || 'INR',
-        name: 'SuperSnake',
-        description: `Order for ${cart.length} item${cart.length > 1 ? 's' : ''}`,
-        order_id: orderData.order_id || orderData.id,
-        magic: false,
-        one_click_checkout: false,
-        config: {
-          display: {
-            preferences: {
-              show_default_blocks: true,
-            },
-          },
-        },
-        prefill: {
-          name: formData.fullName?.trim() || undefined,
-          email: formData.email?.trim() || undefined,
-          contact: cleanPhone.length === 10 ? cleanPhone : undefined,
-        },
-        theme: {
-          color: '#04fc21',
-        },
-        handler: async function (response: {
-          razorpay_payment_id: string;
-          razorpay_order_id: string;
-          razorpay_signature: string;
-        }) {
-          try {
-            // 4. Verify payment signature on backend
-            const verifyRes = await fetch('/api/verify-payment', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-              }),
-            });
-
-            const verifyData = await verifyRes.json();
-
-            if (!verifyRes.ok || !verifyData.success) {
-              throw new Error(
-                verifyData.error || 'Payment signature verification failed. Please contact support.'
-              );
-            }
-
-            // 5. Create confirmed order in store
-            const newOrder = createOrder({
-              status: 'Confirmed',
-              items: cart.map((c) => ({
-                productId: c.product.id,
-                productName: c.product.name,
-                color: c.selectedColor.name,
-                size: c.selectedSize,
-                quantity: c.quantity,
-                price: c.price,
-                imageUrl: c.product.images[0]?.url || '',
-              })),
-              subtotal: cartTotal,
-              discount: 0,
-              shipping: cartTotal >= BRAND.freeShippingThreshold ? 0 : 150,
-              tax: Math.round(cartTotal * 0.05),
-              total: totalOrderAmount,
-              customer: {
-                name: formData.fullName,
-                email: formData.email,
-                phone: formData.phone,
-              },
-              shippingAddress: {
-                fullName: formData.fullName,
-                phone: formData.phone,
-                street: formData.street,
-                landmark: formData.landmark,
-                city: formData.city,
-                state: formData.state || 'Karnataka',
-                postalCode: formData.postalCode,
-                postOffice: formData.postOffice || undefined,
-              },
-              payment: {
-                method: 'razorpay',
-                transactionId: response.razorpay_payment_id,
-                status: 'paid',
-                paidAt: new Date().toISOString(),
-              },
-            });
-
-            // Celebration
-            try {
-              confetti({
-                particleCount: 80,
-                spread: 70,
-                origin: { y: 0.6 },
-                colors: ['#04fc21', '#ffffff', '#000000'],
-              });
-            } catch (e) {}
-
-            router.push(`/checkout/confirmation?orderId=${newOrder.id}`);
-          } catch (err: any) {
-            setIsProcessing(false);
-            setPaymentError(
-              err.message || 'Payment signature verification failed. If your account was debited, please contact support.'
-            );
-          }
-        },
-        modal: {
-          ondismiss: function () {
-            setIsProcessing(false);
-            setPaymentError('Payment window was closed. You can retry whenever you are ready.');
-          },
-        },
-      };
-
-      const rzp = new (window as any).Razorpay(options);
-
-      rzp.on('payment.failed', function (response: any) {
-        setIsProcessing(false);
-        setPaymentError(
-          response.error?.description ||
-          response.error?.reason ||
-          'Payment transaction was not completed. Please try again or use another payment method.'
-        );
-      });
-
-      rzp.open();
+      // 3. Direct redirect to Razorpay Hosted Checkout
+      window.location.href = orderData.payment_link_url;
     } catch (err: any) {
       setIsProcessing(false);
-      setPaymentError(err.message || 'Payment gateway connection interrupted. Please verify your payment details and retry.');
+      setPaymentError(err.message || 'Payment gateway connection interrupted. Please try again.');
     }
   };
 

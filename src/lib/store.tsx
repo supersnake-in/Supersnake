@@ -72,6 +72,7 @@ interface StoreContextType {
   orders: Order[];
   createOrder: (order: Omit<Order, 'id' | 'orderNumber' | 'createdAt'>) => Order;
   getOrderById: (orderId: string) => Order | undefined;
+  updateOrder: (orderId: string, updates: Partial<Order>) => void;
 
   // Products Catalog (Admin & Storefront synchronized)
   products: Product[];
@@ -349,6 +350,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return orders.find((o) => o.id === orderId || o.orderNumber === orderId);
   };
 
+  const updateOrder = (orderId: string, updates: Partial<Order>) => {
+    setOrders((prev) =>
+      prev.map((o) => (o.id === orderId || o.orderNumber === orderId ? { ...o, ...updates } : o))
+    );
+  };
+
   // Product actions
   const addProduct = (newProduct: Product) => {
     setProducts((prev) => [newProduct, ...prev]);
@@ -430,6 +437,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         orders,
         createOrder,
         getOrderById,
+        updateOrder,
       }}
     >
       {children}

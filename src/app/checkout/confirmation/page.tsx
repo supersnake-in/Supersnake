@@ -7,12 +7,38 @@ import { CheckCircle2, ArrowRight, Package, Truck } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { formatPrice } from '@/lib/design-tokens';
 
+import confetti from 'canvas-confetti';
+
 function OrderConfirmationContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get('orderId');
-  const { getOrderById } = useStore();
+  const paymentId = searchParams.get('razorpay_payment_id');
+  const { getOrderById, updateOrder } = useStore();
 
   const order = orderId ? getOrderById(orderId) : null;
+
+  React.useEffect(() => {
+    if (orderId && paymentId && order && order.payment?.status !== 'paid') {
+      updateOrder(orderId, {
+        status: 'Confirmed',
+        payment: {
+          ...order.payment,
+          status: 'paid',
+          transactionId: paymentId,
+          paidAt: new Date().toISOString(),
+        },
+      });
+    }
+
+    try {
+      confetti({
+        particleCount: 80,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#04fc21', '#ffffff', '#000000'],
+      });
+    } catch (e) {}
+  }, [orderId, paymentId, order, updateOrder]);
 
   return (
     <div className="bg-black text-white min-h-screen pt-32 pb-24 px-6 md:px-12 flex flex-col items-center">
