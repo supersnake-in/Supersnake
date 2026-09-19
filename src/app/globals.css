@@ -84,3 +84,29 @@ body {
   scrollbar-width: none;
 }
 
+/* Dedicated Modal Scroller with High-Visibility Thumb */
+.modal-scroller {
+  scrollbar-width: thin !important;
+  scrollbar-color: #04fc21 #141414 !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+.modal-scroller::-webkit-scrollbar {
+  width: 8px !important;
+  display: block !important;
+}
+
+.modal-scroller::-webkit-scrollbar-track {
+  background: #141414 !important;
+  border-radius: 4px;
+}
+
+.modal-scroller::-webkit-scrollbar-thumb {
+  background: #04fc21 !important;
+  border-radius: 4px;
+}
+
+.modal-scroller::-webkit-scrollbar-thumb:hover {
+  background: #ffffff !important;
+}
+

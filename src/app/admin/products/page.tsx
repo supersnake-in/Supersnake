@@ -587,10 +587,10 @@ export default function AdminProductsPage() {
           CREATE / EDIT PRODUCT MODAL (VERTICAL SCROLL FIXED + STICKY FOOTER SAVE BUTTON)
           ============================================================ */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/85 backdrop-blur-md p-3 sm:p-6 flex justify-center items-start">
-          <div className="relative w-full max-w-3xl bg-[#0e0e0e] border border-neutral-800 rounded-xl my-4 sm:my-8 shadow-2xl flex flex-col max-h-[92vh] overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md">
+          <div className="relative w-full max-w-3xl bg-[#0e0e0e] border border-neutral-800 rounded-xl shadow-2xl flex flex-col h-[88vh] max-h-[88vh] overflow-hidden">
             {/* STICKY HEADER */}
-            <div className="sticky top-0 z-20 bg-[#0e0e0e] border-b border-neutral-800 px-6 py-4 flex justify-between items-center shrink-0">
+            <div className="shrink-0 border-b border-neutral-800 px-6 py-4 flex justify-between items-center bg-[#0e0e0e] z-10">
               <div>
                 <h3 className="text-sm sm:text-base font-bold uppercase text-white tracking-wider flex items-center gap-2">
                   <Sparkles size={16} className="text-snake-green" />
@@ -611,9 +611,12 @@ export default function AdminProductsPage() {
             </div>
 
             {/* FORM: Wraps scrollable body + sticky footer */}
-            <form onSubmit={handleSaveProduct} className="flex flex-col flex-1 overflow-hidden">
+            <form onSubmit={handleSaveProduct} className="flex flex-col flex-1 min-h-0 overflow-hidden">
               {/* SCROLLABLE BODY */}
-              <div className="overflow-y-auto flex-1 p-6 space-y-6 text-xs custom-scrollbar">
+              <div
+                tabIndex={0}
+                className="flex-1 min-h-0 overflow-y-scroll p-6 space-y-6 text-xs modal-scroller focus:outline-none"
+              >
                 {/* SECTION 1: IMAGES UPLOAD */}
                 <div className="space-y-3 p-4 bg-neutral-950 border border-neutral-800 rounded-lg">
                   <div className="flex justify-between items-center">
@@ -1060,8 +1063,8 @@ export default function AdminProductsPage() {
                 </div>
               </div>
 
-              {/* STICKY FOOTER: ALWAYS VISIBLE, NEVER CUT OFF */}
-              <div className="sticky bottom-0 z-20 bg-[#0e0e0e] border-t border-neutral-800 px-6 py-4 flex items-center justify-between shrink-0 shadow-2xl">
+              {/* FOOTER: ALWAYS PINNED VISIBLE AT BOTTOM */}
+              <div className="shrink-0 border-t border-neutral-800 px-6 py-4 flex items-center justify-between bg-[#0e0e0e] z-10 shadow-2xl">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
