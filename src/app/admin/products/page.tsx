@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -46,6 +46,17 @@ export default function AdminProductsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
+
+  // Lock background scroll when modal is open
+  useEffect(() => {
+    if (isModalOpen) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = prevOverflow;
+      };
+    }
+  }, [isModalOpen]);
 
   // Form State
   const [name, setName] = useState('');
@@ -588,9 +599,12 @@ export default function AdminProductsPage() {
           ============================================================ */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md">
-          <div className="relative w-full max-w-3xl bg-[#0e0e0e] border border-neutral-800 rounded-xl shadow-2xl flex flex-col h-[88vh] max-h-[88vh] overflow-hidden">
-            {/* STICKY HEADER */}
-            <div className="shrink-0 border-b border-neutral-800 px-6 py-4 flex justify-between items-center bg-[#0e0e0e] z-10">
+          <div
+            className="relative w-full max-w-3xl bg-[#0e0e0e] border border-neutral-800 rounded-xl shadow-2xl flex flex-col overflow-hidden"
+            style={{ height: '88vh', maxHeight: '88vh' }}
+          >
+            {/* 1. STICKY HEADER */}
+            <div className="shrink-0 h-16 border-b border-neutral-800 px-6 flex justify-between items-center bg-[#0e0e0e] z-20">
               <div>
                 <h3 className="text-sm sm:text-base font-bold uppercase text-white tracking-wider flex items-center gap-2">
                   <Sparkles size={16} className="text-snake-green" />
@@ -603,20 +617,24 @@ export default function AdminProductsPage() {
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="text-neutral-400 hover:text-white p-2 rounded-md hover:bg-neutral-800 transition-colors"
+                className="text-neutral-400 hover:text-white p-2 rounded-md hover:bg-neutral-800 transition-colors cursor-pointer"
                 aria-label="Close modal"
               >
                 <X size={18} />
               </button>
             </div>
 
-            {/* FORM: Wraps scrollable body + sticky footer */}
-            <form onSubmit={handleSaveProduct} className="flex flex-col flex-1 min-h-0 overflow-hidden">
-              {/* SCROLLABLE BODY */}
-              <div
-                tabIndex={0}
-                className="flex-1 min-h-0 overflow-y-scroll p-6 space-y-6 text-xs modal-scroller focus:outline-none"
-              >
+            {/* 2. SCROLLABLE BODY CONTAINER (EXPLICIT HEIGHT, GUARANTEED SCROLL) */}
+            <div
+              tabIndex={0}
+              className="overflow-y-auto overscroll-contain p-6 text-xs modal-scroller focus:outline-none"
+              style={{
+                height: 'calc(88vh - 136px)',
+                maxHeight: 'calc(88vh - 136px)',
+                overflowY: 'scroll',
+              }}
+            >
+              <form id="product-modal-form" onSubmit={handleSaveProduct} className="space-y-6">
                 {/* SECTION 1: IMAGES UPLOAD */}
                 <div className="space-y-3 p-4 bg-neutral-950 border border-neutral-800 rounded-lg">
                   <div className="flex justify-between items-center">
@@ -1061,32 +1079,33 @@ export default function AdminProductsPage() {
                     className="w-5 h-5 rounded border-neutral-700 bg-neutral-900 text-snake-green focus:ring-snake-green focus:ring-offset-0 accent-snake-green cursor-pointer"
                   />
                 </div>
-              </div>
+              </form>
+            </div>
 
-              {/* FOOTER: ALWAYS PINNED VISIBLE AT BOTTOM */}
-              <div className="shrink-0 border-t border-neutral-800 px-6 py-4 flex items-center justify-between bg-[#0e0e0e] z-10 shadow-2xl">
+            {/* 3. PINNED FOOTER (Fixed Height, ALWAYS visible at bottom) */}
+            <div className="shrink-0 h-[72px] border-t border-neutral-800 px-6 py-4 flex items-center justify-between bg-[#0e0e0e] z-20 shadow-2xl">
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="px-5 py-2.5 border border-neutral-800 text-neutral-300 rounded hover:text-white hover:border-neutral-600 uppercase tracking-wider text-xs transition-colors cursor-pointer"
+              >
+                CANCEL
+              </button>
+
+              <div className="flex items-center gap-3">
+                <span className="hidden sm:inline text-[11px] text-neutral-500">
+                  Real-time storefront sync active
+                </span>
                 <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-5 py-2.5 border border-neutral-800 text-neutral-300 rounded hover:text-white hover:border-neutral-600 uppercase tracking-wider text-xs transition-colors"
+                  type="submit"
+                  form="product-modal-form"
+                  className="px-8 py-3 bg-snake-green text-black font-bold uppercase rounded hover:bg-white transition-all shadow-[0_0_20px_rgba(4,252,33,0.4)] flex items-center gap-2 cursor-pointer text-xs tracking-wider"
                 >
-                  CANCEL
+                  <Check size={16} />
+                  <span>{editingProductId ? 'UPDATE & PUBLISH' : 'PUBLISH TO LIVE STOREFRONT'}</span>
                 </button>
-
-                <div className="flex items-center gap-3">
-                  <span className="hidden sm:inline text-[11px] text-neutral-500">
-                    Real-time storefront sync active
-                  </span>
-                  <button
-                    type="submit"
-                    className="px-8 py-3 bg-snake-green text-black font-bold uppercase rounded hover:bg-white transition-all shadow-[0_0_20px_rgba(4,252,33,0.4)] flex items-center gap-2 cursor-pointer text-xs tracking-wider"
-                  >
-                    <Check size={16} />
-                    <span>{editingProductId ? 'UPDATE & PUBLISH' : 'PUBLISH TO LIVE STOREFRONT'}</span>
-                  </button>
-                </div>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}
