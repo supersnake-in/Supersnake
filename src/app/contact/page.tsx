@@ -3,10 +3,12 @@
 import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Mail, Clock, Send, CheckCircle2, ArrowRight, ShieldCheck, AlertCircle, FileText } from 'lucide-react';
+import { Mail, Clock, Send, CheckCircle2, ArrowRight, ShieldCheck, AlertCircle, FileText, Phone } from 'lucide-react';
 import { LEGAL_CONFIG, OFFICIAL_EMAILS, getLegalValue } from '@/lib/legal-config';
+import { useStore } from '@/lib/store';
 
 function ContactFormContent() {
+  const { socialConfig } = useStore();
   const searchParams = useSearchParams();
   const prefilledOrder = searchParams.get('order') || '';
   const prefilledCategory = searchParams.get('category') || '';
@@ -55,7 +57,7 @@ function ContactFormContent() {
         </div>
 
         {/* Official Channels Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs font-mono">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 text-xs font-mono">
           {/* Channel 1: Customer Support */}
           <div className="bg-[#0a0a0a] border border-white/10 p-5 rounded-sm space-y-2.5">
             <div className="flex items-center justify-between text-neutral-500">
@@ -73,7 +75,24 @@ function ContactFormContent() {
             </p>
           </div>
 
-          {/* Channel 2: General Enquiries */}
+          {/* Channel 2: Telephone Concierge */}
+          <div className="bg-[#0a0a0a] border border-white/10 p-5 rounded-sm space-y-2.5">
+            <div className="flex items-center justify-between text-neutral-500">
+              <span className="text-[10px] uppercase tracking-widest text-snake-green">CONCIERGE LINE</span>
+              <Phone size={14} className="text-snake-green" />
+            </div>
+            <a
+              href={`tel:${(socialConfig?.contactPhone || '+91 (0) 80 4920 2000').replace(/[^+\d]/g, '')}`}
+              className="text-white hover:text-snake-green transition-colors font-semibold block text-sm break-all"
+            >
+              {socialConfig?.contactPhone || '+91 (0) 80 4920 2000'}
+            </a>
+            <p className="text-[11px] text-neutral-400 leading-relaxed">
+              Direct telephone line for sizing consultations, VIP inquiries &amp; urgent orders.
+            </p>
+          </div>
+
+          {/* Channel 3: General Enquiries */}
           <div className="bg-[#0a0a0a] border border-white/10 p-5 rounded-sm space-y-2.5">
             <div className="flex items-center justify-between text-neutral-500">
               <span className="text-[10px] uppercase tracking-widest text-snake-green">GENERAL ENQUIRIES</span>
@@ -90,7 +109,7 @@ function ContactFormContent() {
             </p>
           </div>
 
-          {/* Channel 3: Formal / Legal */}
+          {/* Channel 4: Formal / Legal */}
           <div className="bg-[#0a0a0a] border border-white/10 p-5 rounded-sm space-y-2.5">
             <div className="flex items-center justify-between text-neutral-500">
               <span className="text-[10px] uppercase tracking-widest text-snake-green">FORMAL &amp; LEGAL</span>
@@ -107,7 +126,7 @@ function ContactFormContent() {
             </p>
           </div>
 
-          {/* Channel 4: Operating Hours */}
+          {/* Channel 5: Operating Hours */}
           <div className="bg-[#0a0a0a] border border-white/10 p-5 rounded-sm space-y-2.5">
             <div className="flex items-center justify-between text-neutral-500">
               <span className="text-[10px] uppercase tracking-widest text-snake-green">CARE HOURS</span>
@@ -438,10 +457,15 @@ function ContactFormContent() {
               </div>
             </div>
 
-            {LEGAL_CONFIG.grievancePhone && (
+            {(socialConfig?.contactPhone || LEGAL_CONFIG.grievancePhone) && (
               <div className="pt-2 border-t border-white/5 text-[11px]">
                 <span className="text-[10px] text-neutral-500 uppercase block">CONTACT TELEPHONE</span>
-                <span className="text-white">{LEGAL_CONFIG.grievancePhone}</span>
+                <a
+                  href={`tel:${(socialConfig?.contactPhone || LEGAL_CONFIG.grievancePhone || '').replace(/[^+\d]/g, '')}`}
+                  className="text-white hover:text-snake-green transition-colors"
+                >
+                  {socialConfig?.contactPhone || LEGAL_CONFIG.grievancePhone}
+                </a>
               </div>
             )}
           </div>

@@ -1,5 +1,5 @@
 import { supabase } from './client';
-import { Product, Order, ProductVariant, ProductImage, HomepageConfig } from '../types';
+import { Product, Order, ProductVariant, ProductImage, HomepageConfig, SocialConfig, NewsletterSubscriber } from '../types';
 
 /**
  * FETCH PRODUCTS DYNAMICALLY FROM SUPABASE
@@ -358,4 +358,104 @@ export async function saveHomepageConfigToSupabase(config: HomepageConfig): Prom
     return false;
   }
 }
+
+/**
+ * FETCH NEWSLETTER SUBSCRIBERS FROM SUPABASE
+ */
+export async function fetchSubscribersFromSupabase(): Promise<NewsletterSubscriber[] | null> {
+  try {
+    const { data, error } = await supabase
+      .from('newsletter_subscribers')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error || !data) {
+      return null;
+    }
+
+    return data.map((row: any) => ({
+      id: row.id || `sub-${row.email}`,
+      email: row.email,
+      createdAt: row.created_at || new Date().toISOString(),
+      source: row.source || 'Footer Snake Pit Roster',
+    }));
+  } catch (err) {
+    console.warn('Error fetching subscribers from Supabase:', err);
+    return null;
+  }
+}
+
+/**
+ * DELETE SUBSCRIBER FROM SUPABASE
+ */
+export async function deleteSubscriberFromSupabase(idOrEmail: string): Promise<boolean> {
+  try {
+    const isId = idOrEmail.includes('-') && !idOrEmail.includes('@');
+    const query = isId
+      ? supabase.from('newsletter_subscribers').delete().eq('id', idOrEmail)
+      : supabase.from('newsletter_subscribers').delete().eq('email', idOrEmail);
+    const { error } = await query;
+    return !error;
+  } catch (err) {
+    return false;
+  }
+}
+
+/**
+ * FETCH SOCIAL CONFIG FROM SUPABASE
+ */
+export async function fetchSocialConfigFromSupabase(): Promise<SocialConfig | null> {
+  try {
+    const { data, error } = await supabase
+      .from('social_config')
+      .select('*')
+      .eq('id', 'default')
+      .single();
+
+    if (error || !data) {
+      return null;
+    }
+
+    return {
+      communityImages: Array.isArray(data.community_images) && data.community_images.length > 0 ? data.community_images : [],
+      instagram: data.instagram || '',
+      x: data.x || '',
+      youtube: data.youtube || '',
+      threads: data.threads || '',
+      linkedin: data.linkedin || '',
+      contactPhone: data.contact_phone || '',
+    };
+  } catch (err) {
+    return null;
+  }
+}
+
+/**
+ * SAVE SOCIAL CONFIG TO SUPABASE
+ */
+export async function saveSocialConfigToSupabase(config: SocialConfig): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('social_config')
+      .upsert(
+        {
+          id: 'default',
+          community_images: config.communityImages,
+          instagram: config.instagram,
+          x: config.x,
+          youtube: config.youtube,
+          threads: config.threads,
+          linkedin: config.linkedin,
+          contact_phone: config.contactPhone,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'id' }
+      );
+
+    return !error;
+  } catch (err) {
+    return false;
+  }
+}
+
 

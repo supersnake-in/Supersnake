@@ -18,6 +18,8 @@ import {
   ArrowUpRight,
   Bell,
   Search,
+  Share2,
+  Mail,
 } from 'lucide-react';
 import { SuperSnakeLogo } from '@/components/brand/SuperSnakeLogo';
 import { useAuth } from '@/lib/auth-context';
@@ -37,6 +39,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { label: 'Reviews', href: '/admin/reviews', icon: Star },
     { label: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
     { label: 'Homepage', href: '/admin/homepage', icon: Home },
+    { label: 'Social Media', href: '/admin/social', icon: Share2 },
+    { label: 'Membership', href: '/admin/membership', icon: Mail },
     { label: 'Settings', href: '/admin/settings', icon: Settings },
   ];
 

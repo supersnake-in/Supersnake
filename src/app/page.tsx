@@ -12,7 +12,7 @@ import { useStore } from '@/lib/store';
 
 export default function HomePage() {
   const heroRef = useRef<HTMLDivElement>(null);
-  const { products, homepageConfig } = useStore();
+  const { products, homepageConfig, socialConfig } = useStore();
   const spotlightProduct = products.find((p) => p.isSpotlight) || products[0];
   const newDrops = products.filter((p) => p.isNew).slice(0, 4);
   const bestsellers = products.filter((p) => p.isBestseller).slice(0, 4);
@@ -531,7 +531,7 @@ export default function HomePage() {
               </h3>
             </div>
             <a
-              href="https://instagram.com"
+              href={socialConfig?.instagram || "https://instagram.com/supersnake.in"}
               target="_blank"
               rel="noopener noreferrer"
               className="text-xs font-mono tracking-widest text-neutral-400 hover:text-snake-green transition-colors uppercase flex items-center gap-1.5 shrink-0 pb-0.5"
@@ -544,42 +544,29 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="relative aspect-square bg-neutral-900 rounded overflow-hidden group">
-              <Image
-                src="https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=600&auto=format&fit=crop"
-                alt="#SUPERSNAKE 01"
-                fill
-                sizes="(max-width: 768px) 50vw, 25vw"
-                className="object-cover transition-transform duration-700 group-hover:scale-105 brightness-90"
-              />
-            </div>
-            <div className="relative aspect-square bg-neutral-900 rounded overflow-hidden group">
-              <Image
-                src="https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&w=600&auto=format&fit=crop"
-                alt="#SUPERSNAKE 02"
-                fill
-                sizes="(max-width: 768px) 50vw, 25vw"
-                className="object-cover transition-transform duration-700 group-hover:scale-105 brightness-90"
-              />
-            </div>
-            <div className="relative aspect-square bg-neutral-900 rounded overflow-hidden group">
-              <Image
-                src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop"
-                alt="#SUPERSNAKE 03"
-                fill
-                sizes="(max-width: 768px) 50vw, 25vw"
-                className="object-cover transition-transform duration-700 group-hover:scale-105 brightness-90"
-              />
-            </div>
-            <div className="relative aspect-square bg-neutral-900 rounded overflow-hidden group">
-              <Image
-                src="https://images.unsplash.com/photo-1503342394128-c104d54dba01?q=80&w=600&auto=format&fit=crop"
-                alt="#SUPERSNAKE 04"
-                fill
-                sizes="(max-width: 768px) 50vw, 25vw"
-                className="object-cover transition-transform duration-700 group-hover:scale-105 brightness-90"
-              />
-            </div>
+            {(socialConfig?.communityImages && socialConfig.communityImages.length > 0
+              ? socialConfig.communityImages
+              : [
+                  'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=600&auto=format&fit=crop',
+                  'https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&w=600&auto=format&fit=crop',
+                  'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop',
+                  'https://images.unsplash.com/photo-1503342394128-c104d54dba01?q=80&w=600&auto=format&fit=crop',
+                ]
+            ).map((imgUrl, idx) => (
+              <div key={`community-img-${idx}`} className="relative aspect-square bg-neutral-900 rounded overflow-hidden group">
+                <Image
+                  src={imgUrl}
+                  alt={`#SUPERSNAKE 0${idx + 1}`}
+                  fill
+                  sizes="(max-width: 768px) 50vw, 25vw"
+                  unoptimized={
+                    imgUrl.startsWith('data:') ||
+                    !imgUrl.includes('unsplash.com')
+                  }
+                  className="object-cover transition-transform duration-700 group-hover:scale-105 brightness-90"
+                />
+              </div>
+            ))}
           </div>
         </div>
       </section>

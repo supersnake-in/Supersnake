@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Product, CartItem, WishlistItem, Size, Order } from './types';
+import { Product, CartItem, WishlistItem, Size, Order, SocialConfig, NewsletterSubscriber } from './types';
 import {
   fetchProductsFromSupabase,
   createProductInSupabase,
@@ -10,6 +10,11 @@ import {
   fetchOrdersFromSupabase,
   fetchHomepageConfigFromSupabase,
   saveHomepageConfigToSupabase,
+  fetchSubscribersFromSupabase,
+  deleteSubscriberFromSupabase,
+  subscribeNewsletterInSupabase,
+  fetchSocialConfigFromSupabase,
+  saveSocialConfigToSupabase,
 } from './supabase/db';
 
 export interface HomepageConfig {
@@ -38,6 +43,22 @@ export const DEFAULT_HOMEPAGE_CONFIG: HomepageConfig = {
   menCollectionImage: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&w=1600&auto=format&fit=crop',
   womenCollectionImage: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1600&auto=format&fit=crop',
 };
+
+export const DEFAULT_SOCIAL_CONFIG: SocialConfig = {
+  communityImages: [
+    'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=600&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&w=600&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1503342394128-c104d54dba01?q=80&w=600&auto=format&fit=crop',
+  ],
+  instagram: 'https://instagram.com/supersnake.in',
+  x: 'https://x.com/supersnake_in',
+  youtube: 'https://youtube.com/@supersnake_in',
+  threads: 'https://threads.net/@supersnake.in',
+  linkedin: 'https://linkedin.com/company/supersnake-in',
+  contactPhone: '+91 98765 43210',
+};
+
 
 interface StoreContextType {
   // Cart
@@ -84,6 +105,15 @@ interface StoreContextType {
   // Homepage Configuration
   homepageConfig: HomepageConfig;
   updateHomepageConfig: (config: Partial<HomepageConfig>) => Promise<boolean>;
+
+  // Social Configuration & Community Showcase
+  socialConfig: SocialConfig;
+  updateSocialConfig: (config: Partial<SocialConfig>) => Promise<boolean>;
+
+  // Membership & Newsletter Subscribers
+  subscribers: NewsletterSubscriber[];
+  addSubscriber: (email: string) => Promise<boolean>;
+  deleteSubscriber: (id: string) => Promise<boolean>;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -97,6 +127,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
   const [homepageConfig, setHomepageConfig] = useState<HomepageConfig>(DEFAULT_HOMEPAGE_CONFIG);
+  const [socialConfig, setSocialConfig] = useState<SocialConfig>(DEFAULT_SOCIAL_CONFIG);
+  const [subscribers, setSubscribers] = useState<NewsletterSubscriber[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Sync from localStorage & Supabase
@@ -145,6 +177,26 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           }
         } catch (e) {}
       }
+
+      // Social configuration
+      const savedSocial = localStorage.getItem('supersnake_social_config');
+      if (savedSocial) {
+        try {
+          const parsed = JSON.parse(savedSocial);
+          if (parsed) {
+            setSocialConfig((prev) => ({ ...prev, ...parsed }));
+          }
+        } catch (e) {}
+      }
+
+      // Newsletter subscribers
+      const savedSubscribers = localStorage.getItem('supersnake_newsletter_subscribers');
+      if (savedSubscribers) {
+        try {
+          const parsed = JSON.parse(savedSubscribers);
+          if (Array.isArray(parsed)) setSubscribers(parsed);
+        } catch (e) {}
+      }
     } catch (e) {
       console.warn('Failed to load storage:', e);
     }
@@ -185,7 +237,46 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       .catch((err) => {
         console.warn('Supabase homepage config fetch failed:', err);
       });
+
+    // Fetch dynamic social config from Supabase
+    fetchSocialConfigFromSupabase()
+      .then((supabaseSocial) => {
+        if (supabaseSocial !== null) {
+          setSocialConfig((prev) => ({ ...prev, ...supabaseSocial }));
+          try {
+            localStorage.setItem('supersnake_social_config', JSON.stringify(supabaseSocial));
+          } catch (e) {}
+        }
+      })
+      .catch(() => {});
+
+    // Fetch dynamic subscribers from Supabase
+    fetchSubscribersFromSupabase()
+      .then((supabaseSubscribers) => {
+        if (supabaseSubscribers !== null) {
+          setSubscribers(supabaseSubscribers);
+          try {
+            localStorage.setItem('supersnake_newsletter_subscribers', JSON.stringify(supabaseSubscribers));
+          } catch (e) {}
+        }
+      })
+      .catch(() => {});
   }, []);
+
+  // Save to localStorage
+  useEffect(() => {
+    if (!isLoaded) return;
+    try {
+      localStorage.setItem('supersnake_social_config', JSON.stringify(socialConfig));
+    } catch (e) {}
+  }, [socialConfig, isLoaded]);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    try {
+      localStorage.setItem('supersnake_newsletter_subscribers', JSON.stringify(subscribers));
+    } catch (e) {}
+  }, [subscribers, isLoaded]);
 
   // Save to localStorage
   useEffect(() => {
@@ -404,6 +495,76 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateSocialConfig = async (config: Partial<SocialConfig>): Promise<boolean> => {
+    const nextConfig: SocialConfig = {
+      ...socialConfig,
+      ...config,
+    };
+
+    setSocialConfig(nextConfig);
+
+    try {
+      localStorage.setItem('supersnake_social_config', JSON.stringify(nextConfig));
+    } catch (e) {
+      console.warn('LocalStorage save failed:', e);
+    }
+
+    try {
+      const ok = await saveSocialConfigToSupabase(nextConfig);
+      return ok;
+    } catch (err) {
+      console.warn('Supabase social config sync error:', err);
+      return false;
+    }
+  };
+
+  const addSubscriber = async (email: string): Promise<boolean> => {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes('@')) return false;
+
+    if (subscribers.some((s) => s.email.toLowerCase() === cleanEmail)) {
+      return true;
+    }
+
+    const newSub: NewsletterSubscriber = {
+      id: `sub-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      email: cleanEmail,
+      createdAt: new Date().toISOString(),
+      source: 'Footer Snake Pit Roster',
+    };
+
+    const updated = [newSub, ...subscribers];
+    setSubscribers(updated);
+
+    try {
+      localStorage.setItem('supersnake_newsletter_subscribers', JSON.stringify(updated));
+    } catch (e) {}
+
+    try {
+      await subscribeNewsletterInSupabase(cleanEmail);
+    } catch (e) {}
+
+    return true;
+  };
+
+  const deleteSubscriber = async (id: string): Promise<boolean> => {
+    const target = subscribers.find((s) => s.id === id);
+    const updated = subscribers.filter((s) => s.id !== id);
+    setSubscribers(updated);
+
+    try {
+      localStorage.setItem('supersnake_newsletter_subscribers', JSON.stringify(updated));
+    } catch (e) {}
+
+    try {
+      if (target) {
+        await deleteSubscriberFromSupabase(target.id);
+      }
+    } catch (e) {}
+
+    return true;
+  };
+
   return (
     <StoreContext.Provider
       value={{
@@ -414,6 +575,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         getProductBySlug,
         homepageConfig,
         updateHomepageConfig,
+        socialConfig,
+        updateSocialConfig,
+        subscribers,
+        addSubscriber,
+        deleteSubscriber,
         cart,
         isCartOpen,
         openCart,

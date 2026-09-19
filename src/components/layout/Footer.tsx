@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowRight, Check, Plus, Minus, ShieldCheck, Truck, RotateCcw, Sparkles } from 'lucide-react';
 import { SuperSnakeLogo } from '../brand/SuperSnakeLogo';
 import { BRAND } from '@/lib/design-tokens';
+import { useStore } from '@/lib/store';
 
 interface NavColumn {
   id: string;
@@ -13,59 +14,65 @@ interface NavColumn {
   links: { label: string; href: string; external?: boolean }[];
 }
 
-const NAV_COLUMNS: NavColumn[] = [
-  {
-    id: 'shop',
-    number: '01',
-    title: 'SHOP',
-    links: [
-      { label: 'ALL T-SHIRTS', href: '/shop' },
-      { label: 'MEN', href: '/men' },
-      { label: 'WOMEN', href: '/women' },
-      { label: 'NEW DROPS', href: '/new-drops' },
-      { label: 'BESTSELLERS', href: '/bestsellers' },
-    ],
-  },
-  {
-    id: 'customer-care',
-    number: '02',
-    title: 'CUSTOMER CARE',
-    links: [
-      { label: 'CONTACT US', href: '/contact' },
-      { label: 'FAQ', href: '/faq' },
-      { label: 'SHIPPING & DELIVERY', href: '/shipping' },
-      { label: 'RETURNS & DEFECTS', href: '/returns' },
-      { label: 'CANCELLATION POLICY', href: '/cancellation' },
-      { label: 'SIZE GUIDE', href: '/size-guide' },
-      { label: 'CARE GUIDE', href: '/care-guide' },
-    ],
-  },
-  {
-    id: 'legal',
-    number: '03',
-    title: 'LEGAL',
-    links: [
-      { label: 'PRIVACY POLICY', href: '/privacy' },
-      { label: 'TERMS & CONDITIONS', href: '/terms' },
-    ],
-  },
-  {
-    id: 'connect',
-    number: '04',
-    title: 'CONNECT',
-    links: [
-      { label: 'INSTAGRAM', href: 'https://instagram.com/supersnake.in', external: true },
-      { label: 'X', href: 'https://x.com/supersnake_in', external: true },
-      { label: 'YOUTUBE', href: 'https://youtube.com/@supersnake_in', external: true },
-    ],
-  },
-];
-
 export function Footer() {
+  const { socialConfig, addSubscriber } = useStore();
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [mobileAccordion, setMobileAccordion] = useState<string | null>(null);
+
+  const navColumns: NavColumn[] = [
+    {
+      id: 'shop',
+      number: '01',
+      title: 'SHOP',
+      links: [
+        { label: 'ALL T-SHIRTS', href: '/shop' },
+        { label: 'MEN', href: '/men' },
+        { label: 'WOMEN', href: '/women' },
+        { label: 'NEW DROPS', href: '/new-drops' },
+        { label: 'BESTSELLERS', href: '/bestsellers' },
+      ],
+    },
+    {
+      id: 'customer-care',
+      number: '02',
+      title: 'CUSTOMER CARE',
+      links: [
+        { label: 'CONTACT US', href: '/contact' },
+        ...(socialConfig?.contactPhone
+          ? [{ label: `TEL: ${socialConfig.contactPhone}`, href: `tel:${socialConfig.contactPhone.replace(/\s+/g, '')}` }]
+          : []),
+        { label: 'FAQ', href: '/faq' },
+        { label: 'SHIPPING & DELIVERY', href: '/shipping' },
+        { label: 'RETURNS & DEFECTS', href: '/returns' },
+        { label: 'CANCELLATION POLICY', href: '/cancellation' },
+        { label: 'SIZE GUIDE', href: '/size-guide' },
+        { label: 'CARE GUIDE', href: '/care-guide' },
+      ],
+    },
+    {
+      id: 'legal',
+      number: '03',
+      title: 'LEGAL',
+      links: [
+        { label: 'PRIVACY POLICY', href: '/privacy' },
+        { label: 'TERMS & CONDITIONS', href: '/terms' },
+      ],
+    },
+    {
+      id: 'connect',
+      number: '04',
+      title: 'CONNECT',
+      links: [
+        ...(socialConfig?.instagram ? [{ label: 'INSTAGRAM', href: socialConfig.instagram, external: true }] : [{ label: 'INSTAGRAM', href: 'https://instagram.com/supersnake.in', external: true }]),
+        ...(socialConfig?.x ? [{ label: 'X', href: socialConfig.x, external: true }] : [{ label: 'X', href: 'https://x.com/supersnake_in', external: true }]),
+        ...(socialConfig?.youtube ? [{ label: 'YOUTUBE', href: socialConfig.youtube, external: true }] : [{ label: 'YOUTUBE', href: 'https://youtube.com/@supersnake_in', external: true }]),
+        ...(socialConfig?.threads ? [{ label: 'THREADS', href: socialConfig.threads, external: true }] : []),
+        ...(socialConfig?.linkedin ? [{ label: 'LINKEDIN', href: socialConfig.linkedin, external: true }] : []),
+      ],
+    },
+  ];
 
   const toggleAccordion = (id: string) => {
     setMobileAccordion((prev) => (prev === id ? null : id));
@@ -96,6 +103,7 @@ export function Footer() {
         setErrorMessage(data.error || 'Subscription transmission interrupted.');
       } else {
         setStatus('success');
+        addSubscriber(email);
         setEmail('');
       }
     } catch (err: any) {
@@ -267,7 +275,7 @@ export function Footer() {
         <div className="pt-12 border-t border-white/[0.06]">
           {/* Desktop Navigation (>= 768px) */}
           <div className="hidden md:grid grid-cols-4 gap-12 text-xs font-mono">
-            {NAV_COLUMNS.map((col) => (
+            {navColumns.map((col) => (
               <div key={col.id} className="space-y-5">
                 <div className="space-y-1">
                   <span className="text-[10px] tracking-[0.25em] text-neutral-600 block">
@@ -313,7 +321,7 @@ export function Footer() {
 
           {/* Mobile Accordions (< 768px) */}
           <div className="md:hidden divide-y divide-white/[0.06] text-xs font-mono">
-            {NAV_COLUMNS.map((col) => {
+            {navColumns.map((col) => {
               const isOpen = mobileAccordion === col.id;
               return (
                 <div key={col.id} className="py-4">

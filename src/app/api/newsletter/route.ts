@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { subscribeNewsletterInSupabase } from '@/lib/supabase/db';
 
 export async function POST(request: Request) {
   try {
@@ -12,6 +13,13 @@ export async function POST(request: Request) {
         { error: 'Please enter a valid email address.' },
         { status: 400 }
       );
+    }
+
+    // Save to Supabase newsletter_subscribers table
+    try {
+      await subscribeNewsletterInSupabase(email);
+    } catch (err) {
+      console.warn('Supabase newsletter subscriber insert error:', err);
     }
 
     // Check Resend or simulated storage

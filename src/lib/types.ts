@@ -159,3 +159,20 @@ export interface AdminKPIs {
   unitsSold: number;
   aov: number;
 }
+
+export interface SocialConfig {
+  communityImages: string[];
+  instagram: string;
+  x: string;
+  youtube: string;
+  threads: string;
+  linkedin: string;
+  contactPhone: string;
+}
+
+export interface NewsletterSubscriber {
+  id: string;
+  email: string;
+  createdAt: string;
+  source?: string;
+}
