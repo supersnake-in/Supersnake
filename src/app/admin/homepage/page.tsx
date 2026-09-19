@@ -698,7 +698,7 @@ export default function AdminHomepageConfigPage() {
             <div className="bg-black border border-neutral-800 rounded-lg p-4 space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase text-white tracking-wider">
-                  COLLECTION 01 — MEN BANNER
+                  MEN BANNER
                 </span>
                 <button
                   type="button"
@@ -723,7 +723,6 @@ export default function AdminHomepageConfigPage() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent pointer-events-none" />
                 <div className="absolute bottom-3 left-3">
-                  <span className="text-[9px] font-mono tracking-widest text-neutral-400 uppercase block">COLLECTION 01</span>
                   <span className="text-2xl font-display font-bold uppercase text-white tracking-tight">MEN</span>
                 </div>
               </div>
@@ -771,7 +770,7 @@ export default function AdminHomepageConfigPage() {
             <div className="bg-black border border-neutral-800 rounded-lg p-4 space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase text-white tracking-wider">
-                  COLLECTION 02 — WOMEN BANNER
+                  WOMEN BANNER
                 </span>
                 <button
                   type="button"
@@ -796,7 +795,6 @@ export default function AdminHomepageConfigPage() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent pointer-events-none" />
                 <div className="absolute bottom-3 left-3">
-                  <span className="text-[9px] font-mono tracking-widest text-neutral-400 uppercase block">COLLECTION 02</span>
                   <span className="text-2xl font-display font-bold uppercase text-white tracking-tight">WOMEN</span>
                 </div>
               </div>

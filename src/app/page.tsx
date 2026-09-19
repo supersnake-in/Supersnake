@@ -281,9 +281,6 @@ export default function HomePage() {
             </div>
 
             <div className="relative z-10 space-y-3 sm:space-y-4">
-              <span className="text-[10px] font-mono tracking-widest text-neutral-400 uppercase">
-                COLLECTION 01
-              </span>
               <h3 className="text-3xl sm:text-5xl md:text-7xl font-display font-bold uppercase tracking-tight text-white group-hover:text-snake-green transition-colors">
                 MEN
               </h3>
@@ -319,9 +316,6 @@ export default function HomePage() {
             </div>
 
             <div className="relative z-10 space-y-3 sm:space-y-4">
-              <span className="text-[10px] font-mono tracking-widest text-neutral-400 uppercase">
-                COLLECTION 02
-              </span>
               <h3 className="text-3xl sm:text-5xl md:text-7xl font-display font-bold uppercase tracking-tight text-white group-hover:text-snake-green transition-colors">
                 WOMEN
               </h3>
