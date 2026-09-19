@@ -10,6 +10,29 @@ import {
   fetchOrdersFromSupabase,
 } from './supabase/db';
 
+export interface HomepageConfig {
+  heroImages: string[];
+  heroIntervalSeconds: number;
+  heroHeadline: string;
+  heroSupportingCopy: string;
+  spotlightProductId: string;
+  brandStatement: string;
+}
+
+export const DEFAULT_HOMEPAGE_CONFIG: HomepageConfig = {
+  heroImages: [
+    'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=2400&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=2400&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&w=2400&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?q=80&w=2400&auto=format&fit=crop',
+  ],
+  heroIntervalSeconds: 3,
+  heroHeadline: 'WEAR YOUR INSTINCT.',
+  heroSupportingCopy: 'Premium T-shirts. Designed for your everyday. Engineered for presence.',
+  spotlightProductId: 'the-signature-tee',
+  brandStatement: 'NOT MADE TO BLEND IN.',
+};
+
 interface StoreContextType {
   // Cart
   cart: CartItem[];
@@ -50,6 +73,10 @@ interface StoreContextType {
   updateProduct: (product: Product) => void;
   deleteProduct: (productId: string) => void;
   getProductBySlug: (slug: string) => Product | undefined;
+
+  // Homepage Configuration
+  homepageConfig: HomepageConfig;
+  updateHomepageConfig: (config: Partial<HomepageConfig>) => void;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -62,6 +89,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [homepageConfig, setHomepageConfig] = useState<HomepageConfig>(DEFAULT_HOMEPAGE_CONFIG);
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Sync from localStorage & Supabase
@@ -98,6 +126,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           setOrders(realOrders);
           localStorage.setItem('supersnake_orders', JSON.stringify(realOrders));
         }
+      }
+
+      // Homepage configuration
+      const savedHomepage = localStorage.getItem('supersnake_homepage_config');
+      if (savedHomepage) {
+        try {
+          const parsed = JSON.parse(savedHomepage);
+          if (parsed && Array.isArray(parsed.heroImages) && parsed.heroImages.length > 0) {
+            setHomepageConfig((prev) => ({ ...prev, ...parsed }));
+          }
+        } catch (e) {}
       }
     } catch (e) {
       console.warn('Failed to load storage:', e);
@@ -155,6 +194,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('supersnake_orders', JSON.stringify(orders));
     } catch (e) {}
   }, [orders, isLoaded]);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    try {
+      localStorage.setItem('supersnake_homepage_config', JSON.stringify(homepageConfig));
+    } catch (e) {}
+  }, [homepageConfig, isLoaded]);
 
   const openCart = () => setIsCartOpen(true);
   const closeCart = () => setIsCartOpen(false);
@@ -308,6 +354,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return products.find((p) => p.slug === slug);
   };
 
+  const updateHomepageConfig = (config: Partial<HomepageConfig>) => {
+    setHomepageConfig((prev) => {
+      const next = { ...prev, ...config };
+      try {
+        localStorage.setItem('supersnake_homepage_config', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+  };
+
   return (
     <StoreContext.Provider
       value={{
@@ -316,6 +372,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         updateProduct,
         deleteProduct,
         getProductBySlug,
+        homepageConfig,
+        updateHomepageConfig,
         cart,
         isCartOpen,
         openCart,

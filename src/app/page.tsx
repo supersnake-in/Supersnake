@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { ArrowRight, ArrowDown, Sparkles } from 'lucide-react';
 import { ProductCard } from '@/components/product/ProductCard';
 import { SuperSnakeLogo } from '@/components/brand/SuperSnakeLogo';
@@ -12,10 +12,33 @@ import { useStore } from '@/lib/store';
 
 export default function HomePage() {
   const heroRef = useRef<HTMLDivElement>(null);
-  const { products } = useStore();
+  const { products, homepageConfig } = useStore();
   const spotlightProduct = products.find((p) => p.isSpotlight) || products[0];
   const newDrops = products.filter((p) => p.isNew).slice(0, 4);
   const bestsellers = products.filter((p) => p.isBestseller).slice(0, 4);
+
+  // Hero Background Images & 3-second auto-scroll
+  const heroImages =
+    homepageConfig?.heroImages && homepageConfig.heroImages.length > 0
+      ? homepageConfig.heroImages
+      : [
+          'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=2400&auto=format&fit=crop',
+          'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=2400&auto=format&fit=crop',
+          'https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&w=2400&auto=format&fit=crop',
+          'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?q=80&w=2400&auto=format&fit=crop',
+        ];
+
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  useEffect(() => {
+    if (heroImages.length <= 1) return;
+    const intervalTime = (homepageConfig?.heroIntervalSeconds || 3) * 1000;
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % heroImages.length);
+    }, intervalTime);
+
+    return () => clearInterval(interval);
+  }, [heroImages.length, homepageConfig?.heroIntervalSeconds]);
 
   // Parallax / Scroll transforms
   const { scrollYProgress } = useScroll({
@@ -36,21 +59,36 @@ export default function HomePage() {
         ref={heroRef}
         className="relative min-h-[100dvh] lg:min-h-screen w-full overflow-hidden flex flex-col justify-end pt-28 sm:pt-32 lg:pt-36 pb-8 sm:pb-12 md:pb-16 px-4 sm:px-6 md:px-12"
       >
-        {/* Background Image with slow cinematic drift */}
+        {/* Background Image Carousel with 3-second auto-scroll & smooth crossfade */}
         <motion.div
           style={{ scale: heroImageScale }}
-          className="absolute inset-0 z-0 will-change-transform"
+          className="absolute inset-0 z-0 will-change-transform overflow-hidden"
         >
-          <Image
-            src="https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=2400&auto=format&fit=crop"
-            alt="SuperSnake Heavyweight Campaign"
-            fill
-            priority
-            className="object-cover object-[center_35%] lg:object-center brightness-75 contrast-125"
-          />
-          {/* Subtle cinematic overlays */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/30" />
-          <div className="absolute inset-0 bg-radial-gradient from-transparent via-black/20 to-black/80 pointer-events-none" />
+          <AnimatePresence mode="popLayout">
+            <motion.div
+              key={currentImageIndex}
+              initial={{ opacity: 0, scale: 1.04 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+              className="absolute inset-0 z-0"
+            >
+              <Image
+                src={heroImages[currentImageIndex] || heroImages[0]}
+                alt={`SuperSnake Heavyweight Campaign ${currentImageIndex + 1}`}
+                fill
+                priority
+                unoptimized={
+                  heroImages[currentImageIndex]?.startsWith('data:') ||
+                  !heroImages[currentImageIndex]?.includes('unsplash.com')
+                }
+                className="object-cover object-[center_35%] lg:object-center brightness-75 contrast-125"
+              />
+              {/* Subtle cinematic overlays */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/30" />
+              <div className="absolute inset-0 bg-radial-gradient from-transparent via-black/20 to-black/80 pointer-events-none" />
+            </motion.div>
+          </AnimatePresence>
         </motion.div>
 
         {/* Hero Content */}
@@ -93,7 +131,7 @@ export default function HomePage() {
               transition={{ duration: 0.8, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
               className="text-xs sm:text-base md:text-lg font-mono text-neutral-300 max-w-md leading-relaxed"
             >
-              Premium T-shirts. Designed for your everyday. Engineered for presence.
+              {homepageConfig?.heroSupportingCopy || 'Premium T-shirts. Designed for your everyday. Engineered for presence.'}
             </motion.p>
 
             {/* Magnetic CTA Buttons */}
@@ -121,10 +159,32 @@ export default function HomePage() {
           </div>
         </motion.div>
 
-        {/* Scroll down indicator */}
-        <div className="absolute bottom-6 sm:bottom-8 right-4 sm:right-6 md:right-12 z-10 hidden sm:flex items-center gap-2 font-mono text-[10px] tracking-widest text-neutral-500 uppercase">
-          <span>SCROLL</span>
-          <ArrowDown size={12} className="animate-bounce text-snake-green" />
+        {/* Carousel slide indicators and scroll arrow */}
+        <div className="absolute bottom-6 sm:bottom-8 right-4 sm:right-6 md:right-12 z-20 flex items-center gap-4">
+          {heroImages.length > 1 && (
+            <div className="flex items-center gap-1.5 bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
+              {heroImages.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentImageIndex(idx)}
+                  aria-label={`Go to slide ${idx + 1}`}
+                  className={`h-1.5 rounded-full transition-all duration-500 ${
+                    idx === currentImageIndex
+                      ? 'w-6 bg-snake-green shadow-[0_0_8px_rgba(4,252,33,0.8)]'
+                      : 'w-1.5 bg-white/30 hover:bg-white/60'
+                  }`}
+                />
+              ))}
+              <span className="text-[10px] font-mono text-neutral-400 ml-1 pl-1.5 border-l border-white/20">
+                0{currentImageIndex + 1} / 0{heroImages.length}
+              </span>
+            </div>
+          )}
+
+          <div className="hidden sm:flex items-center gap-2 font-mono text-[10px] tracking-widest text-neutral-400 uppercase bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
+            <span>SCROLL</span>
+            <ArrowDown size={12} className="animate-bounce text-snake-green" />
+          </div>
         </div>
       </section>
 
