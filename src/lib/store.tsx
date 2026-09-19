@@ -72,6 +72,8 @@ export const DEFAULT_SOCIAL_CONFIG: SocialConfig = {
 
 
 interface StoreContextType {
+  isLoaded: boolean;
+
   // Cart
   cart: CartItem[];
   isCartOpen: boolean;
@@ -130,13 +132,65 @@ interface StoreContextType {
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [products, setProducts] = useState<Product[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('supersnake_products');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed.filter((p: any) => !p.id?.startsWith('prod-0'));
+          }
+        }
+      } catch (e) {}
+    }
+    return [];
+  });
+
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('supersnake_cart');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (e) {}
+    }
+    return [];
+  });
+
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
+
+  const [wishlist, setWishlist] = useState<WishlistItem[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('supersnake_wishlist');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (e) {}
+    }
+    return [];
+  });
+
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [orders, setOrders] = useState<Order[]>([]);
+
+  const [orders, setOrders] = useState<Order[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('supersnake_orders');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (e) {}
+    }
+    return [];
+  });
+
   const [homepageConfig, setHomepageConfig] = useState<HomepageConfig>(DEFAULT_HOMEPAGE_CONFIG);
   const [socialConfig, setSocialConfig] = useState<SocialConfig>(DEFAULT_SOCIAL_CONFIG);
   const [subscribers, setSubscribers] = useState<NewsletterSubscriber[]>([]);
@@ -342,33 +396,43 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           item.selectedColor.name === color.name
       );
 
+      let next: CartItem[];
       if (existingIndex > -1) {
-        const next = [...prev];
+        next = [...prev];
         next[existingIndex].quantity += quantity;
-        return next;
+      } else {
+        const newItem: CartItem = {
+          id: `${product.id}-${color.name}-${size}-${Date.now()}`,
+          product,
+          selectedColor: color,
+          selectedSize: size,
+          quantity,
+          price: product.price,
+        };
+        next = [...prev, newItem];
       }
-
-      const newItem: CartItem = {
-        id: `${product.id}-${color.name}-${size}-${Date.now()}`,
-        product,
-        selectedColor: color,
-        selectedSize: size,
-        quantity,
-        price: product.price,
-      };
-      return [...prev, newItem];
+      try {
+        localStorage.setItem('supersnake_cart', JSON.stringify(next));
+      } catch (e) {}
+      return next;
     });
 
     setIsCartOpen(true);
   };
 
   const removeFromCart = (itemId: string) => {
-    setCart((prev) => prev.filter((item) => item.id !== itemId));
+    setCart((prev) => {
+      const next = prev.filter((item) => item.id !== itemId);
+      try {
+        localStorage.setItem('supersnake_cart', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
   };
 
   const updateQuantity = (itemId: string, delta: number) => {
-    setCart((prev) =>
-      prev
+    setCart((prev) => {
+      const next = prev
         .map((item) => {
           if (item.id === itemId) {
             const nextQty = item.quantity + delta;
@@ -376,11 +440,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           }
           return item;
         })
-        .filter(Boolean) as CartItem[]
-    );
+        .filter(Boolean) as CartItem[];
+      try {
+        localStorage.setItem('supersnake_cart', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
   };
 
   const clearCart = () => {
+    try {
+      localStorage.removeItem('supersnake_cart');
+    } catch (e) {}
     setCart([]);
   };
 
@@ -598,6 +669,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   return (
     <StoreContext.Provider
       value={{
+        isLoaded,
         products,
         addProduct,
         updateProduct,

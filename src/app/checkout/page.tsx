@@ -28,7 +28,7 @@ const loadRazorpayScript = (): Promise<boolean> => {
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { cart, cartTotal, createOrder, updateOrder, clearCart } = useStore();
+  const { cart, cartTotal, createOrder, updateOrder, clearCart, isLoaded } = useStore();
   const { user, profile } = useAuth();
 
   const [step, setStep] = useState<1 | 2>(1);
@@ -342,6 +342,16 @@ export default function CheckoutPage() {
       setPaymentError(err.message || 'Payment gateway connection interrupted. Please try again.');
     }
   };
+
+  if (!isLoaded) {
+    return (
+      <div className="bg-black text-white min-h-screen pt-32 pb-24 px-6 flex flex-col items-center justify-center text-center space-y-4">
+        <Loader2 size={32} className="text-snake-green animate-spin" />
+        <h2 className="text-xl font-display uppercase tracking-wider text-neutral-300">PREPARING ATELIER CHECKOUT...</h2>
+        <p className="text-xs font-mono text-neutral-500">Securing your garment selection</p>
+      </div>
+    );
+  }
 
   if (cart.length === 0 && !isProcessing) {
     return (

@@ -8,7 +8,7 @@ import { useStore } from '@/lib/store';
 import { formatPrice, BRAND } from '@/lib/design-tokens';
 
 export default function BagPage() {
-  const { cart, removeFromCart, updateQuantity, cartTotal } = useStore();
+  const { cart, removeFromCart, updateQuantity, cartTotal, isLoaded } = useStore();
   const [couponCode, setCouponCode] = useState('');
   const [couponDiscount, setCouponDiscount] = useState(0);
   const [couponMessage, setCouponMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
@@ -51,7 +51,12 @@ export default function BagPage() {
           </span>
         </div>
 
-        {cart.length === 0 ? (
+        {!isLoaded ? (
+          <div className="py-24 flex flex-col items-center justify-center text-center space-y-4 max-w-md mx-auto">
+            <div className="w-8 h-8 border-2 border-snake-green border-t-transparent rounded-full animate-spin" />
+            <p className="text-xs font-mono text-neutral-500">LOADING YOUR SELECTION...</p>
+          </div>
+        ) : cart.length === 0 ? (
           <div className="py-24 flex flex-col items-center justify-center text-center space-y-4 max-w-md mx-auto">
             <div className="w-16 h-16 rounded-full border border-neutral-800 flex items-center justify-center text-neutral-600">
               <span className="text-2xl font-mono">0</span>
