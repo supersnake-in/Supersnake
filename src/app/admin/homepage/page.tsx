@@ -29,8 +29,15 @@ CREATE TABLE IF NOT EXISTS public.homepage_config (
   hero_supporting_copy TEXT DEFAULT 'Premium T-shirts. Designed for your everyday. Engineered for presence.',
   spotlight_product_id TEXT DEFAULT 'the-signature-tee',
   brand_statement TEXT DEFAULT 'NOT MADE TO BLEND IN.',
+  men_collection_image TEXT,
+  women_collection_image TEXT,
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- If the table was already created, add the collection image columns:
+ALTER TABLE public.homepage_config 
+  ADD COLUMN IF NOT EXISTS men_collection_image TEXT,
+  ADD COLUMN IF NOT EXISTS women_collection_image TEXT;
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE public.homepage_config ENABLE ROW LEVEL SECURITY;
@@ -75,6 +82,8 @@ const CAMPAIGN_PRESETS = [
 export default function AdminHomepageConfigPage() {
   const { homepageConfig, updateHomepageConfig, products } = useStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const menFileInputRef = useRef<HTMLInputElement>(null);
+  const womenFileInputRef = useRef<HTMLInputElement>(null);
 
   const [heroImages, setHeroImages] = useState<string[]>(
     homepageConfig?.heroImages || DEFAULT_HOMEPAGE_CONFIG.heroImages
@@ -94,9 +103,19 @@ export default function AdminHomepageConfigPage() {
   const [brandStatement, setBrandStatement] = useState<string>(
     homepageConfig?.brandStatement || DEFAULT_HOMEPAGE_CONFIG.brandStatement
   );
+  const [menCollectionImage, setMenCollectionImage] = useState<string>(
+    homepageConfig?.menCollectionImage || DEFAULT_HOMEPAGE_CONFIG.menCollectionImage || ''
+  );
+  const [womenCollectionImage, setWomenCollectionImage] = useState<string>(
+    homepageConfig?.womenCollectionImage || DEFAULT_HOMEPAGE_CONFIG.womenCollectionImage || ''
+  );
 
   const [newImageUrl, setNewImageUrl] = useState('');
+  const [menImageUrl, setMenImageUrl] = useState('');
+  const [womenImageUrl, setWomenImageUrl] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [isUploadingMen, setIsUploadingMen] = useState(false);
+  const [isUploadingWomen, setIsUploadingWomen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saved_supabase' | 'saved_local' | 'error'>('idle');
   const [showSql, setShowSql] = useState(false);
@@ -125,6 +144,12 @@ export default function AdminHomepageConfigPage() {
       }
       if (homepageConfig.brandStatement) {
         setBrandStatement(homepageConfig.brandStatement);
+      }
+      if (homepageConfig.menCollectionImage) {
+        setMenCollectionImage(homepageConfig.menCollectionImage);
+      }
+      if (homepageConfig.womenCollectionImage) {
+        setWomenCollectionImage(homepageConfig.womenCollectionImage);
       }
       hasInitialized.current = true;
     }
@@ -241,6 +266,48 @@ export default function AdminHomepageConfigPage() {
     setHeroImages((prev) => [...prev, url]);
   };
 
+  // Handle Men Banner upload
+  const handleMenFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Only image files (PNG, JPG, WEBP) are supported.');
+      return;
+    }
+    setIsUploadingMen(true);
+    isDirty.current = true;
+    try {
+      const compressed = await compressImage(file);
+      setMenCollectionImage(compressed);
+    } catch (err) {
+      console.error('Men image compression failed:', err);
+    } finally {
+      setIsUploadingMen(false);
+      if (menFileInputRef.current) menFileInputRef.current.value = '';
+    }
+  };
+
+  // Handle Women Banner upload
+  const handleWomenFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Only image files (PNG, JPG, WEBP) are supported.');
+      return;
+    }
+    setIsUploadingWomen(true);
+    isDirty.current = true;
+    try {
+      const compressed = await compressImage(file);
+      setWomenCollectionImage(compressed);
+    } catch (err) {
+      console.error('Women image compression failed:', err);
+    } finally {
+      setIsUploadingWomen(false);
+      if (womenFileInputRef.current) womenFileInputRef.current.value = '';
+    }
+  };
+
   // Save changes
   const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -258,6 +325,8 @@ export default function AdminHomepageConfigPage() {
         heroSupportingCopy,
         spotlightProductId,
         brandStatement,
+        menCollectionImage,
+        womenCollectionImage,
       });
 
       if (syncedToSupabase) {
@@ -599,7 +668,182 @@ export default function AdminHomepageConfigPage() {
         </div>
 
         {/* ============================================================
-            SECTION 2: EDITORIAL HEADLINE & COPY
+            SECTION 2: MEN & WOMEN COLLECTION EDITORIAL BANNERS
+            ============================================================ */}
+        <div className="bg-[#0d0d0d] border border-neutral-800/80 rounded-lg p-6 sm:p-8 space-y-6">
+          <div className="border-b border-neutral-800 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-bold uppercase text-white tracking-wider flex items-center gap-2">
+                <Layers size={16} className="text-snake-green" />
+                MEN & WOMEN COLLECTION BANNERS
+              </h2>
+              <p className="text-[11px] text-neutral-400 mt-0.5">
+                Upload and manage the 2 campaign images displayed for Collection 01 (MEN) and Collection 02 (WOMEN) on the homepage.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              disabled={isSaving}
+              onClick={() => handleSave()}
+              className="px-4 py-1.5 bg-snake-green text-black font-bold uppercase text-xs rounded hover:bg-white transition-colors flex items-center gap-1.5 disabled:opacity-50 self-start sm:self-auto"
+            >
+              {isSaving ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
+              <span>SAVE BANNERS</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* MEN COLLECTION BANNER */}
+            <div className="bg-black border border-neutral-800 rounded-lg p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase text-white tracking-wider">
+                  COLLECTION 01 — MEN BANNER
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    isDirty.current = true;
+                    setMenCollectionImage(DEFAULT_HOMEPAGE_CONFIG.menCollectionImage || '');
+                  }}
+                  className="text-[10px] text-neutral-400 hover:text-white uppercase transition-colors"
+                >
+                  RESET DEFAULT
+                </button>
+              </div>
+
+              {/* Preview Thumbnail */}
+              <div className="relative aspect-[4/5] w-full bg-neutral-900 rounded-md overflow-hidden border border-neutral-800">
+                <Image
+                  src={menCollectionImage || DEFAULT_HOMEPAGE_CONFIG.menCollectionImage || ''}
+                  alt="Men Collection Banner"
+                  fill
+                  unoptimized={menCollectionImage?.startsWith('data:') || (menCollectionImage ? !menCollectionImage.includes('unsplash.com') : false)}
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent pointer-events-none" />
+                <div className="absolute bottom-3 left-3">
+                  <span className="text-[9px] font-mono tracking-widest text-neutral-400 uppercase block">COLLECTION 01</span>
+                  <span className="text-2xl font-display font-bold uppercase text-white tracking-tight">MEN</span>
+                </div>
+              </div>
+
+              {/* Upload & URL Controls */}
+              <div className="space-y-2">
+                <label className="cursor-pointer w-full py-2.5 bg-neutral-900 border border-neutral-700 hover:border-snake-green text-white text-xs uppercase font-bold rounded flex items-center justify-center gap-2 transition-colors">
+                  {isUploadingMen ? <Loader2 size={14} className="animate-spin text-snake-green" /> : <Upload size={14} className="text-snake-green" />}
+                  <span>{isUploadingMen ? 'OPTIMIZING...' : 'UPLOAD MEN BANNER'}</span>
+                  <input
+                    ref={menFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    disabled={isUploadingMen}
+                    onChange={handleMenFileUpload}
+                    className="hidden"
+                  />
+                </label>
+
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    placeholder="Or paste image URL..."
+                    value={menImageUrl}
+                    onChange={(e) => setMenImageUrl(e.target.value)}
+                    className="flex-1 bg-[#111] border border-neutral-800 px-3 py-1.5 text-white text-xs rounded focus:border-snake-green focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!menImageUrl.trim()) return;
+                      isDirty.current = true;
+                      setMenCollectionImage(menImageUrl.trim());
+                      setMenImageUrl('');
+                    }}
+                    className="px-3 py-1.5 bg-white text-black font-bold text-xs uppercase rounded hover:bg-snake-green transition-colors shrink-0"
+                  >
+                    SET
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* WOMEN COLLECTION BANNER */}
+            <div className="bg-black border border-neutral-800 rounded-lg p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase text-white tracking-wider">
+                  COLLECTION 02 — WOMEN BANNER
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    isDirty.current = true;
+                    setWomenCollectionImage(DEFAULT_HOMEPAGE_CONFIG.womenCollectionImage || '');
+                  }}
+                  className="text-[10px] text-neutral-400 hover:text-white uppercase transition-colors"
+                >
+                  RESET DEFAULT
+                </button>
+              </div>
+
+              {/* Preview Thumbnail */}
+              <div className="relative aspect-[4/5] w-full bg-neutral-900 rounded-md overflow-hidden border border-neutral-800">
+                <Image
+                  src={womenCollectionImage || DEFAULT_HOMEPAGE_CONFIG.womenCollectionImage || ''}
+                  alt="Women Collection Banner"
+                  fill
+                  unoptimized={womenCollectionImage?.startsWith('data:') || (womenCollectionImage ? !womenCollectionImage.includes('unsplash.com') : false)}
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent pointer-events-none" />
+                <div className="absolute bottom-3 left-3">
+                  <span className="text-[9px] font-mono tracking-widest text-neutral-400 uppercase block">COLLECTION 02</span>
+                  <span className="text-2xl font-display font-bold uppercase text-white tracking-tight">WOMEN</span>
+                </div>
+              </div>
+
+              {/* Upload & URL Controls */}
+              <div className="space-y-2">
+                <label className="cursor-pointer w-full py-2.5 bg-neutral-900 border border-neutral-700 hover:border-snake-green text-white text-xs uppercase font-bold rounded flex items-center justify-center gap-2 transition-colors">
+                  {isUploadingWomen ? <Loader2 size={14} className="animate-spin text-snake-green" /> : <Upload size={14} className="text-snake-green" />}
+                  <span>{isUploadingWomen ? 'OPTIMIZING...' : 'UPLOAD WOMEN BANNER'}</span>
+                  <input
+                    ref={womenFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    disabled={isUploadingWomen}
+                    onChange={handleWomenFileUpload}
+                    className="hidden"
+                  />
+                </label>
+
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    placeholder="Or paste image URL..."
+                    value={womenImageUrl}
+                    onChange={(e) => setWomenImageUrl(e.target.value)}
+                    className="flex-1 bg-[#111] border border-neutral-800 px-3 py-1.5 text-white text-xs rounded focus:border-snake-green focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!womenImageUrl.trim()) return;
+                      isDirty.current = true;
+                      setWomenCollectionImage(womenImageUrl.trim());
+                      setWomenImageUrl('');
+                    }}
+                    className="px-3 py-1.5 bg-white text-black font-bold text-xs uppercase rounded hover:bg-snake-green transition-colors shrink-0"
+                  >
+                    SET
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ============================================================
+            SECTION 3: EDITORIAL HEADLINE & COPY
             ============================================================ */}
         <div className="space-y-6 text-xs bg-[#0d0d0d] border border-neutral-800/80 rounded-lg p-6 sm:p-8">
           <h2 className="text-sm font-bold uppercase text-white tracking-wider border-b border-neutral-800 pb-3">

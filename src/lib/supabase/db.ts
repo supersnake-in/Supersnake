@@ -316,6 +316,8 @@ export async function fetchHomepageConfigFromSupabase(): Promise<HomepageConfig 
       heroSupportingCopy: data.hero_supporting_copy || '',
       spotlightProductId: data.spotlight_product_id || '',
       brandStatement: data.brand_statement || '',
+      menCollectionImage: data.men_collection_image || undefined,
+      womenCollectionImage: data.women_collection_image || undefined,
     };
   } catch (err) {
     console.warn('Supabase homepage config fetch failed:', err);
@@ -339,6 +341,8 @@ export async function saveHomepageConfigToSupabase(config: HomepageConfig): Prom
           hero_supporting_copy: config.heroSupportingCopy,
           spotlight_product_id: config.spotlightProductId,
           brand_statement: config.brandStatement,
+          men_collection_image: config.menCollectionImage,
+          women_collection_image: config.womenCollectionImage,
           updated_at: new Date().toISOString(),
         },
         { onConflict: 'id' }

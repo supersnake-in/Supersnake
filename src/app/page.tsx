@@ -267,10 +267,14 @@ export default function HomePage() {
           >
             <div className="absolute inset-0 z-0 overflow-hidden">
               <Image
-                src="https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&w=1600&auto=format&fit=crop"
+                src={homepageConfig?.menCollectionImage || "https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&w=1600&auto=format&fit=crop"}
                 alt="SuperSnake Men Collection"
                 fill
                 sizes="(max-width: 768px) 100vw, 50vw"
+                unoptimized={
+                  homepageConfig?.menCollectionImage?.startsWith('data:') ||
+                  (homepageConfig?.menCollectionImage ? !homepageConfig.menCollectionImage.includes('unsplash.com') : false)
+                }
                 className="object-cover transition-transform duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105 brightness-75 group-hover:brightness-90"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
@@ -301,10 +305,14 @@ export default function HomePage() {
           >
             <div className="absolute inset-0 z-0 overflow-hidden">
               <Image
-                src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1600&auto=format&fit=crop"
+                src={homepageConfig?.womenCollectionImage || "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1600&auto=format&fit=crop"}
                 alt="SuperSnake Women Collection"
                 fill
                 sizes="(max-width: 768px) 100vw, 50vw"
+                unoptimized={
+                  homepageConfig?.womenCollectionImage?.startsWith('data:') ||
+                  (homepageConfig?.womenCollectionImage ? !homepageConfig.womenCollectionImage.includes('unsplash.com') : false)
+                }
                 className="object-cover transition-transform duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105 brightness-75 group-hover:brightness-90"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />

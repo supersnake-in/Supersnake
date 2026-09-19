@@ -19,6 +19,8 @@ export interface HomepageConfig {
   heroSupportingCopy: string;
   spotlightProductId: string;
   brandStatement: string;
+  menCollectionImage?: string;
+  womenCollectionImage?: string;
 }
 
 export const DEFAULT_HOMEPAGE_CONFIG: HomepageConfig = {
@@ -33,6 +35,8 @@ export const DEFAULT_HOMEPAGE_CONFIG: HomepageConfig = {
   heroSupportingCopy: 'Premium T-shirts. Designed for your everyday. Engineered for presence.',
   spotlightProductId: 'the-signature-tee',
   brandStatement: 'NOT MADE TO BLEND IN.',
+  menCollectionImage: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&w=1600&auto=format&fit=crop',
+  womenCollectionImage: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1600&auto=format&fit=crop',
 };
 
 interface StoreContextType {

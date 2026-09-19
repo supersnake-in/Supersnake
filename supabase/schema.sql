@@ -487,8 +487,15 @@ CREATE TABLE IF NOT EXISTS public.homepage_config (
   hero_supporting_copy TEXT DEFAULT 'Premium T-shirts. Designed for your everyday. Engineered for presence.',
   spotlight_product_id TEXT DEFAULT 'the-signature-tee',
   brand_statement TEXT DEFAULT 'NOT MADE TO BLEND IN.',
+  men_collection_image TEXT DEFAULT 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&w=1600&auto=format&fit=crop',
+  women_collection_image TEXT DEFAULT 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1600&auto=format&fit=crop',
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Ensure columns exist if table was previously created
+ALTER TABLE public.homepage_config 
+  ADD COLUMN IF NOT EXISTS men_collection_image TEXT DEFAULT 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&w=1600&auto=format&fit=crop',
+  ADD COLUMN IF NOT EXISTS women_collection_image TEXT DEFAULT 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1600&auto=format&fit=crop';
 
 -- Enable RLS
 ALTER TABLE public.homepage_config ENABLE ROW LEVEL SECURITY;

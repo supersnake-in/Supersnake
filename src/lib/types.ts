@@ -29,6 +29,8 @@ export interface HomepageConfig {
   heroSupportingCopy: string;
   spotlightProductId: string;
   brandStatement: string;
+  menCollectionImage?: string;
+  womenCollectionImage?: string;
 }
 
 export interface Product {
