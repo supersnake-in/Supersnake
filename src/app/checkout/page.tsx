@@ -220,19 +220,21 @@ export default function CheckoutPage() {
 
       const orderData = await orderRes.json();
       const razorpayKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TdtCpOjDeqd3Mg';
+      const cleanPhone = formData.phone ? formData.phone.replace(/\D/g, '').slice(-10) : '';
 
-      // 3. Open Razorpay Standard Checkout modal
-      const options = {
+      // 3. Open Razorpay Standard Checkout modal (explicitly force standard checkout)
+      const options: any = {
         key: razorpayKey,
         amount: orderData.amount,
         currency: orderData.currency || 'INR',
         name: 'SuperSnake',
         description: `Order for ${cart.length} item${cart.length > 1 ? 's' : ''}`,
         order_id: orderData.order_id || orderData.id,
+        one_click_checkout: false, // Prevents Magic Checkout from intercepting and failing on un-whitelisted domains
         prefill: {
-          name: formData.fullName,
-          email: formData.email,
-          contact: formData.phone,
+          name: formData.fullName?.trim() || undefined,
+          email: formData.email?.trim() || undefined,
+          contact: cleanPhone.length === 10 ? cleanPhone : undefined,
         },
         theme: {
           color: '#04fc21',
