@@ -124,13 +124,13 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
                 ))}
               </div>
 
-              {/* Floating Counter & GSM badge */}
-              <div className="absolute top-3 left-3 px-2.5 py-1 bg-black/75 backdrop-blur-md border border-white/10 text-[9px] font-mono tracking-widest text-neutral-200 uppercase flex items-center gap-2">
-                <span className="text-snake-green font-bold">
+              {/* Floating Counter & Tagline badge */}
+              <div className="absolute top-3 left-3 px-2.5 py-1 bg-black/75 backdrop-blur-md border border-white/10 text-[9px] font-mono tracking-widest text-neutral-200 uppercase flex items-center gap-2 max-w-[85%]">
+                <span className="text-snake-green font-bold flex-shrink-0">
                   {String(activeImageIndex + 1).padStart(2, '0')} / {String(product.images.length).padStart(2, '0')}
                 </span>
                 <span>•</span>
-                <span>{product.gsm} GSM</span>
+                <span className="truncate">{product.tagline || `${product.gsm} GSM`}</span>
               </div>
 
               {/* Lightbox Trigger */}
@@ -171,9 +171,9 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
                   className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                 />
 
-                {/* Angle Tag */}
-                <div className="absolute top-4 left-4 px-2.5 py-1 bg-black/70 backdrop-blur-md border border-white/10 text-[10px] font-mono tracking-widest text-neutral-300 uppercase">
-                  {product.gsm} GSM • {activeImage.angle || 'STUDIO'}
+                {/* Tagline / Subtitle Badge on Hero Image */}
+                <div className="absolute top-4 left-4 px-2.5 py-1 bg-black/70 backdrop-blur-md border border-white/10 text-[10px] font-mono tracking-widest text-neutral-300 uppercase max-w-[80%] truncate">
+                  {product.tagline || `${product.gsm} GSM`}
                 </div>
 
                 {/* Lightbox Expander */}
@@ -408,7 +408,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
                 {openAccordions.fabric && (
                   <div className="p-4 pt-0 space-y-2 text-neutral-400 border-t border-white/5">
                     <p><span className="text-white">Fabric:</span> {product.fabric}</p>
-                    <p><span className="text-white">Weight:</span> {product.gsm} GSM Heavyweight Jersey</p>
+                    <p><span className="text-white">Weight:</span> {product.weightText || `${product.gsm} GSM Heavyweight Jersey`}</p>
                     <ul className="list-disc list-inside space-y-1 pt-1">
                       {product.features.map((f, i) => (
                         <li key={i}>{f}</li>
@@ -462,13 +462,19 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
                   />
                 </button>
                 {openAccordions.shipping && (
-                  <div className="p-4 pt-0 space-y-2 text-neutral-400 border-t border-white/5 text-xs font-mono">
-                    <p>
-                      Orders dispatch swiftly from our studio via priority air express couriers. Full tracking milestones transmitted upon dispatch. View our full <Link href="/shipping" className="text-snake-green hover:underline">Shipping & Delivery</Link> terms.
-                    </p>
-                    <p>
-                      SuperSnake operates under a strict no-return policy for ordinary purchases (no returns for change of mind or incorrect size). If an item arrives damaged or defective, report it via our <Link href="/returns" className="text-snake-green hover:underline">Returns & Defects</Link> protocol.
-                    </p>
+                  <div className="p-4 pt-0 space-y-3 text-neutral-400 border-t border-white/5 text-xs font-mono whitespace-pre-line leading-relaxed">
+                    {product.shippingPolicy ? (
+                      <p>{product.shippingPolicy}</p>
+                    ) : (
+                      <>
+                        <p>
+                          Orders dispatch swiftly from our studio via priority air express couriers. Full tracking milestones transmitted upon dispatch. View our full <Link href="/shipping" className="text-snake-green hover:underline">Shipping & Delivery</Link> terms.
+                        </p>
+                        <p>
+                          SuperSnake operates under a strict no-return policy for ordinary purchases (no returns for change of mind or incorrect size). If an item arrives damaged or defective, report it via our <Link href="/returns" className="text-snake-green hover:underline">Returns & Defects</Link> protocol.
+                        </p>
+                      </>
+                    )}
                   </div>
                 )}
               </div>

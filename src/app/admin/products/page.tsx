@@ -93,11 +93,15 @@ export default function AdminProductsPage() {
   const [fit, setFit] = useState<FitType>('Boxy');
   const [gender, setGender] = useState<Gender>('unisex');
   const [fabric, setFabric] = useState('100% Long-Staple Supima® Cotton (280 GSM Heavyweight)');
+  const [weightText, setWeightText] = useState('280 GSM Heavyweight Jersey');
   const [specificationsText, setSpecificationsText] = useState(
     '280 GSM Heavyweight structure\nZero-sag reinforced 1-inch collar\nPre-shrunk architectural geometry\nHigh-density luxury stitch finish'
   );
   const [careInstructionsText, setCareInstructionsText] = useState(
     'Machine wash cold, inside out with like colors\nDo not tumble dry\nLay flat to dry in shade\nCool iron on reverse; avoid contact with prints/embroidery'
+  );
+  const [shippingPolicy, setShippingPolicy] = useState(
+    'Orders dispatch swiftly from our studio via priority air express couriers. Full tracking milestones transmitted upon dispatch.\n\nSuperSnake operates under a strict no-return policy for ordinary purchases (no returns for change of mind or incorrect size). If an item arrives damaged or defective, report it via our Returns protocol.'
   );
   const [isNewProduct, setIsNewProduct] = useState(true);
 
@@ -236,11 +240,15 @@ export default function AdminProductsPage() {
     setFit('Boxy');
     setGender('unisex');
     setFabric('100% Long-Staple Supima® Cotton (280 GSM Heavyweight)');
+    setWeightText('280 GSM Heavyweight Jersey');
     setSpecificationsText(
       '280 GSM Heavyweight structure\nZero-sag reinforced 1-inch collar\nPre-shrunk architectural geometry\nHigh-density luxury stitch finish'
     );
     setCareInstructionsText(
       'Machine wash cold, inside out with like colors\nDo not tumble dry\nLay flat to dry in shade\nCool iron on reverse; avoid contact with prints/embroidery'
+    );
+    setShippingPolicy(
+      'Orders dispatch swiftly from our studio via priority air express couriers. Full tracking milestones transmitted upon dispatch.\n\nSuperSnake operates under a strict no-return policy for ordinary purchases (no returns for change of mind or incorrect size). If an item arrives damaged or defective, report it via our Returns protocol.'
     );
     setIsNewProduct(true);
     setSelectedSizes(['S', 'M', 'L', 'XL']);
@@ -266,6 +274,7 @@ export default function AdminProductsPage() {
     setFit(prod.fit);
     setGender(prod.gender);
     setFabric(prod.fabric || `${prod.gsm} GSM 100% Long-Staple Supima® Cotton`);
+    setWeightText(prod.weightText || `${prod.gsm} GSM Heavyweight Jersey`);
     setSpecificationsText(
       prod.features && prod.features.length > 0
         ? prod.features.join('\n')
@@ -275,6 +284,10 @@ export default function AdminProductsPage() {
       prod.careInstructions && prod.careInstructions.length > 0
         ? prod.careInstructions.join('\n')
         : 'Machine wash cold, inside out with like colors\nDo not tumble dry\nLay flat to dry in shade\nCool iron on reverse; avoid contact with prints/embroidery'
+    );
+    setShippingPolicy(
+      prod.shippingPolicy ||
+        'Orders dispatch swiftly from our studio via priority air express couriers. Full tracking milestones transmitted upon dispatch.\n\nSuperSnake operates under a strict no-return policy for ordinary purchases (no returns for change of mind or incorrect size). If an item arrives damaged or defective, report it via our Returns protocol.'
     );
     setIsNewProduct(prod.isNew ?? true);
     setSelectedSizes(prod.sizes || ['S', 'M', 'L', 'XL']);
@@ -355,6 +368,7 @@ export default function AdminProductsPage() {
       mrp: cleanMrp,
       gsm: cleanGsm,
       fabric: sanitizeString(fabric || `${cleanGsm} GSM 100% Long-Staple Supima® Cotton`),
+      weightText: sanitizeString(weightText || `${cleanGsm} GSM Heavyweight Jersey`),
       careInstructions:
         parsedCare.length > 0
           ? parsedCare
@@ -373,6 +387,10 @@ export default function AdminProductsPage() {
               'Pre-shrunk architectural geometry',
               'High-density luxury stitch finish',
             ],
+      shippingPolicy: sanitizeString(
+        shippingPolicy ||
+          'Orders dispatch swiftly from our studio via priority air express couriers. Full tracking milestones transmitted upon dispatch.\n\nSuperSnake operates under a strict no-return policy for ordinary purchases (no returns for change of mind or incorrect size). If an item arrives damaged or defective, report it via our Returns protocol.'
+      ),
       images: uploadedImages.map((img, idx) => ({
         url: img.url,
         alt: `${cleanName} - ${img.angle}`,
@@ -1016,19 +1034,36 @@ export default function AdminProductsPage() {
 
                 {/* SECTION 7: FABRIC & GARMENT SPECIFICATIONS */}
                 <div className="space-y-4 p-4 bg-neutral-950 border border-neutral-800 rounded-lg">
-                  <div className="space-y-1">
-                    <label className="text-white font-bold uppercase tracking-wider flex items-center gap-1.5 text-[11px]">
-                      <Sparkles size={14} className="text-snake-green" />
-                      FABRIC COMPOSITION & MATERIAL SPECIFICATION *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={fabric}
-                      onChange={(e) => setFabric(e.target.value)}
-                      placeholder="e.g. 100% Long-Staple Supima® Cotton (280 GSM Heavyweight)"
-                      className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green text-xs"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-white font-bold uppercase tracking-wider flex items-center gap-1.5 text-[11px]">
+                        <Sparkles size={14} className="text-snake-green" />
+                        FABRIC COMPOSITION (BODY) *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={fabric}
+                        onChange={(e) => setFabric(e.target.value)}
+                        placeholder="e.g. 100% Long-Staple Supima® Cotton"
+                        className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green text-xs"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-white font-bold uppercase tracking-wider flex items-center gap-1.5 text-[11px]">
+                        <Sparkles size={14} className="text-snake-green" />
+                        WEIGHT SPECIFICATION (BODY) *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={weightText}
+                        onChange={(e) => setWeightText(e.target.value)}
+                        placeholder="e.g. 280 GSM Heavyweight Jersey"
+                        className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green text-xs"
+                      />
+                    </div>
                   </div>
 
                   <div className="space-y-1">
@@ -1063,26 +1098,26 @@ export default function AdminProductsPage() {
                   />
                 </div>
 
-                {/* SECTION 9: CRAFTSMANSHIP, CARE & POLICIES (AUTO-CONFIGURED) */}
-                <div className="p-4 bg-neutral-950 border border-neutral-800 rounded-lg space-y-3">
+                {/* SECTION 9: CRAFTSMANSHIP, CARE & POLICIES (EDITABLE WITH LUXURY DEFAULTS) */}
+                <div className="p-4 bg-neutral-950 border border-neutral-800 rounded-lg space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <ShieldCheck size={16} className="text-snake-green" />
                       <span className="text-white font-bold uppercase tracking-wider text-[11px]">
-                        CRAFTSMANSHIP, CARE & STORE POLICIES
+                        CRAFTSMANSHIP, CARE & STORE POLICIES (CUSTOMIZABLE BODY)
                       </span>
                     </div>
                     <span className="px-2 py-0.5 bg-snake-green/10 text-snake-green border border-snake-green/30 rounded text-[9px] uppercase font-bold">
-                      AUTO-CONFIGURED
+                      DEFAULTS PREFILLED
                     </span>
                   </div>
                   <p className="text-[10px] text-neutral-400">
-                    SuperSnake automatically standardizes luxury care protocols and shipping & return policies across all products. You can customize care instructions below if desired:
+                    Standard atelier care protocols and shipping & return terms are automatically populated. You can edit any section below:
                   </p>
 
                   <div className="space-y-1">
                     <label className="text-[10px] text-neutral-400 uppercase font-semibold">
-                      CARE INSTRUCTIONS (1 PER LINE)
+                      CRAFTSMANSHIP & CARE INSTRUCTIONS (1 PER LINE) *
                     </label>
                     <textarea
                       rows={3}
@@ -1092,9 +1127,19 @@ export default function AdminProductsPage() {
                     />
                   </div>
 
-                  <div className="pt-2 border-t border-neutral-900 flex items-center justify-between text-[10px] text-neutral-400">
-                    <span>SHIPPING & RETURNS:</span>
-                    <span className="text-neutral-300 font-medium">Complimentary Express Shipping across India • 7-Day Doorstep Returns</span>
+                  <div className="space-y-1 pt-1">
+                    <div className="flex justify-between items-center">
+                      <label className="text-[10px] text-neutral-400 uppercase font-semibold">
+                        SHIPPING & RETURNS POLICY BODY *
+                      </label>
+                      <span className="text-[10px] text-neutral-500">Rendered in product accordion</span>
+                    </div>
+                    <textarea
+                      rows={4}
+                      value={shippingPolicy}
+                      onChange={(e) => setShippingPolicy(e.target.value)}
+                      className="w-full bg-black border border-neutral-800 px-3 py-2 text-neutral-300 rounded focus:border-snake-green resize-none text-xs leading-relaxed font-mono"
+                    />
                   </div>
                 </div>
 

@@ -71,8 +71,8 @@ export default function WishlistPage() {
                     unoptimized={Boolean(product.images[0]?.url?.startsWith('data:') || product.images[0]?.url?.startsWith('blob:'))}
                     className="object-cover transition-transform duration-700 group-hover:scale-105"
                   />
-                  <div className="absolute top-3 left-3 px-2 py-0.5 bg-black/70 backdrop-blur-sm text-[9px] font-mono tracking-widest text-neutral-300 border border-white/10">
-                    {product.gsm} GSM
+                  <div className="absolute top-3 left-3 px-2 py-0.5 bg-black/70 backdrop-blur-sm text-[9px] font-mono tracking-widest text-neutral-300 border border-white/10 uppercase max-w-[80%] truncate">
+                    {product.tagline || `${product.gsm} GSM`}
                   </div>
                   <button
                     onClick={(e) => {

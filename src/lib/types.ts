@@ -50,8 +50,10 @@ export interface Product {
   mrp: number;
   gsm: number;
   fabric: string;
+  weightText?: string;
   careInstructions: string[];
   features: string[];
+  shippingPolicy?: string;
   images: ProductImage[];
   colors: { name: string; hex: string }[];
   sizes: Size[];

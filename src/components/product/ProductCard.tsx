@@ -80,9 +80,9 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
           />
         )}
 
-        {/* Subtle GSM badge */}
-        <div className="absolute top-3 left-3 px-2 py-0.5 bg-black/60 backdrop-blur-md text-[9px] font-mono tracking-widest text-neutral-300 border border-white/10 uppercase">
-          {product.gsm} GSM
+        {/* Tagline / Subtitle badge */}
+        <div className="absolute top-3 left-3 px-2 py-0.5 bg-black/60 backdrop-blur-md text-[9px] font-mono tracking-widest text-neutral-300 border border-white/10 uppercase max-w-[70%] truncate">
+          {product.tagline || `${product.gsm} GSM`}
         </div>
 
         {/* Wishlist Button - 44px min tap target */}

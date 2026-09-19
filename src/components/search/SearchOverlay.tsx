@@ -252,8 +252,8 @@ export function SearchOverlay() {
                             unoptimized={Boolean(product.images[0]?.url?.startsWith('data:') || product.images[0]?.url?.startsWith('blob:'))}
                             className="object-cover transition-transform duration-700 group-hover:scale-105"
                           />
-                          <div className="absolute top-2.5 left-2.5 px-2 py-0.5 bg-black/70 backdrop-blur-sm text-[8px] sm:text-[9px] font-mono tracking-widest text-white border border-white/10">
-                            {product.gsm} GSM
+                          <div className="absolute top-2.5 left-2.5 px-2 py-0.5 bg-black/70 backdrop-blur-sm text-[8px] sm:text-[9px] font-mono tracking-widest text-white border border-white/10 uppercase max-w-[80%] truncate">
+                            {product.tagline || `${product.gsm} GSM`}
                           </div>
                         </div>
                         <div className="p-3 sm:p-4 space-y-1">
