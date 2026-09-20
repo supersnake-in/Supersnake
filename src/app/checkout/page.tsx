@@ -492,7 +492,7 @@ function CheckoutContent() {
                 },
               });
               clearCart();
-              router.push(`/checkout/confirmation?orderId=${newOrder.id}&razorpay_payment_id=${response.razorpay_payment_id}`);
+              router.push(`/checkout/confirmation?orderId=${newOrder.orderNumber}&internalId=${newOrder.id}&razorpay_payment_id=${response.razorpay_payment_id}`);
             } else {
               setPaymentError('Payment verification failed. If your account was debited, please contact client concierge.');
               setIsProcessing(false);

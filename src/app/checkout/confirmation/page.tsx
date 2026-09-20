@@ -44,7 +44,9 @@ function OrderConfirmationContent() {
     }
   };
 
-  const accountOrderUrl = orderId ? `/account/orders/${orderId}` : '/account/orders';
+  const accountOrderUrl = order?.orderNumber
+    ? `/account/orders/${order.orderNumber}`
+    : (orderId ? `/account/orders/${orderId}` : '/account/orders');
 
   return (
     <div className="bg-black text-white min-h-screen pt-32 pb-24 px-6 md:px-12 flex flex-col items-center">

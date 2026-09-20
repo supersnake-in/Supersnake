@@ -441,7 +441,24 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     fetchOrdersFromSupabase()
       .then((supabaseOrders) => {
         if (supabaseOrders !== null) {
-          setOrders(supabaseOrders);
+          setOrders((prev) => {
+            const map = new Map<string, Order>();
+            // Add Supabase orders
+            supabaseOrders.forEach((o) => {
+              map.set(o.orderNumber, o);
+            });
+            // Keep locally created orders that aren't in Supabase yet
+            prev.forEach((o) => {
+              if (!map.has(o.orderNumber)) {
+                map.set(o.orderNumber, o);
+              }
+            });
+            const merged = Array.from(map.values());
+            try {
+              localStorage.setItem('supersnake_orders', JSON.stringify(merged));
+            } catch (e) {}
+            return merged;
+          });
         }
       })
       .catch((err) => {
@@ -790,7 +807,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       },
     };
 
-    setOrders((prev) => [newOrder, ...prev]);
+    setOrders((prev) => {
+      const next = [newOrder, ...prev.filter((o) => o.id !== newOrder.id && o.orderNumber !== newOrder.orderNumber)];
+      try {
+        localStorage.setItem('supersnake_orders', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+
     // Cart will be cleared upon payment completion
     createOrderInSupabase(newOrder).catch((err) => {
       console.warn('Could not sync order to Supabase:', err);
@@ -798,14 +822,43 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return newOrder;
   };
 
-  const getOrderById = useCallback((orderId: string) => {
-    return orders.find((o) => o.id === orderId || o.orderNumber === orderId);
-  }, [orders]);
+  const getOrderById = useCallback(
+    (orderId: string) => {
+      if (!orderId) return undefined;
+      const clean = orderId.trim();
+      const cleanLower = clean.toLowerCase();
+      const numOnly = clean.replace(/[^0-9]/g, '');
+
+      return orders.find((o) => {
+        // 1. Exact match by id or orderNumber
+        if (o.id === clean || o.orderNumber === clean) return true;
+        if (o.id.toLowerCase() === cleanLower || o.orderNumber.toLowerCase() === cleanLower) return true;
+        // 2. Suffix / number match: e.g. "ord-7471" matches "SS-2026-7471"
+        if (numOnly && (o.orderNumber.endsWith(numOnly) || o.id.endsWith(numOnly))) return true;
+        // 3. Substring match
+        if (o.orderNumber.toLowerCase().includes(cleanLower) || cleanLower.includes(o.orderNumber.toLowerCase()))
+          return true;
+        return false;
+      });
+    },
+    [orders]
+  );
 
   const updateOrder = useCallback((orderId: string, updates: Partial<Order>) => {
-    setOrders((prev) =>
-      prev.map((o) => (o.id === orderId || o.orderNumber === orderId ? { ...o, ...updates } : o))
-    );
+    setOrders((prev) => {
+      const numOnly = orderId.replace(/[^0-9]/g, '');
+      const next = prev.map((o) => {
+        const matches =
+          o.id === orderId ||
+          o.orderNumber === orderId ||
+          (numOnly && (o.id.includes(numOnly) || o.orderNumber.includes(numOnly)));
+        return matches ? { ...o, ...updates } : o;
+      });
+      try {
+        localStorage.setItem('supersnake_orders', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
   }, []);
 
   // Product actions
