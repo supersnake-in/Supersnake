@@ -87,7 +87,7 @@ export default function FAQPage() {
         },
         {
           q: 'What are the shipping charges?',
-          a: `Orders totaling ${freeThreshold} or greater qualify for complimentary domestic express shipping. Orders below ${freeThreshold} incur a standard ${standardFee} logistics handling fee.`,
+          a: `Orders totaling ${freeThreshold} or greater qualify for complimentary domestic shipping. Orders below ${freeThreshold} incur a standard ${standardFee} logistics handling fee.`,
         },
         {
           q: 'How do I track my order?',

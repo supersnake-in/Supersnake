@@ -59,9 +59,9 @@ export function CartDrawer() {
               <div className="flex justify-between text-xs font-mono">
                 <span className="text-neutral-300">
                   {freeShippingLeft === 0 ? (
-                    <span className="text-snake-green font-semibold">✓ FREE EXPRESS SHIPPING UNLOCKED</span>
+                    <span className="text-snake-green font-semibold">✓ FREE SHIPPING UNLOCKED</span>
                   ) : (
-                    <>Add <span className="text-white font-bold">{formatPrice(freeShippingLeft)}</span> for free express shipping</>
+                    <>Add <span className="text-white font-bold">{formatPrice(freeShippingLeft)}</span> for free shipping</>
                   )}
                 </span>
                 <span className="text-neutral-500">{Math.round(progressPercent)}%</span>

@@ -80,9 +80,9 @@ export default function BagPage() {
               <div className="p-4 bg-neutral-950 border border-white/10 rounded flex items-center justify-between text-xs font-mono">
                 <span className="text-neutral-300">
                   {freeShippingLeft === 0 ? (
-                    <span className="text-snake-green font-semibold">✓ FREE EXPRESS DELIVERY UNLOCKED</span>
+                    <span className="text-snake-green font-semibold">✓ FREE SHIPPING UNLOCKED</span>
                   ) : (
-                    <>Add <span className="text-white font-bold">{formatPrice(freeShippingLeft)}</span> more for free express shipping.</>
+                    <>Add <span className="text-white font-bold">{formatPrice(freeShippingLeft)}</span> more for free shipping.</>
                   )}
                 </span>
                 <span className="text-neutral-500 hidden sm:inline">STANDARD: 2–4 DAYS</span>
@@ -232,7 +232,7 @@ export default function BagPage() {
                 )}
 
                 <div className="flex justify-between text-neutral-400">
-                  <span>EXPRESS SHIPPING</span>
+                  <span>SHIPPING</span>
                   <span className="text-white">
                     {freeShippingLeft === 0 ? 'FREE' : formatPrice(150)}
                   </span>

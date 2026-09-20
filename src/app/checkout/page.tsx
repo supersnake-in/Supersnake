@@ -714,7 +714,7 @@ function CheckoutContent() {
                   <span className="text-white">{formatPrice(cartTotal)}</span>
                 </div>
                 <div className="flex justify-between text-neutral-400">
-                  <span>EXPRESS SHIPPING</span>
+                  <span>SHIPPING</span>
                   <span className="text-snake-green">
                     {cartTotal >= BRAND.freeShippingThreshold ? 'FREE' : formatPrice(150)}
                   </span>
@@ -1391,7 +1391,7 @@ function CheckoutContent() {
                 <span className="text-white">{formatPrice(cartTotal)}</span>
               </div>
               <div className="flex justify-between text-neutral-400">
-                <span>EXPRESS SHIPPING</span>
+                <span>SHIPPING</span>
                 <span className="text-snake-green">
                   {cartTotal >= BRAND.freeShippingThreshold ? 'FREE' : formatPrice(150)}
                 </span>
