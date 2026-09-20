@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { Product, CartItem, WishlistItem, Size, Order, SocialConfig, NewsletterSubscriber } from './types';
 import {
   fetchProductsFromSupabase,
@@ -729,10 +729,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setCart(next);
   };
 
-  const clearCart = () => {
+  const clearCart = useCallback(() => {
     saveCartToStorage([]);
     setCart([]);
-  };
+  }, []);
 
   const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -798,15 +798,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return newOrder;
   };
 
-  const getOrderById = (orderId: string) => {
+  const getOrderById = useCallback((orderId: string) => {
     return orders.find((o) => o.id === orderId || o.orderNumber === orderId);
-  };
+  }, [orders]);
 
-  const updateOrder = (orderId: string, updates: Partial<Order>) => {
+  const updateOrder = useCallback((orderId: string, updates: Partial<Order>) => {
     setOrders((prev) =>
       prev.map((o) => (o.id === orderId || o.orderNumber === orderId ? { ...o, ...updates } : o))
     );
-  };
+  }, []);
 
   // Product actions
   const saveProductsToLocalStorage = (productList: Product[]) => {

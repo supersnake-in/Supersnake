@@ -1,35 +1,50 @@
 'use client';
 
-import React, { Suspense } from 'react';
+import React, { Suspense, useRef } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { CheckCircle2, ArrowRight, Package, Truck } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { formatPrice } from '@/lib/design-tokens';
 
 function OrderConfirmationContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const orderId = searchParams.get('orderId');
   const paymentId = searchParams.get('razorpay_payment_id');
   const { getOrderById, updateOrder, clearCart } = useStore();
 
   const order = orderId ? getOrderById(orderId) : null;
+  const hasProcessedRef = useRef(false);
 
   React.useEffect(() => {
+    if (hasProcessedRef.current) return;
+    hasProcessedRef.current = true;
+
     clearCart();
 
-    if (orderId && paymentId && order && order.payment?.status !== 'paid') {
+    if (orderId && paymentId) {
       updateOrder(orderId, {
         status: 'Confirmed',
         payment: {
-          ...order.payment,
+          method: 'razorpay',
           status: 'paid',
           transactionId: paymentId,
           paidAt: new Date().toISOString(),
         },
       });
     }
-  }, [orderId, paymentId, order, updateOrder, clearCart]);
+  }, [orderId, paymentId, clearCart, updateOrder]);
+
+  const handleNavigate = (path: string) => {
+    try {
+      router.push(path);
+    } catch {
+      window.location.href = path;
+    }
+  };
+
+  const accountOrderUrl = orderId ? `/account/orders/${orderId}` : '/account/orders';
 
   return (
     <div className="bg-black text-white min-h-screen pt-32 pb-24 px-6 md:px-12 flex flex-col items-center">
@@ -100,16 +115,24 @@ function OrderConfirmationContent() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 pt-4">
+        <div className="flex flex-col sm:flex-row gap-4 pt-4 relative z-10">
           <Link
-            href="/account"
-            className="flex-1 py-4 bg-snake-green text-black font-mono text-xs tracking-widest font-bold uppercase hover:bg-white transition-colors text-center flex items-center justify-center gap-2"
+            href={accountOrderUrl}
+            onClick={(e) => {
+              e.preventDefault();
+              handleNavigate(accountOrderUrl);
+            }}
+            className="flex-1 py-4 bg-snake-green text-black font-mono text-xs tracking-widest font-bold uppercase hover:bg-white transition-colors text-center flex items-center justify-center gap-2 cursor-pointer select-none"
           >
             VIEW ORDER IN ACCOUNT <ArrowRight size={14} />
           </Link>
           <Link
             href="/shop"
-            className="py-4 px-8 border border-white/20 text-neutral-300 font-mono text-xs tracking-widest uppercase hover:border-white hover:text-white transition-colors text-center"
+            onClick={(e) => {
+              e.preventDefault();
+              handleNavigate('/shop');
+            }}
+            className="py-4 px-8 border border-white/20 text-neutral-300 font-mono text-xs tracking-widest uppercase hover:border-white hover:text-white transition-colors text-center cursor-pointer select-none"
           >
             CONTINUE BROWSING
           </Link>
