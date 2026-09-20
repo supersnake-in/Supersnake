@@ -76,6 +76,36 @@ export const DEFAULT_SOCIAL_CONFIG: SocialConfig = {
   contactPhone: '+91 98765 43210',
 };
 
+/**
+ * Normalizes a list of products so that strictly EXACTLY ONE product has `isSignature = true`.
+ * If multiple have isSignature: true, preserves 'the-signature-tee' if it's one of them, otherwise the first one.
+ * If none has isSignature: true, designates 'the-signature-tee' (or the first product if not found).
+ */
+function normalizeSignatureProduct(prods: Product[]): Product[] {
+  if (!prods || prods.length === 0) return [];
+
+  const sigIndices = prods
+    .map((p, i) => (p.isSignature ? i : -1))
+    .filter((i) => i !== -1);
+
+  let activeIndex = -1;
+  if (sigIndices.length > 0) {
+    const prefIndex = prods.findIndex((p) => p.slug === 'the-signature-tee' && p.isSignature);
+    if (prefIndex !== -1) {
+      activeIndex = prefIndex;
+    } else {
+      activeIndex = sigIndices[0];
+    }
+  } else {
+    const prefIndex = prods.findIndex((p) => p.slug === 'the-signature-tee');
+    activeIndex = prefIndex !== -1 ? prefIndex : 0;
+  }
+
+  return prods.map((p, idx) => ({
+    ...p,
+    isSignature: idx === activeIndex,
+  }));
+}
 
 interface StoreContextType {
   isLoaded: boolean;
@@ -177,13 +207,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                     : [],
                 };
               });
-            const hasSig = realProducts.some((p) => p.isSignature);
-            const normalized = realProducts.map((p, idx) => ({
-              ...p,
-              isSignature: hasSig ? Boolean(p.isSignature) : (p.slug === 'the-signature-tee' || idx === 0),
-            }));
+            const normalized = normalizeSignatureProduct(realProducts);
             setProducts(normalized);
-            saveProductsToLocalStorage(realProducts);
+            saveProductsToLocalStorage(normalized);
           }
         } catch (e) {}
       }
@@ -263,12 +289,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     fetchProductsFromSupabase()
       .then((supabaseProducts) => {
         if (supabaseProducts !== null) {
-          const hasSig = supabaseProducts.some((p) => p.isSignature);
-          const deduplicated = supabaseProducts.map((p, idx) => {
+          const deduplicated = supabaseProducts.map((p) => {
             const seen = new Set<string>();
             return {
               ...p,
-              isSignature: hasSig ? Boolean(p.isSignature) : (p.slug === 'the-signature-tee' || idx === 0),
               images: (p.images || []).filter((img) => {
                 if (!img?.url || seen.has(img.url)) return false;
                 seen.add(img.url);
@@ -276,8 +300,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               }),
             };
           });
-          setProducts(deduplicated);
-          saveProductsToLocalStorage(deduplicated);
+          const normalized = normalizeSignatureProduct(deduplicated);
+          setProducts(normalized);
+          saveProductsToLocalStorage(normalized);
         }
       })
       .catch((err) => {
