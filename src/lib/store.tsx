@@ -53,13 +53,25 @@ export interface HomepageConfig {
   heroObjectSpec3Desc?: string;
 }
 
+export const STOCK_HERO_IMAGE_SNIPPETS = [
+  'photo-1503342217505',
+  'photo-1521572267360',
+  'photo-1576566588028',
+  'photo-1583743814966',
+  'photo-1515886657613',
+  'photo-1509631179647',
+];
+
+export function cleanHeroImages(images?: string[]): string[] {
+  if (!images || !Array.isArray(images) || images.length === 0) return ['/hero2.png'];
+  const filtered = images.filter(
+    (url) => url && typeof url === 'string' && !STOCK_HERO_IMAGE_SNIPPETS.some((stock) => url.includes(stock))
+  );
+  return filtered.length > 0 ? filtered : ['/hero2.png'];
+}
+
 export const DEFAULT_HOMEPAGE_CONFIG: HomepageConfig = {
-  heroImages: [
-    'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=2400&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=2400&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&w=2400&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?q=80&w=2400&auto=format&fit=crop',
-  ],
+  heroImages: ['/hero2.png'],
   heroIntervalSeconds: 3,
   heroHeadline: 'WEAR YOUR INSTINCT.',
   heroSupportingCopy: 'Premium T-shirts. Designed for your everyday. Engineered for presence.',
@@ -281,7 +293,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (savedHomepage) {
         try {
           const parsed = JSON.parse(savedHomepage);
-          if (parsed && Array.isArray(parsed.heroImages) && parsed.heroImages.length > 0) {
+          if (parsed) {
+            if (Array.isArray(parsed.heroImages)) {
+              parsed.heroImages = cleanHeroImages(parsed.heroImages);
+            }
             setHomepageConfig((prev) => ({ ...prev, ...parsed }));
           }
         } catch (e) {}
@@ -349,10 +364,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     // Fetch dynamic homepage config from Supabase
     fetchHomepageConfigFromSupabase()
       .then((supabaseHomepage) => {
-        if (supabaseHomepage !== null && supabaseHomepage.heroImages.length > 0) {
-          setHomepageConfig(supabaseHomepage);
+        if (supabaseHomepage !== null) {
+          const cleaned = {
+            ...supabaseHomepage,
+            heroImages: cleanHeroImages(supabaseHomepage.heroImages),
+          };
+          setHomepageConfig(cleaned);
           try {
-            localStorage.setItem('supersnake_homepage_config', JSON.stringify(supabaseHomepage));
+            localStorage.setItem('supersnake_homepage_config', JSON.stringify(cleaned));
           } catch (e) {}
         }
       })
@@ -770,6 +789,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const nextConfig: HomepageConfig = {
       ...homepageConfig,
       ...config,
+      ...(config.heroImages ? { heroImages: cleanHeroImages(config.heroImages) } : {}),
     };
 
     setHomepageConfig(nextConfig);

@@ -18,12 +18,12 @@ import {
   AlertTriangle,
   Loader2,
 } from 'lucide-react';
-import { useStore, DEFAULT_HOMEPAGE_CONFIG } from '@/lib/store';
+import { useStore, DEFAULT_HOMEPAGE_CONFIG, cleanHeroImages } from '@/lib/store';
 
 const SUPABASE_HOMEPAGE_SQL = `-- Run this in your Supabase SQL Editor:
 CREATE TABLE IF NOT EXISTS public.homepage_config (
   id TEXT PRIMARY KEY DEFAULT 'default',
-  hero_images TEXT[] NOT NULL DEFAULT '{}',
+  hero_images TEXT[] NOT NULL DEFAULT '{"/hero2.png"}',
   hero_interval_seconds INTEGER DEFAULT 3,
   hero_headline TEXT DEFAULT 'WEAR YOUR INSTINCT.',
   hero_supporting_copy TEXT DEFAULT 'Premium T-shirts. Designed for your everyday. Engineered for presence.',
@@ -72,28 +72,8 @@ CREATE POLICY "Allow public all homepage_config"
 
 const CAMPAIGN_PRESETS = [
   {
-    title: 'Monolith Editorial',
-    url: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=2400&auto=format&fit=crop',
-  },
-  {
-    title: 'Studio Signature',
-    url: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=2400&auto=format&fit=crop',
-  },
-  {
-    title: 'Serpent Editorial',
-    url: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&w=2400&auto=format&fit=crop',
-  },
-  {
-    title: 'Obsidian Dark',
-    url: 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?q=80&w=2400&auto=format&fit=crop',
-  },
-  {
-    title: 'Atelier Runway',
-    url: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=2400&auto=format&fit=crop',
-  },
-  {
-    title: 'Minimalist Streetwear',
-    url: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=2400&auto=format&fit=crop',
+    title: 'SuperSnake Fallback Hero',
+    url: '/hero2.png',
   },
 ];
 
@@ -109,7 +89,7 @@ export default function AdminHomepageConfigPage() {
   const pillar3FileRef = useRef<HTMLInputElement>(null);
 
   const [heroImages, setHeroImages] = useState<string[]>(
-    homepageConfig?.heroImages || DEFAULT_HOMEPAGE_CONFIG.heroImages
+    cleanHeroImages(homepageConfig?.heroImages)
   );
   const [heroIntervalSeconds, setHeroIntervalSeconds] = useState<number>(
     homepageConfig?.heroIntervalSeconds || 3
@@ -221,7 +201,7 @@ export default function AdminHomepageConfigPage() {
   useEffect(() => {
     if (!hasInitialized.current && homepageConfig) {
       if (homepageConfig.heroImages && homepageConfig.heroImages.length > 0) {
-        setHeroImages(homepageConfig.heroImages);
+        setHeroImages(cleanHeroImages(homepageConfig.heroImages));
       }
       if (homepageConfig.heroIntervalSeconds) {
         setHeroIntervalSeconds(homepageConfig.heroIntervalSeconds);

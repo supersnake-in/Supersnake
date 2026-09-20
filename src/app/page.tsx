@@ -8,7 +8,7 @@ import { ArrowRight, ArrowDown, Sparkles, Instagram, ChevronLeft, ChevronRight }
 import { ProductCard } from '@/components/product/ProductCard';
 import { SuperSnakeLogo } from '@/components/brand/SuperSnakeLogo';
 import { formatPrice } from '@/lib/design-tokens';
-import { useStore, DEFAULT_HOMEPAGE_CONFIG } from '@/lib/store';
+import { useStore, DEFAULT_HOMEPAGE_CONFIG, cleanHeroImages } from '@/lib/store';
 
 export default function HomePage() {
   const heroRef = useRef<HTMLDivElement>(null);
@@ -29,10 +29,7 @@ export default function HomePage() {
   };
 
   // Hero Background Images & 3-second auto-scroll
-  const heroImages =
-    homepageConfig?.heroImages && homepageConfig.heroImages.length > 0
-      ? homepageConfig.heroImages
-      : DEFAULT_HOMEPAGE_CONFIG.heroImages;
+  const heroImages = cleanHeroImages(homepageConfig?.heroImages);
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [loadedSlides, setLoadedSlides] = useState<Record<number, boolean>>({});
