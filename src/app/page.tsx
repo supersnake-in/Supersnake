@@ -307,7 +307,7 @@ export default function HomePage() {
           05 — PRODUCT SPOTLIGHT (IMMERSIVE PRESENTATION)
           ============================================================ */}
       {signatureProduct && (
-        <section className="relative min-h-[440px] sm:min-h-[480px] md:min-h-[520px] lg:min-h-[560px] w-full border-t border-white/[0.06] overflow-hidden flex items-center px-4 sm:px-6 md:px-16 py-10 sm:py-12 md:py-14 lg:py-16 bg-black">
+        <section className="relative min-h-[580px] sm:min-h-[620px] md:min-h-[520px] lg:min-h-[560px] w-full border-t border-white/[0.06] overflow-hidden flex items-end md:items-center px-4 sm:px-6 md:px-16 pt-20 sm:pt-24 md:py-14 lg:py-16 pb-8 sm:pb-10 bg-black">
           <div className="absolute inset-0 z-0">
             <Image
               src={signatureProduct.images?.[0]?.url || homepageConfig?.signatureTeeImage || ''}
@@ -318,12 +318,12 @@ export default function HomePage() {
                 signatureProduct.images?.[0]?.url?.startsWith('data:') ||
                 (homepageConfig?.signatureTeeImage?.startsWith('data:') ?? false)
               }
-              className="object-cover object-[center_25%] md:object-center brightness-50 contrast-125"
+              className="object-cover object-[center_20%] md:object-center brightness-70 md:brightness-50 contrast-115 md:contrast-125"
             />
-            <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-black via-black/80 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-black via-black/70 md:via-black/80 to-transparent" />
           </div>
 
-          <div className="relative z-10 max-w-2xl space-y-6 sm:space-y-8 md:space-y-12 lg:space-y-14">
+          <div className="relative z-10 max-w-2xl space-y-4 sm:space-y-5 md:space-y-12 lg:space-y-14">
             {/* Top Unit: Campaign Eyebrow, Title & Price */}
             <div className="space-y-1.5 sm:space-y-2">
               <span className="text-[10px] font-mono tracking-mega text-snake-green uppercase">
