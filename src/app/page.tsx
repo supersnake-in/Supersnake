@@ -360,7 +360,7 @@ export default function HomePage() {
       {/* ============================================================
           06 — ALL CREATIONS (CONTINUOUS DISPLAY OF ALL PRODUCTS)
           ============================================================ */}
-      <section className="py-20 md:py-36 border-t border-white/[0.06] bg-[#050505] overflow-hidden">
+      <section className="pt-14 sm:pt-16 md:pt-24 pb-8 sm:pb-10 md:pb-14 border-t border-white/[0.06] bg-[#050505] overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 space-y-8 sm:space-y-12">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
@@ -404,7 +404,7 @@ export default function HomePage() {
       {/* ============================================================
           07 — BESTSELLERS (THE ONES THEY KEEP COMING BACK FOR)
           ============================================================ */}
-      <section className="py-20 md:py-36 px-4 sm:px-6 md:px-12 border-t border-white/[0.06] bg-black">
+      <section className="pt-8 sm:pt-10 md:pt-14 pb-16 sm:pb-20 md:pb-28 px-4 sm:px-6 md:px-12 border-t border-white/[0.06] bg-black">
         <div className="max-w-7xl mx-auto space-y-8 sm:space-y-12">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
