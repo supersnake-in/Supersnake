@@ -645,11 +645,6 @@ function CheckoutContent() {
               CHECKOUT
             </h1>
           </div>
-
-          <div className="flex items-center gap-2 text-xs font-mono text-neutral-400">
-            <Lock size={14} className="text-snake-green" />
-            <span>256-BIT ENCRYPTED</span>
-          </div>
         </div>
 
         {/* Mobile Collapsible Order Summary */}
