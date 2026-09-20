@@ -61,12 +61,18 @@ export function SearchOverlay() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isSearchOpen, closeSearch, openSearch]);
 
-  // Focus input when opened
+  // Focus input when opened and lock body scroll
   useEffect(() => {
     if (isSearchOpen) {
-      setTimeout(() => {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      const timer = setTimeout(() => {
         inputRef.current?.focus();
       }, 100);
+      return () => {
+        clearTimeout(timer);
+        document.body.style.overflow = prevOverflow;
+      };
     } else {
       setQuery('');
       setResults([]);
@@ -108,24 +114,25 @@ export function SearchOverlay() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="fixed inset-0 z-50 bg-black/95 backdrop-blur-2xl flex flex-col pt-[max(1.5rem,calc(env(safe-area-inset-top,0px)+1rem))] pb-[max(2rem,calc(env(safe-area-inset-bottom,0px)+1rem))] px-4 sm:px-8 md:p-12 overflow-y-auto text-neutral-100"
+          className="fixed inset-0 z-50 bg-black/95 backdrop-blur-2xl overflow-y-auto modal-scroller text-neutral-100"
         >
-          {/* Top Bar with Close Button */}
-          <div className="flex justify-between items-center max-w-5xl mx-auto w-full mb-6 sm:mb-10">
-            <span className="text-[10px] sm:text-[11px] font-mono tracking-widest text-neutral-500 uppercase">
-              SEARCH THE ATELIER
-            </span>
-            <button
-              onClick={closeSearch}
-              className="p-2 text-neutral-400 hover:text-white transition-colors focus:outline-none flex items-center gap-2 text-xs font-mono tracking-widest"
-              aria-label="Close Search"
-            >
-              <span className="hidden sm:inline">ESC</span>
-              <X size={20} />
-            </button>
-          </div>
+          <div className="min-h-full flex flex-col pt-[max(1.5rem,calc(env(safe-area-inset-top,0px)+1rem))] pb-28 px-4 sm:px-8 md:p-12">
+            {/* Top Bar with Close Button */}
+            <div className="flex justify-between items-center max-w-5xl mx-auto w-full mb-6 sm:mb-10">
+              <span className="text-[10px] sm:text-[11px] font-mono tracking-widest text-neutral-500 uppercase">
+                SEARCH THE ATELIER
+              </span>
+              <button
+                onClick={closeSearch}
+                className="p-2 text-neutral-400 hover:text-white transition-colors focus:outline-none flex items-center gap-2 text-xs font-mono tracking-widest"
+                aria-label="Close Search"
+              >
+                <span className="hidden sm:inline">ESC</span>
+                <X size={20} />
+              </button>
+            </div>
 
-          <div className="max-w-4xl mx-auto w-full flex-1 flex flex-col">
+            <div className="max-w-4xl mx-auto w-full flex-1 flex flex-col">
             {/* Headline */}
             <h2 className="text-xl sm:text-3xl md:text-5xl font-display font-medium tracking-tight text-white mb-6 sm:mb-8">
               WHAT ARE YOU LOOKING FOR?
@@ -277,7 +284,8 @@ export function SearchOverlay() {
               </div>
             )}
           </div>
-        </motion.div>
+        </div>
+      </motion.div>
       )}
     </AnimatePresence>
   );
