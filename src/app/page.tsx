@@ -14,7 +14,7 @@ export default function HomePage() {
   const heroRef = useRef<HTMLDivElement>(null);
   const communityScrollRef = useRef<HTMLDivElement>(null);
   const { products, homepageConfig, socialConfig } = useStore();
-  const spotlightProduct = products.find((p) => p.isSpotlight) || products[0];
+  const signatureProduct = products.find((p) => p.isSignature);
   const newDrops = products.filter((p) => p.isNew);
   const bestsellers = products.filter((p) => p.isBestseller).slice(0, 4);
 
@@ -306,17 +306,17 @@ export default function HomePage() {
       {/* ============================================================
           05 — PRODUCT SPOTLIGHT (IMMERSIVE FULL-SCREEN PRESENTATION)
           ============================================================ */}
-      {spotlightProduct && (
+      {signatureProduct && (
         <section className="relative min-h-[580px] sm:min-h-[750px] md:min-h-[900px] w-full border-t border-white/[0.06] overflow-hidden flex items-center px-4 sm:px-6 md:px-16 py-16 md:py-20 bg-black">
           <div className="absolute inset-0 z-0">
             <Image
-              src={homepageConfig?.signatureTeeImage || spotlightProduct.images?.[0]?.url || ''}
-              alt={spotlightProduct.name}
+              src={signatureProduct.images?.[0]?.url || homepageConfig?.signatureTeeImage || ''}
+              alt={signatureProduct.name}
               fill
               sizes="100vw"
               unoptimized={
-                homepageConfig?.signatureTeeImage?.startsWith('data:') ||
-                (homepageConfig?.signatureTeeImage ? !homepageConfig.signatureTeeImage.includes('unsplash.com') : false)
+                signatureProduct.images?.[0]?.url?.startsWith('data:') ||
+                (homepageConfig?.signatureTeeImage?.startsWith('data:') ?? false)
               }
               className="object-cover object-[center_30%] md:object-center brightness-50 contrast-125"
             />
@@ -329,22 +329,22 @@ export default function HomePage() {
                 SPOTLIGHT CAMPAIGN
               </span>
               <h2 className="text-3xl sm:text-5xl md:text-8xl font-display font-black tracking-tighter uppercase leading-[0.9] text-white">
-                {spotlightProduct.name}
+                {signatureProduct.name}
               </h2>
             </div>
 
             <div className="space-y-2">
               <span className="font-mono text-xl sm:text-2xl md:text-3xl text-white font-semibold">
-                {formatPrice(spotlightProduct.price)}
+                {formatPrice(signatureProduct.price)}
               </span>
               <p className="text-xs sm:text-sm font-mono text-neutral-400 max-w-md leading-relaxed">
-                {spotlightProduct.description}
+                {signatureProduct.description}
               </p>
             </div>
 
             <div className="flex flex-wrap gap-4 pt-2 sm:pt-4">
               <Link
-                href={`/product/${spotlightProduct.slug}`}
+                href={`/product/${signatureProduct.slug}`}
                 className="w-full sm:w-auto px-8 py-3.5 sm:py-4 bg-snake-green text-black font-mono text-xs tracking-widest font-bold uppercase transition-all duration-300 hover:bg-white hover:shadow-[0_0_30px_rgba(4,252,33,0.5)] flex items-center justify-center gap-2 active:scale-98"
               >
                 <span>SHOP NOW</span>

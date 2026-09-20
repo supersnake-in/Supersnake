@@ -65,6 +65,7 @@ export const PRODUCTS: Product[] = [
       { id: 'v1-6', sku: 'SS-SIG-WHT-L', colorName: 'Chalk White', colorHex: '#f2f2f2', size: 'L', stock: 19, price: 1499, mrp: 2499 },
     ],
     isSpotlight: true,
+    isSignature: true,
     isBestseller: true,
     rating: 4.9,
     reviewsCount: 184,
@@ -385,8 +386,12 @@ export function getProductBySlug(slug: string): Product | undefined {
   return PRODUCTS.find((p) => p.slug === slug);
 }
 
+export function getSignatureProduct(): Product | undefined {
+  return PRODUCTS.find((p) => p.isSignature);
+}
+
 export function getSpotlightProduct(): Product {
-  return PRODUCTS.find((p) => p.isSpotlight) || PRODUCTS[0];
+  return PRODUCTS.find((p) => p.isSignature) || PRODUCTS.find((p) => p.isSpotlight) || PRODUCTS[0];
 }
 
 export function getBestsellers(): Product[] {

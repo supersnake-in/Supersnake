@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS public.products (
   shipping_policy TEXT,
   colors JSONB,
   sizes TEXT[],
+  is_signature BOOLEAN NOT NULL DEFAULT FALSE,
   is_spotlight BOOLEAN DEFAULT FALSE,
   is_bestseller BOOLEAN DEFAULT FALSE,
   is_new BOOLEAN DEFAULT FALSE,
@@ -42,6 +43,31 @@ CREATE TABLE IF NOT EXISTS public.products (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Partial unique index: guarantees at most ONE Signature Product
+CREATE UNIQUE INDEX IF NOT EXISTS one_signature_product
+ON public.products (is_signature)
+WHERE is_signature = TRUE;
+
+-- Atomic, concurrency-safe stored procedure to swap signature product
+CREATE OR REPLACE FUNCTION set_signature_product(target_product_id UUID)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  PERFORM pg_advisory_xact_lock(hashtext('set_signature_product_lock'));
+  IF NOT EXISTS (SELECT 1 FROM public.products WHERE id = target_product_id) THEN
+    RAISE EXCEPTION 'Product not found';
+  END IF;
+  UPDATE public.products SET is_signature = FALSE WHERE is_signature = TRUE;
+  UPDATE public.products SET is_signature = TRUE WHERE id = target_product_id;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION set_signature_product(UUID) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION set_signature_product(UUID) TO service_role;
 
 -- 3. Product Images Table
 CREATE TABLE IF NOT EXISTS public.product_images (

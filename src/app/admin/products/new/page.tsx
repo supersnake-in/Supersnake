@@ -4,7 +4,7 @@ import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, Upload, Plus, X, Check, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Upload, Plus, X, Check, ShieldCheck, Sparkles } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { Product, Size, Gender, FitType, ProductVariant } from '@/lib/types';
 import { sanitizeString, sanitizeSlug, sanitizeNumber, isValidImageSource } from '@/lib/security';
@@ -23,7 +23,7 @@ const ALL_SIZES: Size[] = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL'
 
 export default function AdminNewProductPage() {
   const router = useRouter();
-  const { addProduct } = useStore();
+  const { addProduct, setSignatureProduct } = useStore();
 
   const [name, setName] = useState('');
   const [tagline, setTagline] = useState('');
@@ -34,6 +34,7 @@ export default function AdminNewProductPage() {
   const [fit, setFit] = useState<FitType>('Boxy');
   const [gender, setGender] = useState<Gender>('unisex');
   const [fabric, setFabric] = useState('100% Long-Staple Supima® Cotton (280 GSM Heavyweight)');
+  const [isSignatureChoice, setIsSignatureChoice] = useState(false);
 
   const [selectedSizes, setSelectedSizes] = useState<Size[]>(['S', 'M', 'L', 'XL']);
   const [selectedColors, setSelectedColors] = useState<{ name: string; hex: string }[]>([
@@ -142,7 +143,7 @@ export default function AdminNewProductPage() {
     );
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (uploadedImages.length === 0) {
       alert('Please upload or provide at least one product image.');
@@ -208,6 +209,9 @@ export default function AdminNewProductPage() {
     };
 
     addProduct(newProduct);
+    if (isSignatureChoice) {
+      await setSignatureProduct(newProduct.id);
+    }
     setTimeout(() => {
       router.push('/admin/products');
     }, 500);
@@ -512,6 +516,28 @@ export default function AdminNewProductPage() {
             >
               ADD
             </button>
+          </div>
+        </div>
+
+        {/* Homepage Spotlight Designation */}
+        <div className="pt-4 border-t border-white/10">
+          <div className="p-4 bg-[#121212] border border-white/10 rounded-sm flex items-center justify-between">
+            <div>
+              <label htmlFor="signatureToggle" className="text-white font-bold uppercase text-[11px] block cursor-pointer flex items-center gap-1.5 font-mono">
+                <Sparkles size={13} className="text-amber-400" />
+                SET AS SIGNATURE PRODUCT (HOMEPAGE SPOTLIGHT)
+              </label>
+              <span className="text-[10px] text-neutral-400 font-mono">
+                When checked, this new garment will become the active homepage spotlight (replacing the current signature garment) upon publishing.
+              </span>
+            </div>
+            <input
+              id="signatureToggle"
+              type="checkbox"
+              checked={isSignatureChoice}
+              onChange={(e) => setIsSignatureChoice(e.target.checked)}
+              className="w-5 h-5 rounded border-neutral-700 bg-neutral-900 text-amber-400 focus:ring-amber-400 focus:ring-offset-0 accent-amber-400 cursor-pointer"
+            />
           </div>
         </div>
 

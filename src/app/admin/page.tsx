@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   ArrowUpRight,
   Package,
@@ -10,12 +11,14 @@ import {
   CreditCard,
   Layers,
   Inbox,
+  Sparkles,
 } from 'lucide-react';
 import { formatPrice } from '@/lib/design-tokens';
 import { useStore } from '@/lib/store';
 
 export default function AdminDashboardPage() {
   const { orders, products } = useStore();
+  const signatureProduct = products.find((p) => p.isSignature);
 
   // Dynamic metrics derived directly from real live orders
   const totalRevenue = orders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
@@ -280,6 +283,73 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* CURRENT SIGNATURE PRODUCT WIDGET */}
+      {signatureProduct && (
+        <div className="p-6 bg-gradient-to-r from-amber-500/10 via-[#0d0d0d] to-[#0d0d0d] border border-amber-500/30 rounded-lg space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-neutral-800 pb-3">
+            <div className="flex items-center gap-2">
+              <Sparkles size={16} className="text-amber-400" />
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                CURRENT SIGNATURE PRODUCT (HOMEPAGE SPOTLIGHT)
+              </h3>
+            </div>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[10px] font-bold bg-amber-400/20 text-amber-400 border border-amber-400/40 uppercase tracking-wider self-start sm:self-auto">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" /> LIVE ON SECTION 05
+            </span>
+          </div>
+
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="flex items-center gap-4">
+              <div className="relative w-16 h-20 bg-neutral-900 rounded overflow-hidden flex-shrink-0 border border-neutral-800">
+                <Image
+                  src={signatureProduct.images[0]?.url || ''}
+                  alt={signatureProduct.name}
+                  fill
+                  sizes="80px"
+                  unoptimized={Boolean(signatureProduct.images[0]?.url?.startsWith('data:') || signatureProduct.images[0]?.url?.startsWith('blob:'))}
+                  className="object-cover"
+                />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-base text-white uppercase tracking-tight">
+                    {signatureProduct.name}
+                  </span>
+                  <span className="text-[10px] px-1.5 py-0.5 bg-neutral-800 text-neutral-300 rounded font-mono uppercase">
+                    {signatureProduct.fit} FIT
+                  </span>
+                </div>
+                <p className="text-xs text-neutral-400 max-w-xl line-clamp-2">
+                  {signatureProduct.description}
+                </p>
+                <div className="flex items-center gap-3 pt-1 text-xs">
+                  <span className="font-bold text-white">{formatPrice(signatureProduct.price)}</span>
+                  <span className="text-neutral-500 line-through text-[11px]">{formatPrice(signatureProduct.mrp)}</span>
+                  <span className="text-snake-green font-bold">{signatureProduct.gsm} GSM</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 self-start md:self-center flex-shrink-0">
+              <Link
+                href={`/product/${signatureProduct.slug}`}
+                target="_blank"
+                className="px-4 py-2 border border-neutral-700 hover:border-white text-neutral-300 hover:text-white rounded text-xs font-bold uppercase tracking-wider transition-colors flex items-center gap-1.5"
+              >
+                <span>VIEW STOREFRONT</span>
+                <ArrowUpRight size={13} />
+              </Link>
+              <Link
+                href="/admin/products"
+                className="px-4 py-2 bg-amber-400 hover:bg-amber-300 text-black font-bold rounded text-xs uppercase tracking-wider transition-colors shadow-[0_0_12px_rgba(251,191,36,0.25)]"
+              >
+                SWITCH SIGNATURE →
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Top Performing Garments & Recent Orders */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

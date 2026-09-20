@@ -21,6 +21,7 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  Sparkles,
 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { formatPrice, BRAND } from '@/lib/design-tokens';
@@ -267,8 +268,15 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
                 </AnimatePresence>
 
                 {/* Tagline / Subtitle Badge on Hero Image */}
-                <div className="absolute top-4 left-4 z-10 px-2.5 py-1 bg-black/70 backdrop-blur-md border border-white/10 text-[10px] font-mono tracking-widest text-neutral-300 uppercase max-w-[80%] truncate">
-                  {product.tagline || `${product.gsm} GSM`}
+                <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
+                  {product.isSignature && (
+                    <div className="px-2.5 py-1 bg-black/80 backdrop-blur-md border border-amber-400/40 text-[10px] font-mono tracking-widest text-amber-400 uppercase flex items-center gap-1 shadow-[0_0_10px_rgba(251,191,36,0.2)]">
+                      <Sparkles size={11} /> SIGNATURE
+                    </div>
+                  )}
+                  <div className="px-2.5 py-1 bg-black/70 backdrop-blur-md border border-white/10 text-[10px] font-mono tracking-widest text-neutral-300 uppercase max-w-[80%] truncate">
+                    {product.tagline || `${product.gsm} GSM`}
+                  </div>
                 </div>
 
                 {/* Lightbox Expander */}
@@ -314,9 +322,16 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
             {/* Title, Category & Pricing */}
             <div className="space-y-3 border-b border-white/10 pb-6">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono tracking-mega text-snake-green uppercase">
-                  {product.gender.toUpperCase()} • {product.fit.toUpperCase()} FIT
-                </span>
+                <div className="flex items-center gap-2">
+                  {product.isSignature && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-amber-400/10 text-amber-400 border border-amber-400/30 uppercase tracking-widest">
+                      <Sparkles size={10} /> THE SIGNATURE SERIES
+                    </span>
+                  )}
+                  <span className="text-[10px] font-mono tracking-mega text-snake-green uppercase">
+                    {product.gender.toUpperCase()} • {product.fit.toUpperCase()} FIT
+                  </span>
+                </div>
                 <button
                   onClick={() => toggleWishlist(product)}
                   className={`flex items-center gap-1.5 text-xs font-mono tracking-wider transition-colors ${

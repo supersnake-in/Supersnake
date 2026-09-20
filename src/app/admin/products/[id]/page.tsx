@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, Save, Trash2, Check, AlertCircle, Upload, X } from 'lucide-react';
+import { ArrowLeft, Save, Trash2, Check, AlertCircle, Upload, X, Sparkles } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { Product, Size, Gender, FitType } from '@/lib/types';
 import { sanitizeString, isValidImageSource } from '@/lib/security';
@@ -14,7 +14,7 @@ export default function AdminEditProductPage() {
   const params = useParams();
   const router = useRouter();
   const productId = params?.id as string;
-  const { products, updateProduct, deleteProduct } = useStore();
+  const { products, updateProduct, deleteProduct, setSignatureProduct } = useStore();
 
   const product = products.find((p) => p.id === productId);
 
@@ -27,6 +27,7 @@ export default function AdminEditProductPage() {
   const [fit, setFit] = useState<FitType>('Boxy');
   const [gender, setGender] = useState<Gender>('unisex');
   const [fabric, setFabric] = useState('');
+  const [isSignatureChoice, setIsSignatureChoice] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<
     { url: string; alt: string; angle: 'front' | 'model' | 'fabric' | 'back' | 'detail' | 'studio' | 'side' }[]
   >([]);
@@ -46,6 +47,7 @@ export default function AdminEditProductPage() {
       setFit(product.fit);
       setGender(product.gender);
       setFabric(product.fabric || '');
+      setIsSignatureChoice(Boolean(product.isSignature));
       if (product.images && product.images.length > 0) {
         setUploadedImages(
           product.images.map((img) => ({
@@ -162,7 +164,7 @@ export default function AdminEditProductPage() {
     );
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const updated: Product = {
@@ -185,6 +187,9 @@ export default function AdminEditProductPage() {
     };
 
     updateProduct(updated);
+    if (isSignatureChoice && !product.isSignature) {
+      await setSignatureProduct(product.id);
+    }
     setSaved(true);
     setTimeout(() => {
       setSaved(false);
@@ -193,9 +198,19 @@ export default function AdminEditProductPage() {
   };
 
   const handleDelete = () => {
+    if (product.isSignature) {
+      alert(
+        `CANNOT DELETE SIGNATURE PRODUCT\n\n"${product.name}" is currently designated as the active Signature Product (Homepage Spotlight). Exactly one signature product must always remain active.\n\nPlease designate another product as the Signature Product before deleting this one.`
+      );
+      return;
+    }
     if (confirm(`Are you sure you want to delete ${product.name}?`)) {
-      deleteProduct(product.id);
-      router.push('/admin/products');
+      try {
+        deleteProduct(product.id);
+        router.push('/admin/products');
+      } catch (err: any) {
+        alert(err?.message || 'Failed to delete product.');
+      }
     }
   };
 
@@ -495,6 +510,47 @@ export default function AdminEditProductPage() {
               ADD
             </button>
           </div>
+        </div>
+
+        {/* Homepage Spotlight Designation */}
+        <div className="pt-4 border-t border-white/10">
+          {product.isSignature ? (
+            <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-sm flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Sparkles size={14} className="text-amber-400" />
+                  <span className="text-amber-400 font-bold uppercase text-[11px] font-mono">
+                    CURRENT SIGNATURE PRODUCT (HOMEPAGE SPOTLIGHT)
+                  </span>
+                </div>
+                <span className="text-[10px] text-neutral-400 mt-0.5 block font-mono">
+                  This garment is currently featured in Section 05 on the homepage. Exactly one signature product must remain active. To change it, designate another product as signature.
+                </span>
+              </div>
+              <span className="px-2.5 py-1 bg-amber-400/20 text-amber-400 border border-amber-400/40 rounded text-[9px] font-bold uppercase tracking-wider font-mono">
+                ✓ ACTIVE
+              </span>
+            </div>
+          ) : (
+            <div className="p-4 bg-[#121212] border border-white/10 rounded-sm flex items-center justify-between">
+              <div>
+                <label htmlFor="signatureToggle" className="text-white font-bold uppercase text-[11px] block cursor-pointer flex items-center gap-1.5 font-mono">
+                  <Sparkles size={13} className="text-amber-400" />
+                  SET AS SIGNATURE PRODUCT (HOMEPAGE SPOTLIGHT)
+                </label>
+                <span className="text-[10px] text-neutral-400 font-mono">
+                  When checked, this garment will become the active homepage spotlight (replacing the current signature garment) upon saving.
+                </span>
+              </div>
+              <input
+                id="signatureToggle"
+                type="checkbox"
+                checked={isSignatureChoice}
+                onChange={(e) => setIsSignatureChoice(e.target.checked)}
+                className="w-5 h-5 rounded border-neutral-700 bg-neutral-900 text-amber-400 focus:ring-amber-400 focus:ring-offset-0 accent-amber-400 cursor-pointer"
+              />
+            </div>
+          )}
         </div>
 
         <div className="pt-4 border-t border-white/10 flex items-center justify-end gap-3">

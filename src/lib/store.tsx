@@ -7,6 +7,7 @@ import {
   createProductInSupabase,
   updateProductInSupabase,
   deleteProductFromSupabase,
+  setSignatureProductInSupabase,
   createOrderInSupabase,
   fetchOrdersFromSupabase,
   fetchHomepageConfigFromSupabase,
@@ -120,6 +121,7 @@ interface StoreContextType {
   addProduct: (product: Product) => void;
   updateProduct: (product: Product) => void;
   deleteProduct: (productId: string) => void;
+  setSignatureProduct: (productId: string) => Promise<{ success: boolean; error?: string }>;
   getProductBySlug: (slug: string) => Product | undefined;
 
   // Homepage Configuration
@@ -175,7 +177,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                     : [],
                 };
               });
-            setProducts(realProducts);
+            const hasSig = realProducts.some((p) => p.isSignature);
+            const normalized = realProducts.map((p, idx) => ({
+              ...p,
+              isSignature: hasSig ? Boolean(p.isSignature) : (p.slug === 'the-signature-tee' || idx === 0),
+            }));
+            setProducts(normalized);
             saveProductsToLocalStorage(realProducts);
           }
         } catch (e) {}
@@ -256,10 +263,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     fetchProductsFromSupabase()
       .then((supabaseProducts) => {
         if (supabaseProducts !== null) {
-          const deduplicated = supabaseProducts.map((p) => {
+          const hasSig = supabaseProducts.some((p) => p.isSignature);
+          const deduplicated = supabaseProducts.map((p, idx) => {
             const seen = new Set<string>();
             return {
               ...p,
+              isSignature: hasSig ? Boolean(p.isSignature) : (p.slug === 'the-signature-tee' || idx === 0),
               images: (p.images || []).filter((img) => {
                 if (!img?.url || seen.has(img.url)) return false;
                 seen.add(img.url);
@@ -616,10 +625,35 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const addProduct = (newProduct: Product) => {
+  const setSignatureProduct = async (productId: string): Promise<{ success: boolean; error?: string }> => {
+    const target = products.find((p) => p.id === productId || p.slug === productId);
+    if (!target) {
+      return { success: false, error: 'Product not found.' };
+    }
+
+    const updated = products.map((p) => ({
+      ...p,
+      isSignature: p.id === target.id || p.slug === target.slug,
+    }));
+
+    setProducts(updated);
+    saveProductsToLocalStorage(updated);
+
+    try {
+      await setSignatureProductInSupabase(target.id);
+    } catch (err) {
+      console.warn('Could not sync signature product to Supabase:', err);
+    }
+
+    return { success: true };
+  };
+
+  const addProduct = async (newProduct: Product) => {
+    const isSignatureRequested = Boolean(newProduct.isSignature);
     const seen = new Set<string>();
     const cleanProduct: Product = {
       ...newProduct,
+      isSignature: false, // Normal product creation never directly writes signature
       images: (newProduct.images || []).filter((img) => {
         if (!img?.url || seen.has(img.url)) return false;
         seen.add(img.url);
@@ -634,12 +668,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     createProductInSupabase(cleanProduct).catch((err) => {
       console.warn('Could not sync product to Supabase:', err);
     });
+
+    if (isSignatureRequested) {
+      await setSignatureProduct(cleanProduct.id);
+    }
   };
 
   const updateProduct = (updatedProduct: Product) => {
     const seen = new Set<string>();
+    const existing = products.find((p) => p.id === updatedProduct.id || p.slug === updatedProduct.slug);
     const cleanProduct: Product = {
       ...updatedProduct,
+      isSignature: existing?.isSignature ?? false, // Never mutate signature status via updateProduct
       images: (updatedProduct.images || []).filter((img) => {
         if (!img?.url || seen.has(img.url)) return false;
         seen.add(img.url);
@@ -647,7 +687,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }),
     };
     setProducts((prev) => {
-      const next = prev.map((p) => (p.id === cleanProduct.id ? cleanProduct : p));
+      const next = prev.map((p) => (p.id === cleanProduct.id || p.slug === cleanProduct.slug ? cleanProduct : p));
       saveProductsToLocalStorage(next);
       return next;
     });
@@ -657,8 +697,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   };
 
   const deleteProduct = (productId: string) => {
+    const target = products.find((p) => p.id === productId || p.slug === productId);
+    if (target?.isSignature) {
+      throw new Error('This product is currently the Signature Product. Please select another Signature Product before deleting or archiving it.');
+    }
     setProducts((prev) => {
-      const next = prev.filter((p) => p.id !== productId);
+      const next = prev.filter((p) => p.id !== productId && p.slug !== productId);
       saveProductsToLocalStorage(next);
       return next;
     });
@@ -772,6 +816,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         addProduct,
         updateProduct,
         deleteProduct,
+        setSignatureProduct,
         getProductBySlug,
         homepageConfig,
         updateHomepageConfig,

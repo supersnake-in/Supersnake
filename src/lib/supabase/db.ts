@@ -125,6 +125,7 @@ export async function fetchProductsFromSupabase(): Promise<Product[] | null> {
         isNew: row.is_new,
         isBestseller: row.is_bestseller,
         isSpotlight: row.is_spotlight,
+        isSignature: Boolean(row.is_signature),
         rating: Number(row.rating || 5.0),
         reviewsCount: Number(row.reviews_count || 0),
         createdAt: row.created_at || new Date().toISOString(),
@@ -261,6 +262,36 @@ export async function deleteProductFromSupabase(productId: string): Promise<bool
     const { error } = isUuid ? await query.eq('id', productId) : await query.eq('slug', productId);
     return !error;
   } catch (err) {
+    return false;
+  }
+}
+
+/**
+ * ATOMICALLY SET SIGNATURE PRODUCT IN SUPABASE VIA SECURE RPC / SERVER ENDPOINT
+ */
+export async function setSignatureProductInSupabase(productId: string): Promise<boolean> {
+  try {
+    if (typeof window !== 'undefined') {
+      const res = await fetch('/api/admin/products/signature', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return Boolean(data.success);
+      }
+      return false;
+    }
+
+    const { error } = await supabase.rpc('set_signature_product', { target_product_id: productId });
+    if (error) {
+      console.warn('Supabase set_signature_product RPC error:', error.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('Could not set signature product in Supabase:', err);
     return false;
   }
 }

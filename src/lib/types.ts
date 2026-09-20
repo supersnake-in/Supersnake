@@ -61,6 +61,7 @@ export interface Product {
   isNew?: boolean;
   isBestseller?: boolean;
   isSpotlight?: boolean;
+  isSignature?: boolean;
   rating: number;
   reviewsCount: number;
   createdAt: string;

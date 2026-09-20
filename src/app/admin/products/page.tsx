@@ -42,13 +42,16 @@ const LUXURY_COLOR_PRESETS = [
 const ALL_SIZES: Size[] = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL', '6XL'];
 
 export default function AdminProductsPage() {
-  const { products, addProduct, updateProduct, deleteProduct } = useStore();
+  const { products, addProduct, updateProduct, deleteProduct, setSignatureProduct } = useStore();
   const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGender, setSelectedGender] = useState('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
+  const [signatureConfirmProduct, setSignatureConfirmProduct] = useState<Product | null>(null);
+  const [isSwitchingSignature, setIsSwitchingSignature] = useState(false);
+  const [isSignatureChoice, setIsSignatureChoice] = useState(false);
   const modalBodyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -288,6 +291,7 @@ export default function AdminProductsPage() {
       'Orders dispatch swiftly from our studio via priority air express couriers. Full tracking milestones transmitted upon dispatch.\n\nSuperSnake operates under a strict no-return policy for ordinary purchases (no returns for change of mind or incorrect size). If an item arrives damaged or defective, report it via our Returns protocol.'
     );
     setIsNewProduct(true);
+    setIsSignatureChoice(false);
     setSelectedSizes(['S', 'M', 'L', 'XL']);
     setSelectedColors([{ name: 'Obsidian Black', hex: '#0a0a0a' }]);
     setUploadedImages([
@@ -319,6 +323,7 @@ export default function AdminProductsPage() {
         'Orders dispatch swiftly from our studio via priority air express couriers. Full tracking milestones transmitted upon dispatch.\n\nSuperSnake operates under a strict no-return policy for ordinary purchases (no returns for change of mind or incorrect size). If an item arrives damaged or defective, report it via our Returns protocol.'
     );
     setIsNewProduct(prod.isNew ?? true);
+    setIsSignatureChoice(Boolean(prod.isSignature));
     setSelectedSizes(prod.sizes || ['S', 'M', 'L', 'XL']);
     setSelectedColors(prod.colors || [{ name: 'Obsidian Black', hex: '#0a0a0a' }]);
     setUploadedImages(
@@ -421,9 +426,15 @@ export default function AdminProductsPage() {
 
     if (editingProductId) {
       updateProduct(productPayload);
+      if (isSignatureChoice && !existingProd?.isSignature) {
+        await setSignatureProduct(productPayload.id);
+      }
       setNotification(`UPDATED: "${cleanName}" IS NOW LIVE ON STOREFRONT`);
     } else {
       addProduct(productPayload);
+      if (isSignatureChoice) {
+        await setSignatureProduct(productPayload.id);
+      }
       setNotification(`PUBLISHED: "${cleanName}" IS NOW LIVE ON STOREFRONT`);
     }
 
@@ -432,10 +443,36 @@ export default function AdminProductsPage() {
   };
 
   const handleDeleteProduct = (id: string, prodName: string) => {
+    const prod = products.find((p) => p.id === id);
+    if (prod?.isSignature) {
+      alert(
+        `CANNOT DELETE SIGNATURE PRODUCT\n\n"${prodName}" is currently designated as the active Signature Product (Homepage Spotlight). Exactly one signature product must always remain active.\n\nPlease designate another product as the Signature Product before deleting this one.`
+      );
+      return;
+    }
     if (confirm(`Remove "${prodName}" from customer-facing storefront?`)) {
-      deleteProduct(id);
-      setNotification(`REMOVED: "${prodName}" from storefront`);
-      setTimeout(() => setNotification(null), 4000);
+      try {
+        deleteProduct(id);
+        setNotification(`REMOVED: "${prodName}" from storefront`);
+        setTimeout(() => setNotification(null), 4000);
+      } catch (err: any) {
+        alert(err?.message || 'Failed to delete product.');
+      }
+    }
+  };
+
+  const handleConfirmSignature = async () => {
+    if (!signatureConfirmProduct) return;
+    setIsSwitchingSignature(true);
+    try {
+      await setSignatureProduct(signatureConfirmProduct.id);
+      setNotification(`"${signatureConfirmProduct.name}" IS NOW THE ACTIVE SIGNATURE PRODUCT (HOMEPAGE SPOTLIGHT)`);
+      setTimeout(() => setNotification(null), 5000);
+    } catch (err: any) {
+      alert(err?.message || 'Failed to set signature product.');
+    } finally {
+      setIsSwitchingSignature(false);
+      setSignatureConfirmProduct(null);
     }
   };
 
@@ -513,6 +550,9 @@ export default function AdminProductsPage() {
               <th className="py-3 px-3 w-12 text-center" title="Check to show in New Drops section">
                 <span className="text-[9px] font-bold text-snake-green block">NEW DROP</span>
               </th>
+              <th className="py-3 px-3 w-28 text-center" title="Active Homepage Spotlight Garment">
+                <span className="text-[9px] font-bold text-amber-400 block">SIGNATURE</span>
+              </th>
               <th className="py-3 px-4">GARMENT</th>
               <th className="py-3 px-4">GSM & FABRIC</th>
               <th className="py-3 px-4">COLORS</th>
@@ -542,6 +582,22 @@ export default function AdminProductsPage() {
                     title={prod.isNew ? 'Currently in New Drops (click to uncheck)' : 'Add to New Drops section'}
                     className="w-4 h-4 rounded border-neutral-700 bg-neutral-900 text-snake-green focus:ring-snake-green focus:ring-offset-0 accent-snake-green cursor-pointer"
                   />
+                </td>
+                <td className="py-3 px-3 text-center">
+                  {prod.isSignature ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-bold bg-amber-400/15 text-amber-400 border border-amber-400/40 uppercase tracking-wider shadow-[0_0_8px_rgba(251,191,36,0.15)]">
+                      <Sparkles size={10} /> ACTIVE
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setSignatureConfirmProduct(prod)}
+                      className="px-2 py-1 rounded text-[9px] font-bold bg-neutral-900 border border-neutral-700 text-neutral-400 hover:text-white hover:border-amber-400 hover:bg-amber-400/10 transition-colors uppercase tracking-wider"
+                      title="Designate as the active Signature Product (Homepage Spotlight)"
+                    >
+                      MAKE SIGNATURE
+                    </button>
+                  )}
                 </td>
                 <td className="py-3 px-4">
                   <div className="flex items-center gap-3">
@@ -1241,6 +1297,45 @@ export default function AdminProductsPage() {
                     className="w-5 h-5 rounded border-neutral-700 bg-neutral-900 text-snake-green focus:ring-snake-green focus:ring-offset-0 accent-snake-green cursor-pointer"
                   />
                 </div>
+
+                {/* SECTION 11: HOMEPAGE SPOTLIGHT DESIGNATION (SIGNATURE PRODUCT) */}
+                {editingProductId && products.find((p) => p.id === editingProductId)?.isSignature ? (
+                  <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Sparkles size={14} className="text-amber-400" />
+                        <span className="text-amber-400 font-bold uppercase text-[11px]">
+                          CURRENT SIGNATURE PRODUCT (HOMEPAGE SPOTLIGHT)
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-neutral-400 mt-0.5 block">
+                        This garment is currently featured in Section 05 on the homepage. Exactly one signature product must remain active. To change it, designate another garment as signature.
+                      </span>
+                    </div>
+                    <span className="px-2.5 py-1 bg-amber-400/20 text-amber-400 border border-amber-400/40 rounded text-[9px] font-bold uppercase tracking-wider flex items-center gap-1">
+                      <Check size={12} /> ACTIVE
+                    </span>
+                  </div>
+                ) : (
+                  <div className="p-4 bg-neutral-950 border border-neutral-800 rounded-lg flex items-center justify-between">
+                    <div>
+                      <label htmlFor="signatureToggle" className="text-white font-bold uppercase text-[11px] block cursor-pointer flex items-center gap-1.5">
+                        <Sparkles size={13} className="text-amber-400" />
+                        SET AS SIGNATURE PRODUCT (HOMEPAGE SPOTLIGHT)
+                      </label>
+                      <span className="text-[10px] text-neutral-500">
+                        When checked, this garment will become the active homepage spotlight (replacing the current signature garment) upon saving.
+                      </span>
+                    </div>
+                    <input
+                      id="signatureToggle"
+                      type="checkbox"
+                      checked={isSignatureChoice}
+                      onChange={(e) => setIsSignatureChoice(e.target.checked)}
+                      className="w-5 h-5 rounded border-neutral-700 bg-neutral-900 text-amber-400 focus:ring-amber-400 focus:ring-offset-0 accent-amber-400 cursor-pointer"
+                    />
+                  </div>
+                )}
               </form>
             </div>
 
@@ -1267,6 +1362,66 @@ export default function AdminProductsPage() {
                   <span>{editingProductId ? 'UPDATE & PUBLISH' : 'PUBLISH TO LIVE STOREFRONT'}</span>
                 </button>
               </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Signature Switch Confirmation Modal */}
+      {mounted && signatureConfirmProduct && createPortal(
+        <div
+          className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md"
+          onClick={() => {
+            if (!isSwitchingSignature) setSignatureConfirmProduct(null);
+          }}
+        >
+          <div
+            className="w-full max-w-md bg-[#0e0e0e] border border-amber-500/40 rounded-xl shadow-2xl p-6 space-y-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-400">
+                <Sparkles size={22} />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold uppercase text-white tracking-wider">
+                  DESIGNATE SIGNATURE PRODUCT
+                </h3>
+                <p className="text-[11px] text-neutral-400 mt-0.5">
+                  Homepage Section 05 Spotlight Campaign
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3.5 bg-black/60 border border-neutral-800 rounded-lg space-y-2 text-xs">
+              <p className="text-neutral-300">
+                Make <span className="font-bold text-white uppercase">&ldquo;{signatureConfirmProduct.name}&rdquo;</span> the new Signature Product?
+              </p>
+              {products.find((p) => p.isSignature) && (
+                <p className="text-[11px] text-neutral-400">
+                  This will replace <span className="font-semibold text-amber-400 uppercase">&ldquo;{products.find((p) => p.isSignature)?.name}&rdquo;</span> as the homepage spotlight. Exactly one signature product is always maintained.
+                </p>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                disabled={isSwitchingSignature}
+                onClick={() => setSignatureConfirmProduct(null)}
+                className="px-4 py-2 border border-neutral-800 text-neutral-300 hover:text-white rounded text-xs uppercase tracking-wider transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                CANCEL
+              </button>
+              <button
+                type="button"
+                disabled={isSwitchingSignature}
+                onClick={handleConfirmSignature}
+                className="px-5 py-2 bg-amber-400 hover:bg-amber-300 text-black font-bold rounded text-xs uppercase tracking-wider transition-all shadow-[0_0_15px_rgba(251,191,36,0.3)] disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+              >
+                {isSwitchingSignature ? 'UPDATING...' : 'CONFIRM & SET SIGNATURE'}
+              </button>
             </div>
           </div>
         </div>,
