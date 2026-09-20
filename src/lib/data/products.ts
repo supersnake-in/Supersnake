@@ -26,29 +26,7 @@ export const PRODUCTS: Product[] = [
       'Subtle tonal SuperSnake nape embroidery',
       'Dyed with non-toxic OEKO-TEX® certified reactive dyes',
     ],
-    images: [
-      {
-        url: '/product-fallback.png',
-        alt: 'The Signature Tee - Front View in Studio Lighting',
-        isPrimary: true,
-        angle: 'front',
-      },
-      {
-        url: '/product-fallback.png',
-        alt: 'The Signature Tee - Editorial Model Fit',
-        angle: 'model',
-      },
-      {
-        url: '/product-fallback.png',
-        alt: 'The Signature Tee - Texture and Collar Macro',
-        angle: 'fabric',
-      },
-      {
-        url: '/product-fallback.png',
-        alt: 'The Signature Tee - Back Drape',
-        angle: 'back',
-      },
-    ],
+    images: [],
     colors: [
       { name: 'Obsidian Black', hex: '#0a0a0a' },
       { name: 'Chalk White', hex: '#f2f2f2' },
@@ -94,24 +72,7 @@ export const PRODUCTS: Product[] = [
       'Breathable French Terry looped interior',
       'Pre-washed with organic enzymes for buttery hand feel',
     ],
-    images: [
-      {
-        url: '/product-fallback.png',
-        alt: 'The Serpent Tee - Studio Front',
-        isPrimary: true,
-        angle: 'front',
-      },
-      {
-        url: '/product-fallback.png',
-        alt: 'The Serpent Tee - Editorial Stance',
-        angle: 'model',
-      },
-      {
-        url: '/product-fallback.png',
-        alt: 'The Serpent Tee - Crest Detail',
-        angle: 'detail',
-      },
-    ],
+    images: [],
     colors: [
       { name: 'Obsidian Black', hex: '#0a0a0a' },
       { name: 'Sage Olive', hex: '#3d4a3e' },
@@ -148,19 +109,7 @@ export const PRODUCTS: Product[] = [
       'Side-split seam with reinforcement webbing',
       'Generous chest and sleeve drape',
     ],
-    images: [
-      {
-        url: '/product-fallback.png',
-        alt: 'The Monolith Oversized Tee - Dark Studio',
-        isPrimary: true,
-        angle: 'front',
-      },
-      {
-        url: '/product-fallback.png',
-        alt: 'The Monolith Oversized - Side Profile',
-        angle: 'model',
-      },
-    ],
+    images: [],
     colors: [
       { name: 'Washed Charcoal', hex: '#262626' },
       { name: 'Obsidian Black', hex: '#0a0a0a' },
@@ -195,19 +144,7 @@ export const PRODUCTS: Product[] = [
       'Silicone branded neck label (itch-free)',
       'Limited production run of 500 units',
     ],
-    images: [
-      {
-        url: '/product-fallback.png',
-        alt: 'The Venom Edition - Front',
-        isPrimary: true,
-        angle: 'front',
-      },
-      {
-        url: '/product-fallback.png',
-        alt: 'The Venom Edition - Styling',
-        angle: 'model',
-      },
-    ],
+    images: [],
     colors: [
       { name: 'Obsidian Black', hex: '#0a0a0a' },
       { name: 'Deep Forest', hex: '#112217' },
@@ -241,19 +178,7 @@ export const PRODUCTS: Product[] = [
       'Anti-twist side seams',
       'Minimalist blind hems',
     ],
-    images: [
-      {
-        url: '/product-fallback.png',
-        alt: 'The Chalk Minimalist - Front',
-        isPrimary: true,
-        angle: 'front',
-      },
-      {
-        url: '/product-fallback.png',
-        alt: 'The Chalk Minimalist - Editorial',
-        angle: 'model',
-      },
-    ],
+    images: [],
     colors: [
       { name: 'Chalk White', hex: '#f2f2f2' },
       { name: 'Bone Ivory', hex: '#e6dfd5' },
@@ -288,19 +213,7 @@ export const PRODUCTS: Product[] = [
       'Structured shoulder line with subtle padding support',
       'Non-see-through dense weave',
     ],
-    images: [
-      {
-        url: '/product-fallback.png',
-        alt: 'The Meridian Cropped - Front View',
-        isPrimary: true,
-        angle: 'front',
-      },
-      {
-        url: '/product-fallback.png',
-        alt: 'The Meridian Cropped - Editorial',
-        angle: 'model',
-      },
-    ],
+    images: [],
     colors: [
       { name: 'Obsidian Black', hex: '#0a0a0a' },
       { name: 'Chalk White', hex: '#f2f2f2' },
@@ -331,14 +244,7 @@ export const PRODUCTS: Product[] = [
     fabric: '100% Combed Cotton (250 GSM)',
     careInstructions: ['Wash gentle cold', 'Do not bleach', 'Lay flat to dry'],
     features: ['Laser-cut raw hems', 'Enzyme washed black', 'No exterior branding'],
-    images: [
-      {
-        url: '/product-fallback.png',
-        alt: 'The Shadow Raw-Hem',
-        isPrimary: true,
-        angle: 'front',
-      },
-    ],
+    images: [],
     colors: [{ name: 'Obsidian Black', hex: '#0a0a0a' }, { name: 'Washed Charcoal', hex: '#262626' }],
     sizes: ['S', 'M', 'L', 'XL'],
     variants: [
@@ -362,14 +268,7 @@ export const PRODUCTS: Product[] = [
     fabric: '85% Supima® Cotton, 15% Mulberry Silk (210 GSM)',
     careInstructions: ['Dry clean or delicate hand wash cold', 'Dry flat in shade', 'Silk setting iron'],
     features: ['Mulberry silk blend', 'Subtle natural luster', 'Featherlight on skin', 'French seam construction'],
-    images: [
-      {
-        url: '/product-fallback.png',
-        alt: 'The Kinetic Silk-Cotton Tee',
-        isPrimary: true,
-        angle: 'front',
-      },
-    ],
+    images: [],
     colors: [{ name: 'Obsidian Black', hex: '#0a0a0a' }, { name: 'Chalk White', hex: '#f2f2f2' }],
     sizes: ['XS', 'S', 'M', 'L'],
     variants: [

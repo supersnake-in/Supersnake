@@ -97,24 +97,18 @@ export default function BagPage() {
                     <div key={item.id} className="py-6 flex gap-6 items-center">
                       {/* Image */}
                       <div className="relative w-24 h-28 sm:w-28 sm:h-32 bg-neutral-900 rounded overflow-hidden flex-shrink-0 border border-white/10 flex items-center justify-center">
-                        <Image
-                          src="/product-fallback.png"
-                          alt="Fallback"
-                          fill
-                          sizes="120px"
-                          className="object-cover pointer-events-none"
-                        />
-                        <Image
-                          src={imgUrl || '/product-fallback.png'}
-                          alt={item.product.name}
-                          fill
-                          sizes="120px"
-                          unoptimized={Boolean(imgUrl.startsWith('data:') || imgUrl.startsWith('blob:'))}
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = '/product-fallback.png';
-                          }}
-                          className="object-cover"
-                        />
+                        {imgUrl ? (
+                          <Image
+                            src={imgUrl}
+                            alt={item.product.name}
+                            fill
+                            sizes="120px"
+                            unoptimized={Boolean(imgUrl.startsWith('data:') || imgUrl.startsWith('blob:'))}
+                            className="object-cover"
+                          />
+                        ) : (
+                          <span className="text-[10px] font-mono text-neutral-600 uppercase">NO IMAGE</span>
+                        )}
                       </div>
 
                     {/* Details */}

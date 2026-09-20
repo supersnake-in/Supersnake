@@ -100,9 +100,10 @@ export function cleanCommunityImages(images?: string[]): string[] {
 }
 
 export function cleanProductImage(url?: string): string {
-  if (!url || typeof url !== 'string' || !url.trim()) return '/product-fallback.png';
+  if (!url || typeof url !== 'string' || !url.trim()) return '';
+  if (url === '/product-fallback.png') return '';
   if (STOCK_HERO_IMAGE_SNIPPETS.some((stock) => url.includes(stock))) {
-    return '/product-fallback.png';
+    return '';
   }
   return url;
 }

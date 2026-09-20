@@ -121,13 +121,7 @@ export default function AdminProductsPage() {
   // Image Upload State
   const [uploadedImages, setUploadedImages] = useState<
     { url: string; alt: string; angle: 'front' | 'model' | 'fabric' | 'back' | 'detail' | 'studio' | 'side' }[]
-  >([
-    {
-      url: '/product-fallback.png',
-      alt: 'Front View in Studio Lighting',
-      angle: 'front',
-    },
-  ]);
+  >([]);
   const [externalImageUrl, setExternalImageUrl] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -296,13 +290,7 @@ export default function AdminProductsPage() {
     setIsSignatureChoice(false);
     setSelectedSizes(['S', 'M', 'L', 'XL']);
     setSelectedColors([{ name: 'Obsidian Black', hex: '#0a0a0a' }]);
-    setUploadedImages([
-      {
-        url: '/product-fallback.png',
-        alt: 'Front View in Studio Lighting',
-        angle: 'front',
-      },
-    ]);
+    setUploadedImages([]);
     setIsModalOpen(true);
   };
 

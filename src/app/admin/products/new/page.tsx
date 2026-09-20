@@ -42,13 +42,7 @@ export default function AdminNewProductPage() {
   ]);
   const [uploadedImages, setUploadedImages] = useState<
     { url: string; alt: string; angle: 'front' | 'model' | 'fabric' | 'back' | 'detail' | 'studio' | 'side' }[]
-  >([
-    {
-      url: '/product-fallback.png',
-      alt: 'Front View in Studio Lighting',
-      angle: 'front',
-    },
-  ]);
+  >([]);
   const [externalImageUrl, setExternalImageUrl] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);

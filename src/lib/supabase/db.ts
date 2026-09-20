@@ -111,14 +111,7 @@ export async function fetchProductsFromSupabase(): Promise<Product[] | null> {
         careInstructions: row.care_instructions || [],
         features: row.features || [],
         shippingPolicy: row.shipping_policy || undefined,
-        images: images.length > 0 ? images : [
-          {
-            url: '/product-fallback.png',
-            alt: row.name,
-            isPrimary: true,
-            angle: 'front',
-          },
-        ],
+        images: images.length > 0 ? images : [],
         colors,
         sizes,
         variants,

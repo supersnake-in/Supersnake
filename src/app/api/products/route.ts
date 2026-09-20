@@ -63,14 +63,7 @@ export async function POST(request: Request) {
           })
       : [];
 
-    if (cleanImages.length === 0) {
-      cleanImages.push({
-        url: '/product-fallback.png',
-        alt: `${cleanName} - Front View`,
-        isPrimary: true,
-        angle: 'front',
-      });
-    }
+
 
     // Colors
     const cleanColors = Array.isArray(colors) && colors.length > 0

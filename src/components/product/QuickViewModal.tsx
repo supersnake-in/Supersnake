@@ -61,25 +61,21 @@ export function QuickViewModal() {
 
           {/* Left: Product Image */}
           <div className="relative w-full md:w-1/2 aspect-[4/5] bg-neutral-950 overflow-hidden">
-            <Image
-              src="/product-fallback.png"
-              alt="Loading..."
-              fill
-              sizes="(max-width: 768px) 100vw, 400px"
-              className="object-cover pointer-events-none"
-            />
-            <Image
-              src={quickViewProduct.images[0]?.url || '/product-fallback.png'}
-              alt={quickViewProduct.name}
-              fill
-              sizes="(max-width: 768px) 100vw, 400px"
-              unoptimized={Boolean(quickViewProduct.images[0]?.url?.startsWith('data:') || quickViewProduct.images[0]?.url?.startsWith('blob:'))}
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = '/product-fallback.png';
-              }}
-              className="object-cover"
-              priority
-            />
+            {quickViewProduct.images[0]?.url ? (
+              <Image
+                src={quickViewProduct.images[0].url}
+                alt={quickViewProduct.name}
+                fill
+                sizes="(max-width: 768px) 100vw, 400px"
+                unoptimized={Boolean(quickViewProduct.images[0].url.startsWith('data:') || quickViewProduct.images[0].url.startsWith('blob:'))}
+                className="object-cover"
+                priority
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-neutral-950 text-neutral-600 font-mono text-xs">
+                NO IMAGE
+              </div>
+            )}
             <div className="absolute bottom-3 left-3 px-2 py-0.5 bg-black/80 backdrop-blur-sm text-[9px] font-mono tracking-widest text-neutral-300 border border-white/10 uppercase max-w-[85%] truncate">
               {quickViewProduct.tagline || `${quickViewProduct.gsm} GSM • ${quickViewProduct.fit.toUpperCase()}`}
             </div>
