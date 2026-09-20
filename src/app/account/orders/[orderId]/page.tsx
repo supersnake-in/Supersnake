@@ -19,6 +19,7 @@ import { useStore } from '@/lib/store';
 import { formatPrice } from '@/lib/design-tokens';
 import { Order, OrderStatus } from '@/lib/types';
 import { supabase } from '@/lib/supabase/client';
+import OrderInvoice from '@/components/invoice/OrderInvoice';
 
 export default function OrderDetailPage() {
   const params = useParams();
@@ -165,27 +166,34 @@ export default function OrderDetailPage() {
   };
 
   return (
-    <div className="space-y-8">
-      {/* Top Breadcrumb & Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
-        <Link
-          href="/account/orders"
-          className="inline-flex items-center gap-2 text-xs font-mono text-neutral-400 hover:text-snake-green transition-colors"
-        >
-          <ArrowLeft size={14} />
-          <span>BACK TO ORDERS</span>
-        </Link>
-
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handlePrint}
-            className="px-3.5 py-1.5 bg-[#121212] hover:bg-white hover:text-black border border-white/10 text-white rounded text-xs font-mono uppercase tracking-wider transition-colors flex items-center gap-1.5"
+    <>
+      <div className="space-y-8 screen-only print:hidden">
+        {/* Top Breadcrumb & Actions */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+          <Link
+            href="/account/orders"
+            className="inline-flex items-center gap-2 text-xs font-mono text-neutral-400 hover:text-snake-green transition-colors"
           >
-            <Printer size={13} />
-            <span>PRINT INVOICE</span>
-          </button>
+            <ArrowLeft size={14} />
+            <span>BACK TO ORDERS</span>
+          </Link>
+
+          <div className="flex items-center gap-3">
+            <Link
+              href={`/account/orders/${order.orderNumber || order.id}/invoice`}
+              className="px-3.5 py-1.5 bg-[#121212] hover:bg-white hover:text-black border border-white/10 text-neutral-300 hover:text-black rounded text-xs font-mono uppercase tracking-wider transition-colors"
+            >
+              VIEW INVOICE
+            </Link>
+            <button
+              onClick={handlePrint}
+              className="px-3.5 py-1.5 bg-white text-black hover:bg-snake-green border border-white/10 rounded text-xs font-mono uppercase tracking-wider transition-colors flex items-center gap-1.5 font-semibold"
+            >
+              <Printer size={13} />
+              <span>PRINT INVOICE</span>
+            </button>
+          </div>
         </div>
-      </div>
 
       {/* Order Header Summary */}
       <div className="bg-[#0a0a0a] border border-white/10 p-6 rounded-sm space-y-4">
@@ -391,5 +399,11 @@ export default function OrderDetailPage() {
         </div>
       </div>
     </div>
+
+    {/* Print-only Dedicated Minimal A4 Invoice */}
+    <div id="supersnake-invoice" className="hidden print:block">
+      <OrderInvoice order={order} />
+    </div>
+  </>
   );
 }

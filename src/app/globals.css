@@ -120,3 +120,58 @@ body {
   background: #ffffff !important;
 }
 
+/* Print Styles for Dedicated 1-Page SuperSnake Invoice */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm 15mm;
+  }
+
+  html,
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide entire website chrome, navigation, footers, and screen-only tracking UI */
+  header,
+  footer,
+  nav,
+  aside,
+  .no-print,
+  [data-no-print="true"],
+  .screen-only,
+  #mobile-menu,
+  #cart-drawer,
+  .film-grain {
+    display: none !important;
+  }
+
+  /* Expose dedicated invoice container */
+  #supersnake-invoice {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+  }
+
+  /* Ensure no unwanted page break splits */
+  #supersnake-invoice,
+  #supersnake-invoice header,
+  #supersnake-invoice section,
+  #supersnake-invoice table,
+  #supersnake-invoice tr,
+  #supersnake-invoice footer {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+}

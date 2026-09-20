@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import { CheckCircle2, ArrowRight, Package, Truck, Printer } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { formatPrice } from '@/lib/design-tokens';
+import OrderInvoice from '@/components/invoice/OrderInvoice';
 
 export default function DynamicOrderConfirmationPage() {
   const params = useParams();
@@ -18,7 +19,8 @@ export default function DynamicOrderConfirmationPage() {
   };
 
   return (
-    <div className="bg-black text-white min-h-screen pt-32 pb-24 px-6 md:px-12 flex flex-col items-center font-sans">
+    <>
+      <div className="bg-black text-white min-h-screen pt-32 pb-24 px-6 md:px-12 flex flex-col items-center font-sans screen-only print:hidden">
       <div className="max-w-2xl w-full space-y-10">
         {/* Celebration Header */}
         <div className="text-center space-y-4">
@@ -112,5 +114,13 @@ export default function DynamicOrderConfirmationPage() {
         </div>
       </div>
     </div>
+
+    {/* Print-only Dedicated Minimal A4 Invoice */}
+    {order && (
+      <div id="supersnake-invoice" className="hidden print:block">
+        <OrderInvoice order={order} />
+      </div>
+    )}
+  </>
   );
 }
