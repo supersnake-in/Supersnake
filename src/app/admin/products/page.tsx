@@ -108,6 +108,7 @@ export default function AdminProductsPage() {
     'Orders dispatch swiftly from our studio via priority air express couriers. Full tracking milestones transmitted upon dispatch.\n\nSuperSnake operates under a strict no-return policy for ordinary purchases (no returns for change of mind or incorrect size). If an item arrives damaged or defective, report it via our Returns protocol.'
   );
   const [isNewProduct, setIsNewProduct] = useState(true);
+  const [isBestsellerProduct, setIsBestsellerProduct] = useState(false);
 
   // Selected Sizes & Colors
   const [selectedSizes, setSelectedSizes] = useState<Size[]>(['S', 'M', 'L', 'XL']);
@@ -291,6 +292,7 @@ export default function AdminProductsPage() {
       'Orders dispatch swiftly from our studio via priority air express couriers. Full tracking milestones transmitted upon dispatch.\n\nSuperSnake operates under a strict no-return policy for ordinary purchases (no returns for change of mind or incorrect size). If an item arrives damaged or defective, report it via our Returns protocol.'
     );
     setIsNewProduct(true);
+    setIsBestsellerProduct(false);
     setIsSignatureChoice(false);
     setSelectedSizes(['S', 'M', 'L', 'XL']);
     setSelectedColors([{ name: 'Obsidian Black', hex: '#0a0a0a' }]);
@@ -323,6 +325,7 @@ export default function AdminProductsPage() {
         'Orders dispatch swiftly from our studio via priority air express couriers. Full tracking milestones transmitted upon dispatch.\n\nSuperSnake operates under a strict no-return policy for ordinary purchases (no returns for change of mind or incorrect size). If an item arrives damaged or defective, report it via our Returns protocol.'
     );
     setIsNewProduct(prod.isNew ?? true);
+    setIsBestsellerProduct(Boolean(prod.isBestseller));
     setIsSignatureChoice(Boolean(prod.isSignature));
     setSelectedSizes(prod.sizes || ['S', 'M', 'L', 'XL']);
     setSelectedColors(prod.colors || [{ name: 'Obsidian Black', hex: '#0a0a0a' }]);
@@ -419,6 +422,7 @@ export default function AdminProductsPage() {
       sizes: selectedSizes,
       variants,
       isNew: isNewProduct,
+      isBestseller: isBestsellerProduct,
       rating: existingProd?.rating ?? 5.0,
       reviewsCount: existingProd?.reviewsCount ?? 0,
       createdAt: existingProd?.createdAt || new Date().toISOString(),
@@ -550,6 +554,9 @@ export default function AdminProductsPage() {
               <th className="py-3 px-3 w-12 text-center" title="Check to show in New Drops section">
                 <span className="text-[9px] font-bold text-snake-green block">NEW DROP</span>
               </th>
+              <th className="py-3 px-3 w-12 text-center" title="Check to feature in Best Sellers section">
+                <span className="text-[9px] font-bold text-snake-green block">BESTSELLER</span>
+              </th>
               <th className="py-3 px-3 w-28 text-center" title="Active Homepage Spotlight Garment">
                 <span className="text-[9px] font-bold text-amber-400 block">SIGNATURE</span>
               </th>
@@ -580,6 +587,24 @@ export default function AdminProductsPage() {
                       setTimeout(() => setNotification(null), 3000);
                     }}
                     title={prod.isNew ? 'Currently in New Drops (click to uncheck)' : 'Add to New Drops section'}
+                    className="w-4 h-4 rounded border-neutral-700 bg-neutral-900 text-snake-green focus:ring-snake-green focus:ring-offset-0 accent-snake-green cursor-pointer"
+                  />
+                </td>
+                <td className="py-3 px-3 text-center">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(prod.isBestseller)}
+                    onChange={(e) => {
+                      const updated = { ...prod, isBestseller: e.target.checked };
+                      updateProduct(updated);
+                      setNotification(
+                        e.target.checked
+                          ? `ADDED TO BEST SELLERS: "${prod.name}"`
+                          : `REMOVED FROM BEST SELLERS: "${prod.name}"`
+                      );
+                      setTimeout(() => setNotification(null), 3000);
+                    }}
+                    title={prod.isBestseller ? 'Currently a Best Seller (click to uncheck)' : 'Add to Best Sellers section'}
                     className="w-4 h-4 rounded border-neutral-700 bg-neutral-900 text-snake-green focus:ring-snake-green focus:ring-offset-0 accent-snake-green cursor-pointer"
                   />
                 </td>
@@ -1294,6 +1319,25 @@ export default function AdminProductsPage() {
                     type="checkbox"
                     checked={isNewProduct}
                     onChange={(e) => setIsNewProduct(e.target.checked)}
+                    className="w-5 h-5 rounded border-neutral-700 bg-neutral-900 text-snake-green focus:ring-snake-green focus:ring-offset-0 accent-snake-green cursor-pointer"
+                  />
+                </div>
+
+                {/* SECTION 10B: BEST SELLERS FEATURE TOGGLE */}
+                <div className="p-4 bg-neutral-950 border border-neutral-800 rounded-lg flex items-center justify-between">
+                  <div>
+                    <label htmlFor="bestsellerToggle" className="text-white font-bold uppercase text-[11px] block cursor-pointer">
+                      FEATURE IN &quot;BEST SELLERS&quot; SECTION
+                    </label>
+                    <span className="text-[10px] text-neutral-500">
+                      When checked, this garment appears in the homepage Perpetual Demand section and the Bestsellers filter.
+                    </span>
+                  </div>
+                  <input
+                    id="bestsellerToggle"
+                    type="checkbox"
+                    checked={isBestsellerProduct}
+                    onChange={(e) => setIsBestsellerProduct(e.target.checked)}
                     className="w-5 h-5 rounded border-neutral-700 bg-neutral-900 text-snake-green focus:ring-snake-green focus:ring-offset-0 accent-snake-green cursor-pointer"
                   />
                 </div>
