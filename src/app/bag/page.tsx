@@ -233,14 +233,14 @@ export default function BagPage() {
 
                 <div className="flex justify-between text-neutral-400">
                   <span>SHIPPING</span>
-                  <span className="text-white">
+                  <span className={freeShippingLeft === 0 ? 'text-snake-green font-medium' : 'text-white'}>
                     {freeShippingLeft === 0 ? 'FREE' : formatPrice(150)}
                   </span>
                 </div>
 
                 <div className="flex justify-between text-sm font-semibold text-white pt-3 border-t border-white/10">
                   <span>ESTIMATED TOTAL</span>
-                  <span className="text-base text-snake-green">
+                  <span className="text-base text-white">
                     {formatPrice(finalTotal + (freeShippingLeft === 0 ? 0 : 150))}
                   </span>
                 </div>

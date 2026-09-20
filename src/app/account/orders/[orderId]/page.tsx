@@ -125,7 +125,7 @@ export default function OrderDetailPage() {
 
           <div className="text-left md:text-right">
             <span className="text-[10px] font-mono uppercase text-neutral-500 block">TOTAL AMOUNT</span>
-            <span className="text-2xl font-display font-medium text-snake-green">
+            <span className="text-2xl font-display font-medium text-white">
               {formatPrice(order.total)}
             </span>
             <span className="text-[10px] font-mono text-neutral-500 block">
@@ -288,7 +288,7 @@ export default function OrderDetailPage() {
               </div>
               <div className="pt-2 border-t border-white/10 flex justify-between text-sm font-semibold text-white">
                 <span>Total Paid</span>
-                <span className="text-snake-green">{formatPrice(order.total)}</span>
+                <span className="text-white">{formatPrice(order.total)}</span>
               </div>
             </div>
           </div>

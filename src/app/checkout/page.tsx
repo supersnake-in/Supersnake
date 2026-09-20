@@ -715,13 +715,13 @@ function CheckoutContent() {
                 </div>
                 <div className="flex justify-between text-neutral-400">
                   <span>SHIPPING</span>
-                  <span className="text-snake-green">
+                  <span className={cartTotal >= BRAND.freeShippingThreshold ? 'text-snake-green font-medium' : 'text-white'}>
                     {cartTotal >= BRAND.freeShippingThreshold ? 'FREE' : formatPrice(150)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm font-semibold text-white pt-2 border-t border-white/10">
                   <span>TOTAL DUE</span>
-                  <span className="text-base text-snake-green">
+                  <span className="text-base text-white">
                     {formatPrice(cartTotal + (cartTotal >= BRAND.freeShippingThreshold ? 0 : 150))}
                   </span>
                 </div>
@@ -1392,13 +1392,13 @@ function CheckoutContent() {
               </div>
               <div className="flex justify-between text-neutral-400">
                 <span>SHIPPING</span>
-                <span className="text-snake-green">
+                <span className={cartTotal >= BRAND.freeShippingThreshold ? 'text-snake-green font-medium' : 'text-white'}>
                   {cartTotal >= BRAND.freeShippingThreshold ? 'FREE' : formatPrice(150)}
                 </span>
               </div>
               <div className="flex justify-between text-sm font-semibold text-white pt-3 border-t border-white/10">
                 <span>TOTAL DUE</span>
-                <span className="text-base text-snake-green">
+                <span className="text-base text-white">
                   {formatPrice(cartTotal + (cartTotal >= BRAND.freeShippingThreshold ? 0 : 150))}
                 </span>
               </div>

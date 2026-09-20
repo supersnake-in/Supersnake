@@ -137,7 +137,7 @@ export default function AccountOrdersPage() {
                 </div>
                 <div className="space-y-1">
                   <span className="text-neutral-500">AMOUNT</span>
-                  <p className="text-snake-green font-semibold">
+                  <p className="text-white font-semibold">
                     {formatPrice(order.total)}
                   </p>
                 </div>

@@ -87,7 +87,7 @@ export default function DynamicOrderConfirmationPage() {
           {order && (
             <div className="pt-4 border-t border-white/10 flex justify-between items-center">
               <span className="text-neutral-400">TOTAL AMOUNT</span>
-              <span className="text-sm font-semibold text-snake-green">
+              <span className="text-sm font-semibold text-white">
                 {formatPrice(order.total)}
               </span>
             </div>
