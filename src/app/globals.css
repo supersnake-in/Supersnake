@@ -124,21 +124,40 @@ body {
 @media print {
   @page {
     size: A4 portrait;
-    margin: 10mm 15mm;
+    margin: 0; /* Suppresses browser headers (date/title) and footers (URL/page numbers) */
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-shadow: none !important;
+    text-shadow: none !important;
   }
 
   html,
   body {
     background-color: #ffffff !important;
+    background: #ffffff !important;
     color: #000000 !important;
     width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
     margin: 0 !important;
     padding: 0 !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
-  /* Hide entire website chrome, navigation, footers, and screen-only tracking UI */
+  /* Force all wrappers to have no black background in print */
+  main,
+  div,
+  section,
+  article {
+    background: transparent !important;
+    background-color: transparent !important;
+  }
+
+  /* Hide entire website chrome, navigation, footers, account portal chrome, and screen-only UI */
   header,
   footer,
   nav,
@@ -148,24 +167,33 @@ body {
   .screen-only,
   #mobile-menu,
   #cart-drawer,
-  .film-grain {
+  .film-grain,
+  [role="dialog"],
+  [role="banner"],
+  [role="navigation"] {
     display: none !important;
   }
 
-  /* Expose dedicated invoice container */
+  /* Isolate and display ONLY the invoice */
   #supersnake-invoice {
     display: block !important;
+    visibility: visible !important;
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 !important;
-    padding: 0 !important;
+    padding: 10mm 15mm !important;
+    background-color: #ffffff !important;
     background: #ffffff !important;
     color: #000000 !important;
     box-shadow: none !important;
+    border: none !important;
+    box-sizing: border-box !important;
   }
 
-  /* Ensure no unwanted page break splits */
-  #supersnake-invoice,
+  #supersnake-invoice * {
+    visibility: visible !important;
+  }
+
   #supersnake-invoice header,
   #supersnake-invoice section,
   #supersnake-invoice table,

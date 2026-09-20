@@ -50,11 +50,16 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
         : 'ATELIER MEMBER'
       : 'GUEST PATRON';
 
+  // Dedicated invoice page must NOT render account portal chrome or background
+  if (pathname?.includes('/invoice')) {
+    return <>{children}</>;
+  }
+
   return (
-    <div className="bg-black text-white min-h-screen pt-28 md:pt-32 pb-24 px-4 sm:px-6 md:px-12 font-sans">
-      <div className="max-w-7xl mx-auto space-y-10">
+    <div className="bg-black text-white min-h-screen pt-28 md:pt-32 pb-24 px-4 sm:px-6 md:px-12 font-sans print:bg-white print:text-black print:p-0 print:m-0 print:min-h-0">
+      <div className="max-w-7xl mx-auto space-y-10 print:m-0 print:p-0 print:max-w-none print:space-y-0">
         {/* Account Header */}
-        <div className="border-b border-white/10 pb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="border-b border-white/10 pb-8 flex flex-col md:flex-row md:items-end justify-between gap-6 print:hidden">
           <div className="space-y-3">
             <div className="flex items-center gap-3">
               <span className="text-[10px] font-mono tracking-widest text-snake-green uppercase">
@@ -87,7 +92,7 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
 
         {/* Guest Patron Prompt Banner */}
         {!user && (
-          <div className="p-4 sm:p-5 bg-white/[0.02] border border-snake-green/30 rounded-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="p-4 sm:p-5 bg-white/[0.02] border border-snake-green/30 rounded-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-snake-green animate-pulse" />
@@ -117,7 +122,7 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
         )}
 
         {/* Mobile Navigation Tab Bar (< lg) */}
-        <div className="lg:hidden border-b border-white/10 pb-2">
+        <div className="lg:hidden border-b border-white/10 pb-2 print:hidden">
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
             {ACCOUNT_NAV.map((item) => {
               const Icon = item.icon;
@@ -197,9 +202,9 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
         </div>
 
         {/* Account Body Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start print:block print:m-0 print:p-0">
           {/* Sidebar Navigation (Desktop Locked) */}
-          <aside className="hidden lg:block lg:col-span-1 bg-[#0a0a0a] border border-white/10 p-3 rounded-sm space-y-1">
+          <aside className="hidden lg:block lg:col-span-1 bg-[#0a0a0a] border border-white/10 p-3 rounded-sm space-y-1 print:hidden">
             <div className="px-3 py-2 text-[10px] font-mono tracking-widest text-neutral-500 uppercase border-b border-white/5 mb-1">
               NAVIGATION
             </div>
@@ -289,7 +294,7 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
           </aside>
 
           {/* Subroute Active Content */}
-          <main className="lg:col-span-3 min-h-[500px]">
+          <main className="lg:col-span-3 min-h-[500px] print:w-full print:min-h-0 print:m-0 print:p-0">
             {children}
           </main>
         </div>

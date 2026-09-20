@@ -75,7 +75,7 @@ export default function OrderInvoice({ order, className = '' }: OrderInvoiceProp
 
   return (
     <div
-      className={`bg-white text-black font-sans antialiased text-[13px] leading-relaxed select-text ${className}`}
+      className={`bg-white text-black font-sans antialiased text-[13px] leading-relaxed select-text print:w-full print:max-w-none print:m-0 print:p-0 ${className}`}
       style={{
         width: '100%',
         maxWidth: '210mm',
@@ -83,7 +83,7 @@ export default function OrderInvoice({ order, className = '' }: OrderInvoiceProp
         boxSizing: 'border-box',
       }}
     >
-      <div className="p-8 sm:p-12 space-y-8">
+      <div className="p-8 sm:p-12 print:p-0 space-y-6 sm:space-y-8 print:space-y-4">
         {/* HEADER */}
         <header className="flex flex-row items-start justify-between border-b border-neutral-900/15 pb-6 gap-6">
           {/* Brand Left */}

@@ -142,7 +142,7 @@ export default function DedicatedInvoicePage() {
   }
 
   return (
-    <div className="min-h-screen py-6 px-4 sm:px-6 lg:px-8">
+    <div className="bg-[#050505] text-white min-h-screen pt-24 sm:pt-28 pb-16 px-4 sm:px-6 lg:px-8 print:bg-white print:text-black print:p-0 print:m-0 print:min-h-0">
       {/* Top Controls (Hidden during print) */}
       <div className="max-w-[210mm] mx-auto mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden border-b border-white/10 pb-4">
         <Link
@@ -175,7 +175,7 @@ export default function DedicatedInvoicePage() {
       {/* Invoice Container */}
       <div
         id="supersnake-invoice"
-        className="max-w-[210mm] mx-auto bg-white shadow-2xl rounded-sm border border-neutral-200 overflow-hidden"
+        className="max-w-[210mm] mx-auto bg-white shadow-2xl rounded-sm border border-neutral-200 overflow-hidden print:shadow-none print:border-none print:m-0 print:p-0 print:max-w-none print:w-full"
       >
         <OrderInvoice order={order} />
       </div>
