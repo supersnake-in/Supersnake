@@ -55,8 +55,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const key_id = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TdtCpOjDeqd3Mg';
-    const key_secret = process.env.RAZORPAY_KEY_SECRET || 'h8352O1kmcWDIIT0bbmycIFK';
+    const key_id = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TeKVwwxJXp1r5I';
+    const key_secret = process.env.RAZORPAY_KEY_SECRET || 'i01HJRIICmZZ77L9GReP0ZHG';
 
     const razorpay = new Razorpay({
       key_id,

@@ -436,7 +436,7 @@ function CheckoutContent() {
 
       // 4. Open Razorpay Standard Checkout
       const options = {
-        key: orderData.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TdtCpOjDeqd3Mg',
+        key: orderData.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TeKVwwxJXp1r5I',
         amount: orderData.amount,
         currency: orderData.currency || 'INR',
         name: 'SuperSnake',
