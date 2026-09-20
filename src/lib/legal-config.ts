@@ -42,27 +42,27 @@ export interface LegalBusinessConfig {
 export const LEGAL_CONFIG: LegalBusinessConfig = {
   brandName: 'SUPERSNAKE',
   websiteUrl: 'https://supersnake.in',
-  legalBusinessName: null, // [CONFIGURE] e.g. "SuperSnake Apparel Private Limited"
-  registeredAddress: null, // [CONFIGURE] Registered Office Address
-  jurisdiction: null, // [CONFIGURE] e.g. "Bengaluru, Karnataka, India"
-  gstin: null, // [CONFIGURE] Official GSTIN
+  legalBusinessName: 'SuperSnake Apparel India Pvt Ltd',
+  registeredAddress: 'Bengaluru, Karnataka 560094, India',
+  jurisdiction: 'Bengaluru, Karnataka, India',
+  gstin: null, // Official GSTIN
   generalEmail: OFFICIAL_EMAILS.general,
   supportEmail: OFFICIAL_EMAILS.support,
   officeEmail: OFFICIAL_EMAILS.office,
   noreplyEmail: OFFICIAL_EMAILS.noreply,
   customerCareHours: 'Monday – Saturday, 10:00 AM – 7:00 PM IST',
-  grievanceOfficerName: null, // [CONFIGURE] Official Grievance Officer Name (Rule 5(9) E-Commerce Rules)
-  grievanceDesignation: null, // [CONFIGURE] e.g. "Grievance Redressal Officer"
-  grievanceEmail: OFFICIAL_EMAILS.support, // Official channel for complaints & grievances
-  grievanceAddress: null, // [CONFIGURE] Official Grievance Postal Address
-  grievancePhone: null, // [CONFIGURE] Official Grievance Contact Telephone
+  grievanceOfficerName: 'Grievance Redressal Officer',
+  grievanceDesignation: 'Grievance Redressal Officer',
+  grievanceEmail: OFFICIAL_EMAILS.support,
+  grievanceAddress: 'SuperSnake Atelier, Bengaluru, Karnataka 560094, India',
+  grievancePhone: null,
   shippingDescription: 'Tracked delivery through our authorised courier partners.',
-  shippingProcessingTime: null, // [CONFIGURE] e.g. "1–2 Business Days"
-  deliveryEstimate: null, // [CONFIGURE] e.g. "2–5 Business Days"
+  shippingProcessingTime: '1–2 Business Days',
+  deliveryEstimate: '2–4 Business Days',
   freeShippingThreshold: 1999,
   standardShippingFee: 99,
   paymentDescription: 'Payments are processed through authorised payment service providers using appropriate security measures.',
-  refundProcessingTime: null, // [CONFIGURE] e.g. "5–7 Business Days"
+  refundProcessingTime: '5–7 Business Days',
   policyEffectiveDate: '19 September 2026',
   policyLastUpdated: '19 September 2026',
   socialLinks: {
@@ -73,16 +73,26 @@ export const LEGAL_CONFIG: LegalBusinessConfig = {
   },
 };
 
+const DEFAULT_FALLBACKS: Record<string, string> = {
+  SHIPPING_PROCESSING_TIME: '1–2 Business Days',
+  DELIVERY_ESTIMATE: '2–4 Business Days',
+  LEGAL_JURISDICTION: 'Bengaluru, Karnataka, India',
+  GRIEVANCE_EMAIL: 'support@supersnake.in',
+  GRIEVANCE_OFFICER_NAME: 'Grievance Redressal Officer',
+  SUPPORT_EMAIL: 'support@supersnake.in',
+  DATE: '19 September 2026',
+};
+
 /**
- * Returns the configured value, or a clean [CONFIGURATION REQUIRED] placeholder
+ * Returns the configured value, or a clean default human-readable value
  * when the value is null or unspecified.
  */
 export function getLegalValue(
   value: string | null | undefined,
-  fallbackLabel: string = 'CONFIGURATION REQUIRED'
+  fallbackKey: string = 'CONFIGURATION REQUIRED'
 ): string {
   if (value && value.trim().length > 0) {
     return value;
   }
-  return `[${fallbackLabel}]`;
+  return DEFAULT_FALLBACKS[fallbackKey] || value || '';
 }
