@@ -16,6 +16,8 @@ export interface UserProfile {
   preferredFit?: FitType;
   preferredSize?: string;
   genderInterest?: 'men' | 'women' | 'all';
+  isEmailVerified?: boolean;
+  phoneVerified?: boolean;
 }
 
 interface AuthContextType {
@@ -25,7 +27,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAdmin: boolean;
   signIn: (email: string, password?: string) => Promise<{ error?: string }>;
-  signUp: (email: string, password: string, fullName?: string, phone?: string) => Promise<{ error?: string; requireVerification?: boolean }>;
+  signUp: (email: string, password?: string, fullName?: string, phone?: string) => Promise<{ error?: string; requireVerification?: boolean }>;
   signInWithGoogle: (redirectTo?: string) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error?: string }>;
@@ -33,6 +35,7 @@ interface AuthContextType {
   checkEmailExists: (email: string) => Promise<{ exists: boolean; error?: string }>;
   sendEmailOtp: (email: string) => Promise<{ success: boolean; error?: string }>;
   verifyEmailOtp: (email: string, token: string) => Promise<{ success: boolean; error?: string }>;
+  authenticateWithOtp: (email: string, token: string, fullName?: string) => Promise<{ success: boolean; error?: string }>;
   signInWithOtp: (email: string, token: string) => Promise<{ error?: string }>;
 }
 
@@ -106,6 +109,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadUserProfile = async (currentUser: User) => {
     const meta = currentUser.user_metadata || {};
+    const isEmailVerified = Boolean(
+      currentUser.email_confirmed_at ||
+      (currentUser as any).confirmed_at ||
+      meta.email_verified ||
+      meta.is_email_verified
+    );
     let loadedProfile: UserProfile = {
       id: currentUser.id,
       email: currentUser.email || '',
@@ -116,6 +125,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       preferredFit: meta.preferred_fit || 'Classic',
       preferredSize: meta.preferred_size || 'M',
       genderInterest: meta.gender_interest || 'all',
+      isEmailVerified,
+      phoneVerified: Boolean(meta.phone_verified),
     };
 
     setProfile(loadedProfile);
@@ -136,6 +147,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           ...loadedProfile,
           fullName: dbProfile.full_name || loadedProfile.fullName,
           phone: dbProfile.phone || loadedProfile.phone,
+          isEmailVerified: dbProfile.is_email_verified !== undefined ? dbProfile.is_email_verified : loadedProfile.isEmailVerified,
+          phoneVerified: dbProfile.phone_verified !== undefined ? dbProfile.phone_verified : loadedProfile.phoneVerified,
         };
         setProfile(loadedProfile);
         try {
@@ -189,49 +202,68 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (
     email: string,
-    password: string,
+    password?: string,
     fullName?: string,
     phone?: string
   ): Promise<{ error?: string; requireVerification?: boolean }> => {
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-            phone,
+      const cleanEmail = email.trim().toLowerCase();
+      // If password provided, perform standard Supabase sign up
+      if (password) {
+        const { data, error } = await supabase.auth.signUp({
+          email: cleanEmail,
+          password,
+          options: {
+            data: {
+              full_name: fullName,
+              phone,
+            },
+            emailRedirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback`,
           },
-          emailRedirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback`,
-        },
-      });
+        });
 
-      if (error) {
-        // Graceful local fallback for local development if network fails
-        if (error.message.includes('Fetch') || error.message.includes('network') || error.message.includes('placeholder')) {
-          const fallbackUser: any = {
-            id: 'local-patron-' + Date.now(),
-            email,
-            user_metadata: { full_name: fullName || email.split('@')[0], phone },
-            created_at: new Date().toISOString(),
-          };
-          setUser(fallbackUser);
-          loadUserProfile(fallbackUser);
-          return {};
+        if (error) {
+          // Graceful local fallback for local development if network fails
+          if (error.message.includes('Fetch') || error.message.includes('network') || error.message.includes('placeholder')) {
+            const fallbackUser: any = {
+              id: 'local-patron-' + Date.now(),
+              email: cleanEmail,
+              user_metadata: { full_name: fullName || cleanEmail.split('@')[0], phone },
+              created_at: new Date().toISOString(),
+            };
+            setUser(fallbackUser);
+            loadUserProfile(fallbackUser);
+            return {};
+          }
+          return { error: error.message };
         }
-        return { error: error.message };
-      }
 
-      if (data.user && !data.session) {
+        if (data.user && !data.session) {
+          return { requireVerification: true };
+        }
+
+        if (data.user) {
+          setUser(data.user);
+          loadUserProfile(data.user);
+        }
+
+        return {};
+      } else {
+        // Passwordless sign up / sign in via OTP
+        const { error } = await supabase.auth.signInWithOtp({
+          email: cleanEmail,
+          options: {
+            shouldCreateUser: true,
+            emailRedirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback`,
+            data: {
+              full_name: fullName,
+              phone,
+            },
+          },
+        });
+        if (error) return { error: error.message };
         return { requireVerification: true };
       }
-
-      if (data.user) {
-        setUser(data.user);
-        loadUserProfile(data.user);
-      }
-
-      return {};
     } catch (err: any) {
       return { error: err.message || 'Registration failed' };
     }
@@ -270,6 +302,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return {};
         }
         return { error: error.message };
+      }
+
+      if (data?.url) {
+        window.location.assign(data.url);
+        return {};
       }
 
       return {};
@@ -417,6 +454,67 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const authenticateWithOtp = async (
+    email: string,
+    token: string,
+    fullName?: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanToken = token.trim();
+    try {
+      // 1. Try Supabase verifyOtp first
+      const { data, error } = await supabase.auth.verifyOtp({
+        email: cleanEmail,
+        token: cleanToken,
+        type: 'email',
+      });
+      if (!error && data?.user) {
+        setSession(data.session);
+        setUser(data.user);
+        if (fullName) {
+          data.user.user_metadata = {
+            ...data.user.user_metadata,
+            full_name: fullName,
+            name: fullName,
+          };
+        }
+        await loadUserProfile(data.user);
+        return { success: true };
+      }
+
+      // 2. Call server /api/auth/verify-otp
+      const res = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: cleanEmail, token: cleanToken }),
+      });
+      const resData = await res.json();
+      if (res.ok && resData.success) {
+        const verifiedUser: any = resData.user || {
+          id: 'patron-' + Date.now(),
+          email: cleanEmail,
+          user_metadata: {
+            full_name: fullName || cleanEmail.split('@')[0],
+            name: fullName || cleanEmail.split('@')[0],
+            email_verified: true,
+          },
+          email_confirmed_at: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+        };
+        setUser(verifiedUser);
+        await loadUserProfile(verifiedUser);
+        return { success: true };
+      }
+
+      return {
+        success: false,
+        error: resData.error || error?.message || 'Invalid or expired verification code.',
+      };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Verification failed.' };
+    }
+  };
+
   const signInWithOtp = async (email: string, token: string): Promise<{ error?: string }> => {
     const res = await verifyEmailOtp(email, token);
     if (!res.success) {
@@ -444,6 +542,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         checkEmailExists,
         sendEmailOtp,
         verifyEmailOtp,
+        authenticateWithOtp,
         signInWithOtp,
       }}
     >

@@ -144,7 +144,7 @@ export interface Order {
     status: 'paid' | 'pending' | 'failed';
     paidAt?: string;
   };
-  verificationStatus?: 'Pending' | 'Verified' | 'Unverified';
+  verificationStatus?: 'Pending' | 'Verified' | 'Unverified' | 'Unreachable';
   verifiedAt?: string;
   verifiedBy?: string;
   verificationNotes?: string;

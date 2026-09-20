@@ -11,15 +11,15 @@ function SignupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get('next') || searchParams.get('redirect') || '/account';
-  const { user, signUp, signInWithGoogle, checkEmailExists, sendEmailOtp, verifyEmailOtp, isLoading } = useAuth();
+  const { user, signUp, signInWithGoogle, checkEmailExists, sendEmailOtp, verifyEmailOtp, authenticateWithOtp, isLoading } = useAuth();
   
   // Step: 'form' | 'otp'
   const [step, setStep] = useState<'form' | 'otp'>('form');
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [wantPassword, setWantPassword] = useState(false);
   const [otp, setOtp] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
@@ -75,24 +75,19 @@ function SignupContent() {
     setSuccessMessage(null);
 
     const cleanEmail = email.trim().toLowerCase();
-    const cleanPhone = phone.trim().replace(/\D/g, '').slice(-10);
 
     // 1. Email format
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+    if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
       setError('Please provide a valid email address.');
       return;
     }
 
-    // 2. Phone format (10-digit Indian mobile)
-    if (cleanPhone.length !== 10 || !/^[6-9]\d{9}$/.test(cleanPhone)) {
-      setError('Please provide a valid 10-digit mobile number (e.g. 9876543210).');
-      return;
-    }
-
-    // 3. Password criteria: min 8 chars, letters and numbers
-    if (password.length < 8 || !/(?=.*[A-Za-z])(?=.*\d)/.test(password)) {
-      setError('Password must be at least 8 characters and contain both letters and numbers.');
-      return;
+    // 2. Optional Password criteria if chosen
+    if (wantPassword && password) {
+      if (password.length < 8 || !/(?=.*[A-Za-z])(?=.*\d)/.test(password)) {
+        setError('Password must be at least 8 characters and contain both letters and numbers.');
+        return;
+      }
     }
 
     if (!agreeTerms) {
@@ -103,15 +98,7 @@ function SignupContent() {
     setIsSubmitting(true);
 
     try {
-      // 4. Check whether email already exists
-      const checkRes = await checkEmailExists(cleanEmail);
-      if (checkRes.exists) {
-        setIsSubmitting(false);
-        setError('An account with this email already exists. Please sign in instead.');
-        return;
-      }
-
-      // 5. Send Email OTP
+      // Send Email OTP
       const otpRes = await sendEmailOtp(cleanEmail);
       setIsSubmitting(false);
 
@@ -136,7 +123,6 @@ function SignupContent() {
 
     const cleanEmail = email.trim().toLowerCase();
     const cleanOtp = otp.trim();
-    const cleanPhone = phone.trim().replace(/\D/g, '').slice(-10);
 
     if (cleanOtp.length !== 6) {
       setError('Please enter the 6-digit verification code.');
@@ -146,23 +132,23 @@ function SignupContent() {
     setIsSubmitting(true);
 
     try {
-      // 1. Verify Email OTP
-      const verifyRes = await verifyEmailOtp(cleanEmail, cleanOtp);
+      // 1. Authenticate with OTP (creates account or signs in)
+      const verifyRes = await authenticateWithOtp(cleanEmail, cleanOtp, fullName.trim() || undefined);
       if (!verifyRes.success) {
         setIsSubmitting(false);
         setError(verifyRes.error || 'Invalid or expired verification code.');
         return;
       }
 
-      // 2. Create customer account with verified email
-      const signupRes = await signUp(cleanEmail, password, fullName.trim(), cleanPhone);
-      setIsSubmitting(false);
-
-      if (signupRes.error) {
-        setError(signupRes.error);
-        return;
+      // 2. If password was optionally entered, update password
+      if (wantPassword && password) {
+        try {
+          const { supabase } = await import('@/lib/supabase/client');
+          await supabase.auth.updateUser({ password });
+        } catch (e) {}
       }
 
+      setIsSubmitting(false);
       router.push(next);
     } catch (err: any) {
       setIsSubmitting(false);
@@ -270,13 +256,12 @@ function SignupContent() {
               <form onSubmit={handleInitiateSignup} className="space-y-4">
                 <div>
                   <label className="block text-[10px] font-mono uppercase tracking-widest text-neutral-400 mb-1.5">
-                    Full Name *
+                    Full Name (Optional)
                   </label>
                   <input
                     type="text"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    required
                     placeholder="Aditya Sharma"
                     className="w-full bg-[#121212] border border-white/15 px-4 py-3 text-sm font-mono text-white placeholder:text-neutral-600 focus:outline-none focus:border-snake-green transition-colors"
                   />
@@ -284,7 +269,7 @@ function SignupContent() {
 
                 <div>
                   <label className="block text-[10px] font-mono uppercase tracking-widest text-neutral-400 mb-1.5">
-                    Email Address (OTP Verification Required) *
+                    Email Address *
                   </label>
                   <input
                     type="email"
@@ -296,69 +281,65 @@ function SignupContent() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-[10px] font-mono uppercase tracking-widest text-neutral-400 mb-1.5">
-                    Mobile Number (10 Digits) *
-                  </label>
-                  <input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    required
-                    placeholder="9876543210"
-                    maxLength={15}
-                    className="w-full bg-[#121212] border border-white/15 px-4 py-3 text-sm font-mono text-white placeholder:text-neutral-600 focus:outline-none focus:border-snake-green transition-colors"
-                  />
-                  <p className="text-[10px] font-mono text-neutral-500 mt-1">
-                    Used for order dispatch & delivery updates. No phone OTP required during signup.
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-mono uppercase tracking-widest text-neutral-400 mb-1.5">
-                    Password (Min 8 Characters, Letters & Numbers) *
-                  </label>
-                  <div className="relative">
+                {/* Optional Password Toggle */}
+                <div className="pt-1">
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-mono text-neutral-400 hover:text-neutral-300">
                     <input
-                      type={showPassword ? 'text' : 'password'}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      placeholder="Minimum 8 characters with letters and numbers"
-                      className="w-full bg-[#121212] border border-white/15 px-4 py-3 text-sm font-mono text-white placeholder:text-neutral-600 focus:outline-none focus:border-snake-green transition-colors pr-11"
+                      type="checkbox"
+                      checked={wantPassword}
+                      onChange={(e) => setWantPassword(e.target.checked)}
+                      className="rounded bg-[#121212] border-white/20 text-snake-green focus:ring-0 focus:ring-offset-0 cursor-pointer"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white"
-                      tabIndex={-1}
-                    >
-                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </div>
-
-                  {/* Password strength meter */}
-                  {password.length > 0 && (
-                    <div className="mt-2 space-y-1.5">
-                      <div className="flex gap-1.5 h-1">
-                        {[0, 1, 2, 3].map((idx) => (
-                          <div
-                            key={idx}
-                            className={`h-full flex-1 rounded-sm transition-all duration-300 ${
-                              idx < strength ? strengthColors[strength - 1] : 'bg-white/10'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                      <div className="flex justify-between text-[9px] font-mono uppercase text-neutral-500">
-                        <span>SECURITY RATING</span>
-                        <span className="font-semibold text-white">
-                          {strength > 0 ? strengthLabels[strength - 1] : 'TOO SHORT'}
-                        </span>
-                      </div>
-                    </div>
-                  )}
+                    <span className="text-[11px]">Set a password now (Optional — passwordless OTP available)</span>
+                  </label>
                 </div>
+
+                {wantPassword && (
+                  <div className="space-y-2 pt-1 animate-fadeIn">
+                    <label className="block text-[10px] font-mono uppercase tracking-widest text-neutral-400 mb-1.5">
+                      Password (Min 8 Characters, Letters & Numbers)
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Minimum 8 characters with letters and numbers"
+                        className="w-full bg-[#121212] border border-white/15 px-4 py-3 text-sm font-mono text-white placeholder:text-neutral-600 focus:outline-none focus:border-snake-green transition-colors pr-11"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white"
+                        tabIndex={-1}
+                      >
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+
+                    {/* Password strength meter */}
+                    {password.length > 0 && (
+                      <div className="mt-2 space-y-1.5">
+                        <div className="flex gap-1.5 h-1">
+                          {[0, 1, 2, 3].map((idx) => (
+                            <div
+                              key={idx}
+                              className={`h-full flex-1 rounded-sm transition-all duration-300 ${
+                                idx < strength ? strengthColors[strength - 1] : 'bg-white/10'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <div className="flex justify-between text-[9px] font-mono uppercase text-neutral-500">
+                          <span>SECURITY RATING</span>
+                          <span className="font-semibold text-white">
+                            {strength > 0 ? strengthLabels[strength - 1] : 'TOO SHORT'}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Terms checkbox */}
                 <div className="pt-2">
@@ -392,7 +373,7 @@ function SignupContent() {
                     <span className="inline-block animate-spin w-4 h-4 border-2 border-black border-t-transparent rounded-full" />
                   ) : (
                     <>
-                      <span>VERIFY EMAIL & CONTINUE</span>
+                      <span>CONTINUE WITH EMAIL</span>
                       <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                     </>
                   )}
@@ -404,7 +385,7 @@ function SignupContent() {
             <form onSubmit={handleVerifyAndCreate} className="space-y-5 animate-fadeIn">
               <div className="text-center space-y-2 pb-2">
                 <span className="text-[10px] font-mono uppercase tracking-widest text-snake-green">
-                  MANDATORY EMAIL OTP VERIFICATION
+                  ENTER VERIFICATION CODE
                 </span>
                 <p className="text-xs font-mono text-neutral-300">
                   Please enter the 6-digit code sent to <strong className="text-white">{email}</strong>
@@ -458,7 +439,7 @@ function SignupContent() {
                   <span className="inline-block animate-spin w-4 h-4 border-2 border-black border-t-transparent rounded-full" />
                 ) : (
                   <>
-                    <span>VERIFY & COMPLETE ENROLLMENT</span>
+                    <span>VERIFY & ENTER ATELIER</span>
                     <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                   </>
                 )}

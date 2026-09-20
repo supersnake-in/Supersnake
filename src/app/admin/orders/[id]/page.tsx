@@ -37,7 +37,7 @@ export default function AdminOrderDetailPage() {
   const [carrier, setCarrier] = useState(order?.tracking?.carrier || 'Express Courier');
   const [waybill, setWaybill] = useState(order?.tracking?.trackingNumber || '');
   const [phoneVerified, setPhoneVerified] = useState<boolean>(Boolean(order?.phoneVerified));
-  const [verificationStatus, setVerificationStatus] = useState<'Pending' | 'Verified' | 'Unverified'>(
+  const [verificationStatus, setVerificationStatus] = useState<'Pending' | 'Verified' | 'Unverified' | 'Unreachable'>(
     order?.verificationStatus || 'Pending'
   );
   const [verificationNotes, setVerificationNotes] = useState<string>(order?.verificationNotes || '');
@@ -70,7 +70,7 @@ export default function AdminOrderDetailPage() {
     setTimeout(() => setSaved(false), 2500);
   };
 
-  const handleVerifyPhone = (newVerifStatus: 'Verified' | 'Unverified') => {
+  const handleVerifyPhone = (newVerifStatus: 'Verified' | 'Unverified' | 'Unreachable') => {
     setPhoneVerified(newVerifStatus === 'Verified');
     setVerificationStatus(newVerifStatus);
     order.phoneVerified = newVerifStatus === 'Verified';
@@ -154,6 +154,8 @@ export default function AdminOrderDetailPage() {
               className={`px-3 py-1 text-[10px] font-mono uppercase font-bold rounded border ${
                 phoneVerified
                   ? 'bg-snake-green/10 border-snake-green/40 text-snake-green'
+                  : verificationStatus === 'Unreachable'
+                  ? 'bg-orange-950/40 border-orange-800/40 text-orange-400'
                   : verificationStatus === 'Unverified'
                   ? 'bg-red-950/40 border-red-800/40 text-red-400'
                   : 'bg-amber-950/40 border-amber-800/40 text-amber-400'
@@ -161,8 +163,10 @@ export default function AdminOrderDetailPage() {
             >
               {phoneVerified
                 ? 'PHONE VERIFIED'
+                : verificationStatus === 'Unreachable'
+                ? 'CALL UNREACHABLE'
                 : verificationStatus === 'Unverified'
-                ? 'CALL FAILED / UNREACHABLE'
+                ? 'CALL FAILED / INVALID'
                 : 'VERIFICATION PENDING'}
             </span>
           </div>
@@ -216,10 +220,17 @@ export default function AdminOrderDetailPage() {
               </button>
               <button
                 type="button"
+                onClick={() => handleVerifyPhone('Unreachable')}
+                className="w-full py-2 bg-neutral-900 hover:bg-orange-950 text-neutral-300 hover:text-orange-400 border border-white/10 hover:border-orange-800 font-mono text-xs uppercase font-bold tracking-wider rounded transition-colors"
+              >
+                FLAG AS UNREACHABLE
+              </button>
+              <button
+                type="button"
                 onClick={() => handleVerifyPhone('Unverified')}
                 className="w-full py-2 bg-neutral-900 hover:bg-red-950 text-neutral-300 hover:text-red-400 border border-white/10 hover:border-red-800 font-mono text-xs uppercase font-bold tracking-wider rounded transition-colors"
               >
-                FLAG UNREACHABLE / INVALID
+                FLAG UNVERIFIED / FAILED
               </button>
             </div>
           </div>

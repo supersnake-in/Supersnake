@@ -33,7 +33,7 @@ function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { cart, cartTotal, createOrder, updateOrder, clearCart, isLoaded, products, setCart, setCartItem } = useStore();
-  const { user, profile, checkEmailExists, sendEmailOtp, verifyEmailOtp, signIn, signInWithOtp, signUp } = useAuth();
+  const { user, profile, checkEmailExists, sendEmailOtp, verifyEmailOtp, authenticateWithOtp, signIn, signInWithOtp, signInWithGoogle, signUp } = useAuth();
 
   const [step, setStep] = useState<1 | 2>(1);
   const [paymentError, setPaymentError] = useState<string | null>(null);
@@ -54,12 +54,14 @@ function CheckoutContent() {
   });
 
   // Step 1 Inline Authentication State
-  const [authFlow, setAuthFlow] = useState<'enter_email' | 'existing_password' | 'existing_otp' | 'new_account'>('enter_email');
+  const [authFlow, setAuthFlow] = useState<'enter_email' | 'verify_otp' | 'existing_password'>('enter_email');
+  const [hasPasswordAccount, setHasPasswordAccount] = useState(false);
   const [authPassword, setAuthPassword] = useState('');
   const [authOtp, setAuthOtp] = useState('');
   const [authError, setAuthError] = useState<string | null>(null);
   const [authSuccess, setAuthSuccess] = useState<string | null>(null);
   const [isAuthProcessing, setIsAuthProcessing] = useState(false);
+  const [isGoogleProcessing, setIsGoogleProcessing] = useState(false);
   const [otpCooldown, setOtpCooldown] = useState(0);
 
   useEffect(() => {
@@ -68,6 +70,13 @@ function CheckoutContent() {
       return () => clearTimeout(timer);
     }
   }, [otpCooldown]);
+
+  // Returning patron with active session advances directly to delivery & payment
+  useEffect(() => {
+    if (user && step === 1) {
+      setStep(2);
+    }
+  }, [user]);
 
   const [postOffices, setPostOffices] = useState<Array<{ name: string; branchType?: string; deliveryStatus?: string }>>([]);
   const [isFetchingPincode, setIsFetchingPincode] = useState(false);
@@ -191,7 +200,17 @@ function CheckoutContent() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Step 1 inline authentication handlers
+  // Step 1 progressive inline authentication handlers
+  const handleGoogleCheckoutAuth = async () => {
+    setAuthError(null);
+    setIsGoogleProcessing(true);
+    const res = await signInWithGoogle('/checkout');
+    if (res.error) {
+      setAuthError(res.error);
+      setIsGoogleProcessing(false);
+    }
+  };
+
   const handleCheckEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError(null);
@@ -206,27 +225,43 @@ function CheckoutContent() {
     setIsAuthProcessing(true);
     try {
       const checkRes = await checkEmailExists(cleanEmail);
+      setHasPasswordAccount(Boolean(checkRes.exists));
+
+      const otpRes = await sendEmailOtp(cleanEmail);
       setIsAuthProcessing(false);
 
-      if (checkRes.exists) {
-        setAuthFlow('existing_password');
-        setAuthSuccess(`Account found for ${cleanEmail}. Enter password or sign in with OTP.`);
-      } else {
-        // Send email OTP for new account creation
-        setIsAuthProcessing(true);
-        const otpRes = await sendEmailOtp(cleanEmail);
-        setIsAuthProcessing(false);
-        if (!otpRes.success) {
-          setAuthError(otpRes.error || 'Failed to dispatch verification code.');
-          return;
-        }
-        setAuthFlow('new_account');
-        setOtpCooldown(60);
-        setAuthSuccess(`A 6-digit verification code was sent to ${cleanEmail}`);
+      if (!otpRes.success) {
+        setAuthError(otpRes.error || 'Failed to dispatch verification code.');
+        return;
       }
+
+      setAuthFlow('verify_otp');
+      setOtpCooldown(60);
+      setAuthSuccess(`A 6-digit verification code was dispatched to ${cleanEmail}`);
     } catch (err: any) {
       setIsAuthProcessing(false);
       setAuthError(err.message || 'Email verification encountered an issue.');
+    }
+  };
+
+  const handleVerifyOtpInline = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError(null);
+    const cleanOtp = authOtp.trim();
+
+    if (cleanOtp.length !== 6) {
+      setAuthError('Please enter the complete 6-digit verification code.');
+      return;
+    }
+
+    setIsAuthProcessing(true);
+    const res = await authenticateWithOtp(formData.email.trim().toLowerCase(), cleanOtp);
+    setIsAuthProcessing(false);
+
+    if (!res.success) {
+      setAuthError(res.error || 'Invalid or expired verification code.');
+    } else {
+      setStep(2);
     }
   };
 
@@ -249,97 +284,6 @@ function CheckoutContent() {
     }
   };
 
-  const handleExistingOtpLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAuthError(null);
-    if (authOtp.trim().length !== 6) {
-      setAuthError('Please enter the 6-digit verification code.');
-      return;
-    }
-
-    setIsAuthProcessing(true);
-    const res = await signInWithOtp(formData.email.trim().toLowerCase(), authOtp.trim());
-    setIsAuthProcessing(false);
-
-    if (res.error) {
-      setAuthError(res.error);
-    } else {
-      setStep(2);
-    }
-  };
-
-  const handleSwitchToExistingOtp = async () => {
-    setAuthError(null);
-    setAuthSuccess(null);
-    setIsAuthProcessing(true);
-    const res = await sendEmailOtp(formData.email.trim().toLowerCase());
-    setIsAuthProcessing(false);
-
-    if (!res.success) {
-      setAuthError(res.error || 'Failed to send login code.');
-    } else {
-      setAuthFlow('existing_otp');
-      setOtpCooldown(60);
-      setAuthSuccess(`Login code sent to ${formData.email.trim().toLowerCase()}`);
-    }
-  };
-
-  const handleCreateNewAccountInline = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAuthError(null);
-
-    const cleanEmail = formData.email.trim().toLowerCase();
-    const cleanOtp = authOtp.trim();
-    const cleanPhone = formData.phone.trim().replace(/\D/g, '').slice(-10);
-
-    if (cleanOtp.length !== 6) {
-      setAuthError('Please enter the 6-digit email verification code.');
-      return;
-    }
-
-    if (!formData.fullName.trim()) {
-      setAuthError('Please enter your full name.');
-      return;
-    }
-
-    if (cleanPhone.length !== 10 || !/^[6-9]\d{9}$/.test(cleanPhone)) {
-      setAuthError('Please provide a valid 10-digit mobile number (e.g. 9876543210).');
-      return;
-    }
-
-    if (authPassword.length < 8 || !/(?=.*[A-Za-z])(?=.*\d)/.test(authPassword)) {
-      setAuthError('Password must be at least 8 characters with both letters and numbers.');
-      return;
-    }
-
-    setIsAuthProcessing(true);
-
-    try {
-      // 1. Verify Email OTP
-      const verifyRes = await verifyEmailOtp(cleanEmail, cleanOtp);
-      if (!verifyRes.success) {
-        setIsAuthProcessing(false);
-        setAuthError(verifyRes.error || 'Invalid or expired verification code.');
-        return;
-      }
-
-      // 2. Create customer account
-      const signupRes = await signUp(cleanEmail, authPassword, formData.fullName.trim(), cleanPhone);
-      setIsAuthProcessing(false);
-
-      if (signupRes.error) {
-        setAuthError(signupRes.error);
-        return;
-      }
-
-      setFormData((prev) => ({ ...prev, phone: cleanPhone }));
-      setStep(2);
-    } catch (err: any) {
-      setIsAuthProcessing(false);
-      setAuthError(err.message || 'Account creation encountered an issue.');
-    }
-  };
-
   const handleResendInlineOtp = async () => {
     if (otpCooldown > 0) return;
     setAuthError(null);
@@ -350,7 +294,7 @@ function CheckoutContent() {
     if (!res.success) {
       setAuthError(res.error || 'Failed to resend code.');
     } else {
-      setAuthSuccess(`New code sent to ${cleanEmail}`);
+      setAuthSuccess(`New verification code sent to ${cleanEmail}`);
       setOtpCooldown(60);
     }
   };
@@ -891,11 +835,42 @@ function CheckoutContent() {
                     </button>
                   </form>
                 ) : (
-                  /* Case 2: Unauthenticated Customer */
+                  /* Case 2: Unauthenticated Customer - Progressive Low-Friction Flow */
                   <div className="space-y-6">
-                    {/* Sub-case 2A: Enter Email to Detect Account */}
+                    {/* Google Authentication */}
+                    <button
+                      type="button"
+                      onClick={handleGoogleCheckoutAuth}
+                      disabled={isGoogleProcessing || isAuthProcessing}
+                      className="w-full bg-[#121212] hover:bg-white hover:text-black border border-white/20 hover:border-white text-white font-mono text-xs uppercase tracking-widest py-3.5 px-6 font-semibold transition-all duration-300 flex items-center justify-center gap-3 group active:scale-[0.99] disabled:opacity-50"
+                    >
+                      {isGoogleProcessing ? (
+                        <span className="inline-block animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                          </svg>
+                          <span>CONTINUE WITH GOOGLE</span>
+                        </>
+                      )}
+                    </button>
+
+                    <div className="relative my-4">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-white/10" />
+                      </div>
+                      <div className="relative flex justify-center text-[10px] uppercase font-mono">
+                        <span className="bg-[#0c0c0c] px-3 text-neutral-500">OR CONTINUE WITH EMAIL</span>
+                      </div>
+                    </div>
+
+                    {/* Sub-case 2A: Enter Email */}
                     {authFlow === 'enter_email' && (
-                      <form onSubmit={handleCheckEmail} className="space-y-5">
+                      <form onSubmit={handleCheckEmail} className="space-y-4">
                         <div className="space-y-1.5 text-xs font-mono">
                           <label className="text-neutral-400 uppercase">EMAIL ADDRESS *</label>
                           <input
@@ -910,7 +885,7 @@ function CheckoutContent() {
                             className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green"
                           />
                           <p className="text-[10px] font-mono text-neutral-500">
-                            We will check if you have an existing patron profile or guide you through instant verification.
+                            We will send a secure 6-digit login code. No password required.
                           </p>
                         </div>
 
@@ -922,18 +897,107 @@ function CheckoutContent() {
                           {isAuthProcessing ? (
                             <>
                               <Loader2 size={14} className="animate-spin" />
-                              CHECKING PATRON PROFILE...
+                              SENDING CODE...
                             </>
                           ) : (
                             <>
-                              CONTINUE <ArrowRight size={14} />
+                              CONTINUE WITH EMAIL <ArrowRight size={14} />
                             </>
                           )}
                         </button>
                       </form>
                     )}
 
-                    {/* Sub-case 2B: Existing Account - Password Login */}
+                    {/* Sub-case 2B: Email OTP Verification (Passwordless) */}
+                    {authFlow === 'verify_otp' && (
+                      <form onSubmit={handleVerifyOtpInline} className="space-y-5 animate-fadeIn">
+                        <div className="p-3.5 bg-neutral-950 border border-white/10 rounded flex justify-between items-center text-xs font-mono">
+                          <div>
+                            <span className="text-[10px] text-snake-green uppercase font-bold block">
+                              VERIFYING PATRON
+                            </span>
+                            <span className="text-white font-semibold">{formData.email}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAuthFlow('enter_email');
+                              setAuthError(null);
+                              setAuthSuccess(null);
+                              setAuthOtp('');
+                            }}
+                            className="text-[10px] font-mono text-snake-green hover:underline uppercase"
+                          >
+                            CHANGE EMAIL
+                          </button>
+                        </div>
+
+                        <div className="space-y-1.5 text-xs font-mono">
+                          <label className="text-neutral-400 uppercase">6-DIGIT VERIFICATION CODE *</label>
+                          <input
+                            type="text"
+                            value={authOtp}
+                            onChange={(e) => setAuthOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                            required
+                            placeholder="123456"
+                            maxLength={6}
+                            autoFocus
+                            className="w-full min-h-[48px] bg-black border border-white/20 text-center tracking-[0.5em] text-xl font-mono text-white rounded focus:outline-none focus:border-snake-green"
+                          />
+                          <p className="text-[10px] font-mono text-neutral-500">
+                            Enter the 6-digit code sent to your email to continue.
+                          </p>
+                        </div>
+
+                        <div className="flex items-center justify-between text-xs font-mono text-neutral-400">
+                          {hasPasswordAccount ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setAuthFlow('existing_password');
+                                setAuthError(null);
+                              }}
+                              className="text-neutral-400 hover:text-white underline text-[11px]"
+                            >
+                              Sign in with Password instead
+                            </button>
+                          ) : (
+                            <span />
+                          )}
+
+                          {otpCooldown > 0 ? (
+                            <span className="text-[11px] text-neutral-500">Resend in {otpCooldown}s</span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={handleResendInlineOtp}
+                              className="text-snake-green hover:underline text-[11px] uppercase font-semibold"
+                            >
+                              Resend Code
+                            </button>
+                          )}
+                        </div>
+
+                        <button
+                          type="submit"
+                          disabled={isAuthProcessing || authOtp.length !== 6}
+                          className="w-full min-h-[48px] py-4 bg-snake-green text-black font-mono text-xs tracking-widest font-bold uppercase hover:bg-white active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                        >
+                          {isAuthProcessing ? (
+                            <>
+                              <Loader2 size={14} className="animate-spin" />
+                              VERIFYING...
+                            </>
+                          ) : (
+                            <>
+                              VERIFY &amp; CONTINUE <ArrowRight size={14} />
+                            </>
+                          )}
+                        </button>
+                      </form>
+                    )}
+
+                    {/* Sub-case 2C: Password Option for Returning Patrons */}
                     {authFlow === 'existing_password' && (
                       <form onSubmit={handleExistingPasswordLogin} className="space-y-5 animate-fadeIn">
                         <div className="p-3.5 bg-neutral-950 border border-white/10 rounded flex justify-between items-center text-xs font-mono">
@@ -977,8 +1041,10 @@ function CheckoutContent() {
                         <div className="flex items-center justify-between text-xs font-mono">
                           <button
                             type="button"
-                            onClick={handleSwitchToExistingOtp}
-                            disabled={isAuthProcessing}
+                            onClick={() => {
+                              setAuthFlow('verify_otp');
+                              setAuthError(null);
+                            }}
                             className="text-neutral-400 hover:text-white underline text-[11px]"
                           >
                             Sign in with Email OTP instead
@@ -1003,213 +1069,18 @@ function CheckoutContent() {
                         </button>
                       </form>
                     )}
-
-                    {/* Sub-case 2C: Existing Account - Email OTP Login */}
-                    {authFlow === 'existing_otp' && (
-                      <form onSubmit={handleExistingOtpLogin} className="space-y-5 animate-fadeIn">
-                        <div className="p-3.5 bg-neutral-950 border border-white/10 rounded flex justify-between items-center text-xs font-mono">
-                          <div>
-                            <span className="text-[10px] text-neutral-500 uppercase block">PATRON EMAIL</span>
-                            <span className="text-white font-semibold">{formData.email}</span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setAuthFlow('enter_email');
-                              setAuthError(null);
-                              setAuthSuccess(null);
-                            }}
-                            className="text-[10px] font-mono text-snake-green hover:underline uppercase"
-                          >
-                            CHANGE EMAIL
-                          </button>
-                        </div>
-
-                        <div className="space-y-1.5 text-xs font-mono">
-                          <label className="text-neutral-400 uppercase">6-DIGIT LOGIN CODE *</label>
-                          <input
-                            type="text"
-                            value={authOtp}
-                            onChange={(e) => setAuthOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                            required
-                            placeholder="123456"
-                            maxLength={6}
-                            autoFocus
-                            className="w-full min-h-[48px] bg-black border border-white/20 text-center tracking-[0.5em] text-xl font-mono text-white rounded focus:outline-none focus:border-snake-green"
-                          />
-                        </div>
-
-                        <div className="flex items-center justify-between text-xs font-mono text-neutral-400">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setAuthFlow('existing_password');
-                              setAuthError(null);
-                            }}
-                            className="text-neutral-400 hover:text-white underline text-[11px]"
-                          >
-                            Sign in with Password instead
-                          </button>
-
-                          {otpCooldown > 0 ? (
-                            <span className="text-[11px] text-neutral-500">Resend in {otpCooldown}s</span>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={handleResendInlineOtp}
-                              className="text-snake-green hover:underline text-[11px] uppercase font-semibold"
-                            >
-                              Resend Code
-                            </button>
-                          )}
-                        </div>
-
-                        <button
-                          type="submit"
-                          disabled={isAuthProcessing || authOtp.length !== 6}
-                          className="w-full min-h-[48px] py-4 bg-snake-green text-black font-mono text-xs tracking-widest font-bold uppercase hover:bg-white active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                        >
-                          {isAuthProcessing ? (
-                            <>
-                              <Loader2 size={14} className="animate-spin" />
-                              VERIFYING...
-                            </>
-                          ) : (
-                            <>
-                              VERIFY &amp; CONTINUE <ArrowRight size={14} />
-                            </>
-                          )}
-                        </button>
-                      </form>
-                    )}
-
-                    {/* Sub-case 2D: New Customer - Inline Email OTP & Account Creation */}
-                    {authFlow === 'new_account' && (
-                      <form onSubmit={handleCreateNewAccountInline} className="space-y-5 animate-fadeIn">
-                        <div className="p-3.5 bg-neutral-950 border border-white/10 rounded flex justify-between items-center text-xs font-mono">
-                          <div>
-                            <span className="text-[10px] text-snake-green uppercase font-bold block">
-                              NEW PATRON VERIFICATION
-                            </span>
-                            <span className="text-white font-semibold">{formData.email}</span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setAuthFlow('enter_email');
-                              setAuthError(null);
-                              setAuthSuccess(null);
-                            }}
-                            className="text-[10px] font-mono text-neutral-400 hover:text-white underline uppercase"
-                          >
-                            CHANGE EMAIL
-                          </button>
-                        </div>
-
-                        <div className="space-y-4 text-xs font-mono">
-                          <div className="space-y-1.5">
-                            <label className="text-neutral-400 uppercase flex items-center justify-between">
-                              <span className="text-white font-semibold">6-DIGIT EMAIL VERIFICATION CODE *</span>
-                              {otpCooldown > 0 ? (
-                                <span className="text-[10px] text-neutral-500">Resend in {otpCooldown}s</span>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={handleResendInlineOtp}
-                                  className="text-snake-green hover:underline text-[10px] uppercase font-semibold"
-                                >
-                                  Resend Code
-                                </button>
-                              )}
-                            </label>
-                            <input
-                              type="text"
-                              value={authOtp}
-                              onChange={(e) => setAuthOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                              required
-                              placeholder="123456"
-                              maxLength={6}
-                              autoFocus
-                              className="w-full min-h-[48px] bg-black border border-white/20 text-center tracking-[0.5em] text-xl font-mono text-white rounded focus:outline-none focus:border-snake-green"
-                            />
-                            <p className="text-[10px] font-mono text-neutral-500">
-                              Mandatory email verification code dispatched to your inbox.
-                            </p>
-                          </div>
-
-                          <div className="space-y-1.5">
-                            <label className="text-neutral-400 uppercase">FULL NAME *</label>
-                            <input
-                              type="text"
-                              name="fullName"
-                              required
-                              value={formData.fullName}
-                              onChange={handleChange}
-                              placeholder="Aditya Sharma"
-                              className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green"
-                            />
-                          </div>
-
-                          <div className="space-y-1.5">
-                            <label className="text-neutral-400 uppercase flex items-center justify-between">
-                              <span>MOBILE NUMBER *</span>
-                              <span className="text-[10px] text-neutral-500 font-mono">10 DIGITS (NO PHONE OTP)</span>
-                            </label>
-                            <input
-                              type="tel"
-                              name="phone"
-                              required
-                              value={formData.phone}
-                              onChange={handleChange}
-                              placeholder="9876543210"
-                              maxLength={15}
-                              className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green font-mono"
-                            />
-                          </div>
-
-                          <div className="space-y-1.5">
-                            <label className="text-neutral-400 uppercase">CREATE PASSWORD *</label>
-                            <input
-                              type="password"
-                              value={authPassword}
-                              onChange={(e) => setAuthPassword(e.target.value)}
-                              required
-                              placeholder="Min 8 characters with letters & numbers"
-                              className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green"
-                            />
-                          </div>
-                        </div>
-
-                        <button
-                          type="submit"
-                          disabled={isAuthProcessing || authOtp.length !== 6}
-                          className="w-full min-h-[48px] py-4 bg-snake-green text-black font-mono text-xs tracking-widest font-bold uppercase hover:bg-white active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                        >
-                          {isAuthProcessing ? (
-                            <>
-                              <Loader2 size={14} className="animate-spin" />
-                              VERIFYING &amp; CREATING PROFILE...
-                            </>
-                          ) : (
-                            <>
-                              VERIFY &amp; PROCEED TO DELIVERY <ArrowRight size={14} />
-                            </>
-                          )}
-                        </button>
-                      </form>
-                    )}
                   </div>
                 )}
               </div>
             )}
 
-            {/* Step 2: Delivery */}
+            {/* Step 2: Delivery & Payment */}
             {step === 2 && (
               <form onSubmit={handleNextStep} className="space-y-6">
                 <div className="border-b border-white/10 pb-3 flex justify-between items-center">
                   <div>
                     <h3 className="text-sm font-mono tracking-widest text-white uppercase font-bold">
-                      DELIVERY ADDRESS
+                      DELIVERY ADDRESS &amp; CONTACT
                     </h3>
                     <p className="text-[11px] font-mono text-neutral-500 mt-1">
                       Tracked delivery through our authorised courier partners.
@@ -1220,7 +1091,7 @@ function CheckoutContent() {
                     onClick={() => setStep(1)}
                     className="text-xs font-mono text-neutral-400 hover:text-white underline"
                   >
-                    EDIT CONTACT
+                    CHANGE ACCOUNT
                   </button>
                 </div>
 
@@ -1237,6 +1108,28 @@ function CheckoutContent() {
                       placeholder="Full recipient name"
                       className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green"
                     />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-neutral-400 uppercase flex items-center justify-between">
+                      <span>DELIVERY CONTACT NUMBER *</span>
+                      <span className="text-[10px] text-neutral-500 font-mono">10 DIGITS (SMS UPDATES)</span>
+                    </label>
+                    <input
+                      type="tel"
+                      name="phone"
+                      required
+                      autoComplete="tel"
+                      inputMode="tel"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      placeholder="9876543210"
+                      maxLength={15}
+                      className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green font-mono"
+                    />
+                    <p className="text-[10px] font-mono text-neutral-500">
+                      Required for dispatch notifications. No phone OTP required.
+                    </p>
                   </div>
 
                   <div className="space-y-1.5">

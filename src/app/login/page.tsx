@@ -11,10 +11,10 @@ function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get('next') || searchParams.get('redirect') || '/account';
-  const { user, signIn, signInWithOtp, sendEmailOtp, signInWithGoogle, isLoading } = useAuth();
+  const { user, signIn, signInWithOtp, sendEmailOtp, signInWithGoogle, authenticateWithOtp, isLoading } = useAuth();
   
-  // Login mode: 'password' | 'otp'
-  const [loginMode, setLoginMode] = useState<'password' | 'otp'>('password');
+  // Login mode: 'otp' | 'password' (Email OTP is primary)
+  const [loginMode, setLoginMode] = useState<'otp' | 'password'>('otp');
   const [otpStep, setOtpStep] = useState<'email' | 'code'>('email');
 
   const [email, setEmail] = useState('');
@@ -108,11 +108,11 @@ function LoginContent() {
     }
 
     setIsSubmitting(true);
-    const res = await signInWithOtp(cleanEmail, cleanOtp);
+    const res = await authenticateWithOtp(cleanEmail, cleanOtp);
     setIsSubmitting(false);
 
-    if (res.error) {
-      setError(res.error);
+    if (!res.success) {
+      setError(res.error || 'Invalid or expired login code.');
     } else {
       router.push(next);
     }
@@ -211,22 +211,8 @@ function LoginContent() {
             </div>
           </div>
 
-          {/* Tab Selector: Password vs Email OTP */}
+          {/* Tab Selector: Email OTP vs Password */}
           <div className="grid grid-cols-2 gap-2 mb-6 p-1 bg-[#121212] border border-white/10 rounded">
-            <button
-              type="button"
-              onClick={() => {
-                setLoginMode('password');
-                setError(null);
-              }}
-              className={`py-2 text-[11px] font-mono uppercase tracking-wider transition-colors ${
-                loginMode === 'password'
-                  ? 'bg-white text-black font-bold'
-                  : 'text-neutral-400 hover:text-white'
-              }`}
-            >
-              Password
-            </button>
             <button
               type="button"
               onClick={() => {
@@ -240,6 +226,20 @@ function LoginContent() {
               }`}
             >
               Email OTP
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setLoginMode('password');
+                setError(null);
+              }}
+              className={`py-2 text-[11px] font-mono uppercase tracking-wider transition-colors ${
+                loginMode === 'password'
+                  ? 'bg-white text-black font-bold'
+                  : 'text-neutral-400 hover:text-white'
+              }`}
+            >
+              Password
             </button>
           </div>
 
