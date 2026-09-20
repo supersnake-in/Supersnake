@@ -322,9 +322,14 @@ export default function HomePage() {
                 homepageConfig?.signatureTeeImage?.startsWith('data:') ||
                 (homepageConfig?.signatureTeeImage ? !homepageConfig.signatureTeeImage.includes('unsplash.com') : false)
               }
-              className="object-cover object-[center_20%] md:object-center brightness-95"
+              className="object-cover object-[center_20%] md:object-center brightness-80 md:brightness-75 contrast-105"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent md:bg-gradient-to-r md:from-black/90 md:via-black/35 md:via-45% md:to-transparent md:w-[70%]" />
+            {/* Matte-finished black translucent tint */}
+            <div className="absolute inset-0 bg-black/25 pointer-events-none" />
+            {/* Soft directional black gradient for typography readability */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/60 to-transparent md:bg-gradient-to-r md:from-black/95 md:via-black/60 md:via-40% md:to-transparent pointer-events-none" />
+            {/* Cinematic vignette effect */}
+            <div className="absolute inset-0 [background:radial-gradient(ellipse_at_center,transparent_40%,rgba(0,0,0,0.65)_100%)] pointer-events-none" />
           </div>
 
           <div className="relative z-10 max-w-2xl space-y-4 sm:space-y-5 md:space-y-12 lg:space-y-14 drop-shadow-[0_2px_12px_rgba(0,0,0,0.7)]">
