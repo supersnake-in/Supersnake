@@ -118,7 +118,7 @@ export default function AdminHomepageConfigPage() {
     homepageConfig?.supersnakeTeeImage || DEFAULT_HOMEPAGE_CONFIG.supersnakeTeeImage || ''
   );
   const [signatureTeeImage, setSignatureTeeImage] = useState<string>(
-    homepageConfig?.signatureTeeImage || DEFAULT_HOMEPAGE_CONFIG.signatureTeeImage || ''
+    cleanCollectionImage(homepageConfig?.signatureTeeImage, DEFAULT_HOMEPAGE_CONFIG.signatureTeeImage || '/signature-tee-spotlight.png')
   );
   const [pillar1Image, setPillar1Image] = useState<string>(
     homepageConfig?.pillar1Image || DEFAULT_HOMEPAGE_CONFIG.pillar1Image || ''
@@ -228,7 +228,7 @@ export default function AdminHomepageConfigPage() {
         setSupersnakeTeeImage(homepageConfig.supersnakeTeeImage);
       }
       if (homepageConfig.signatureTeeImage) {
-        setSignatureTeeImage(homepageConfig.signatureTeeImage);
+        setSignatureTeeImage(cleanCollectionImage(homepageConfig.signatureTeeImage, '/signature-tee-spotlight.png'));
       }
       if (homepageConfig.pillar1Image) {
         setPillar1Image(homepageConfig.pillar1Image);
@@ -1382,9 +1382,7 @@ export default function AdminHomepageConfigPage() {
               <div className="relative aspect-[16/9] w-full bg-neutral-900 rounded-md overflow-hidden border border-neutral-800 group">
                 <Image
                   src={
-                    signatureTeeImage ||
-                    DEFAULT_HOMEPAGE_CONFIG.signatureTeeImage ||
-                    'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=2400&auto=format&fit=crop'
+                    cleanCollectionImage(signatureTeeImage, DEFAULT_HOMEPAGE_CONFIG.signatureTeeImage || '/signature-tee-spotlight.png')
                   }
                   alt="The Signature Tee Spotlight"
                   fill

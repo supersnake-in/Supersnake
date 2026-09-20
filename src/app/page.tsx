@@ -321,9 +321,7 @@ export default function HomePage() {
           <div className="absolute inset-0 z-0">
             <Image
               src={
-                homepageConfig?.signatureTeeImage ||
-                DEFAULT_HOMEPAGE_CONFIG.signatureTeeImage ||
-                'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=2400&auto=format&fit=crop'
+                cleanCollectionImage(homepageConfig?.signatureTeeImage, '/signature-tee-spotlight.png')
               }
               alt={signatureProduct.name}
               fill
