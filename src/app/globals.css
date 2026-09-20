@@ -86,27 +86,34 @@ body {
 
 /* Dedicated Modal Scroller with High-Visibility Thumb */
 .modal-scroller {
-  scrollbar-width: thin !important;
-  scrollbar-color: #04fc21 #141414 !important;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain !important;
 }
 
+/* Firefox standard scrollbar */
+@supports not selector(::-webkit-scrollbar) {
+  .modal-scroller {
+    scrollbar-width: thin !important;
+    scrollbar-color: #04fc21 #141414 !important;
+  }
+}
+
+/* WebKit / Blink (Chrome, Safari, Edge) */
 .modal-scroller::-webkit-scrollbar {
   width: 10px !important;
+  height: 10px !important;
   display: block !important;
 }
 
 .modal-scroller::-webkit-scrollbar-track {
   background: #141414 !important;
-  border-radius: 6px;
-  border: 1px solid #222222;
+  border-left: 1px solid #222222 !important;
 }
 
 .modal-scroller::-webkit-scrollbar-thumb {
   background: #04fc21 !important;
-  border-radius: 6px;
-  border: 2px solid #141414;
+  border-radius: 6px !important;
+  border: 2px solid #141414 !important;
 }
 
 .modal-scroller::-webkit-scrollbar-thumb:hover {

@@ -19,6 +19,7 @@ export function SmoothScroll({ children }: { children: React.ReactNode }) {
       smoothWheel: true,
       wheelMultiplier: 1,
       touchMultiplier: 1.5,
+      allowNestedScroll: true,
     });
 
     lenisRef.current = lenis;
