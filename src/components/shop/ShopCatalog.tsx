@@ -66,7 +66,7 @@ export function ShopCatalog({
       if (sortBy === 'rating') return b.rating - a.rating;
       return 0; // featured default
     });
-  }, [selectedGender, selectedFit, selectedSize, selectedColor, onlyNew, onlyBestsellers, sortBy]);
+  }, [products, selectedGender, selectedFit, selectedSize, selectedColor, onlyNew, onlyBestsellers, sortBy]);
 
   const activeFilterCount =
     (selectedFit !== 'all' ? 1 : 0) +
@@ -414,7 +414,16 @@ export function ShopCatalog({
         )}
 
         {/* Product Grid */}
-        {filteredProducts.length === 0 ? (
+        {products.length === 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8">
+            {[...Array(6)].map((_, idx) => (
+              <div
+                key={idx}
+                className="aspect-[3/4] bg-neutral-950 border border-white/[0.06] animate-pulse rounded-sm"
+              />
+            ))}
+          </div>
+        ) : filteredProducts.length === 0 ? (
           <div className="py-28 text-center space-y-4">
             <p className="font-display text-2xl tracking-wider text-white">NO STYLES MATCH YOUR FILTERS.</p>
             <p className="text-xs font-mono text-neutral-500">
