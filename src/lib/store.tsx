@@ -62,6 +62,7 @@ export const STOCK_HERO_IMAGE_SNIPPETS = [
   'photo-1618354691373',
   'photo-1515886657613',
   'photo-1509631179647',
+  'photo-1503342394128',
 ];
 
 export function cleanHeroImages(images?: string[]): string[] {
@@ -78,6 +79,24 @@ export function cleanCollectionImage(url?: string, defaultFallback: string = '')
     return defaultFallback;
   }
   return url;
+}
+
+export function cleanCommunityImages(images?: string[]): string[] {
+  const fallback = [
+    '/community-supersnake.png',
+    '/community-supersnake.png',
+    '/community-supersnake.png',
+    '/community-supersnake.png',
+  ];
+  if (!images || !Array.isArray(images) || images.length === 0) return fallback;
+  const cleaned = images.map((url) => {
+    if (!url || typeof url !== 'string') return '/community-supersnake.png';
+    if (STOCK_HERO_IMAGE_SNIPPETS.some((stock) => url.includes(stock))) {
+      return '/community-supersnake.png';
+    }
+    return url;
+  });
+  return cleaned.length > 0 ? cleaned : fallback;
 }
 
 export const DEFAULT_HOMEPAGE_CONFIG: HomepageConfig = {
@@ -111,10 +130,10 @@ export const DEFAULT_HOMEPAGE_CONFIG: HomepageConfig = {
 
 export const DEFAULT_SOCIAL_CONFIG: SocialConfig = {
   communityImages: [
-    'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=600&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&w=600&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1503342394128-c104d54dba01?q=80&w=600&auto=format&fit=crop',
+    '/community-supersnake.png',
+    '/community-supersnake.png',
+    '/community-supersnake.png',
+    '/community-supersnake.png',
   ],
   instagram: 'https://instagram.com/supersnake.in',
   x: 'https://x.com/supersnake_in',
@@ -339,6 +358,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         try {
           const parsed = JSON.parse(savedSocial);
           if (parsed) {
+            if (Array.isArray(parsed.communityImages)) {
+              parsed.communityImages = cleanCommunityImages(parsed.communityImages);
+            }
             setSocialConfig((prev) => ({ ...prev, ...parsed }));
           }
         } catch (e) {}
@@ -421,9 +443,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     fetchSocialConfigFromSupabase()
       .then((supabaseSocial) => {
         if (supabaseSocial !== null) {
-          setSocialConfig((prev) => ({ ...prev, ...supabaseSocial }));
+          const cleaned = {
+            ...supabaseSocial,
+            ...(Array.isArray(supabaseSocial.communityImages)
+              ? { communityImages: cleanCommunityImages(supabaseSocial.communityImages) }
+              : {}),
+          };
+          setSocialConfig((prev) => ({ ...prev, ...cleaned }));
           try {
-            localStorage.setItem('supersnake_social_config', JSON.stringify(supabaseSocial));
+            localStorage.setItem('supersnake_social_config', JSON.stringify(cleaned));
           } catch (e) {}
         }
       })
@@ -872,6 +900,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const nextConfig: SocialConfig = {
       ...socialConfig,
       ...config,
+      ...(config.communityImages ? { communityImages: cleanCommunityImages(config.communityImages) } : {}),
     };
 
     setSocialConfig(nextConfig);

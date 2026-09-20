@@ -8,7 +8,7 @@ import { ArrowRight, ArrowDown, Sparkles, Instagram, ChevronLeft, ChevronRight }
 import { ProductCard } from '@/components/product/ProductCard';
 import { SuperSnakeLogo } from '@/components/brand/SuperSnakeLogo';
 import { formatPrice } from '@/lib/design-tokens';
-import { useStore, DEFAULT_HOMEPAGE_CONFIG, cleanHeroImages, cleanCollectionImage } from '@/lib/store';
+import { useStore, DEFAULT_HOMEPAGE_CONFIG, cleanHeroImages, cleanCollectionImage, cleanCommunityImages } from '@/lib/store';
 
 export default function HomePage() {
   const heroRef = useRef<HTMLDivElement>(null);
@@ -578,15 +578,7 @@ export default function HomePage() {
       <section className="py-24 px-6 md:px-12 border-t border-white/[0.06] bg-[#050505]">
         <div className="max-w-7xl mx-auto space-y-10">
           {(() => {
-            const communityImgs =
-              socialConfig?.communityImages && socialConfig.communityImages.length > 0
-                ? socialConfig.communityImages
-                : [
-                    'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=600&auto=format&fit=crop',
-                    'https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&w=600&auto=format&fit=crop',
-                    'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop',
-                    'https://images.unsplash.com/photo-1503342394128-c104d54dba01?q=80&w=600&auto=format&fit=crop',
-                  ];
+            const communityImgs = cleanCommunityImages(socialConfig?.communityImages);
 
             const count = communityImgs.length;
             const scrollOnMobile = count > 4;

@@ -18,13 +18,13 @@ import {
   Loader2,
   AlertCircle,
 } from 'lucide-react';
-import { useStore, DEFAULT_SOCIAL_CONFIG } from '@/lib/store';
+import { useStore, DEFAULT_SOCIAL_CONFIG, cleanCommunityImages } from '@/lib/store';
 
 const STUDIO_PRESETS = [
-  'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=600&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&w=600&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1503342394128-c104d54dba01?q=80&w=600&auto=format&fit=crop',
+  '/community-supersnake.png',
+  '/community-supersnake.png',
+  '/community-supersnake.png',
+  '/community-supersnake.png',
 ];
 
 export default function AdminSocialMediaPage() {
@@ -32,7 +32,7 @@ export default function AdminSocialMediaPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [communityImages, setCommunityImages] = useState<string[]>(
-    socialConfig?.communityImages?.length > 0 ? socialConfig.communityImages : DEFAULT_SOCIAL_CONFIG.communityImages
+    cleanCommunityImages(socialConfig?.communityImages)
   );
   const [instagram, setInstagram] = useState(socialConfig?.instagram || DEFAULT_SOCIAL_CONFIG.instagram);
   const [x, setX] = useState(socialConfig?.x || DEFAULT_SOCIAL_CONFIG.x);
@@ -50,7 +50,7 @@ export default function AdminSocialMediaPage() {
   useEffect(() => {
     if (socialConfig) {
       if (socialConfig.communityImages && socialConfig.communityImages.length > 0) {
-        setCommunityImages(socialConfig.communityImages);
+        setCommunityImages(cleanCommunityImages(socialConfig.communityImages));
       }
       if (socialConfig.instagram) setInstagram(socialConfig.instagram);
       if (socialConfig.x) setX(socialConfig.x);
