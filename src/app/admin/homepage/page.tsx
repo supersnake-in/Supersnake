@@ -1409,9 +1409,9 @@ export default function AdminHomepageConfigPage() {
                   alt="The Signature Tee Spotlight"
                   fill
                   unoptimized={signatureTeeImage?.startsWith('data:') || (signatureTeeImage ? !signatureTeeImage.includes('unsplash.com') : false)}
-                  className="object-cover brightness-60"
+                  className="object-cover brightness-95"
                 />
-                <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/35 via-45% to-transparent pointer-events-none w-[70%]" />
                 <div className="absolute bottom-4 left-4 space-y-1">
                   <span className="text-[9px] font-mono tracking-widest text-snake-green uppercase block">SPOTLIGHT CAMPAIGN</span>
                   <span className="text-lg sm:text-xl font-display font-black text-white uppercase block">THE SIGNATURE TEE</span>

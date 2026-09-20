@@ -322,12 +322,12 @@ export default function HomePage() {
                 homepageConfig?.signatureTeeImage?.startsWith('data:') ||
                 (homepageConfig?.signatureTeeImage ? !homepageConfig.signatureTeeImage.includes('unsplash.com') : false)
               }
-              className="object-cover object-[center_20%] md:object-center brightness-70 md:brightness-50 contrast-115 md:contrast-125"
+              className="object-cover object-[center_20%] md:object-center brightness-95"
             />
-            <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-black via-black/70 md:via-black/80 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent md:bg-gradient-to-r md:from-black/90 md:via-black/35 md:via-45% md:to-transparent md:w-[70%]" />
           </div>
 
-          <div className="relative z-10 max-w-2xl space-y-4 sm:space-y-5 md:space-y-12 lg:space-y-14">
+          <div className="relative z-10 max-w-2xl space-y-4 sm:space-y-5 md:space-y-12 lg:space-y-14 drop-shadow-[0_2px_12px_rgba(0,0,0,0.7)]">
             {/* Top Unit: Campaign Eyebrow, Title & Price */}
             <div className="space-y-1.5 sm:space-y-2">
               <span className="text-[10px] font-mono tracking-mega text-snake-green uppercase">
