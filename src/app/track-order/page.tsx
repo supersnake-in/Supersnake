@@ -123,7 +123,7 @@ export default function TrackOrderPage() {
                     ESTIMATED ARRIVAL
                   </span>
                   <span className="text-lg font-display font-medium text-snake-green">
-                    {foundOrder.tracking?.estimatedDelivery || 'Within 2–4 Business Days'}
+                    {foundOrder.tracking?.estimatedDelivery || 'Within 4–7 Business Days'}
                   </span>
                 </div>
               </div>

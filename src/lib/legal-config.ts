@@ -58,7 +58,7 @@ export const LEGAL_CONFIG: LegalBusinessConfig = {
   grievancePhone: null,
   shippingDescription: 'Tracked delivery through our authorised courier partners.',
   shippingProcessingTime: '1–2 Business Days',
-  deliveryEstimate: '2–4 Business Days',
+  deliveryEstimate: '4–7 Business Days',
   freeShippingThreshold: 1999,
   standardShippingFee: 99,
   paymentDescription: 'Payments are processed through authorised payment service providers using appropriate security measures.',
@@ -75,7 +75,7 @@ export const LEGAL_CONFIG: LegalBusinessConfig = {
 
 const DEFAULT_FALLBACKS: Record<string, string> = {
   SHIPPING_PROCESSING_TIME: '1–2 Business Days',
-  DELIVERY_ESTIMATE: '2–4 Business Days',
+  DELIVERY_ESTIMATE: '4–7 Business Days',
   LEGAL_JURISDICTION: 'Bengaluru, Karnataka, India',
   GRIEVANCE_EMAIL: 'support@supersnake.in',
   GRIEVANCE_OFFICER_NAME: 'Grievance Redressal Officer',

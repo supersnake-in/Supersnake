@@ -50,7 +50,7 @@ export default function DynamicOrderConfirmationPage() {
             <div className="text-right">
               <span className="text-neutral-500 uppercase block text-[10px]">ESTIMATED ARRIVAL</span>
               <span className="text-snake-green font-semibold">
-                {order?.tracking?.estimatedDelivery || 'Within 2–4 Business Days'}
+                {order?.tracking?.estimatedDelivery || 'Within 4–7 Business Days'}
               </span>
             </div>
           </div>

@@ -11,7 +11,7 @@ export default function AdminSettingsPage() {
   const [storeName, setStoreName] = useState(BRAND.name);
   const [supportEmail, setSupportEmail] = useState('support@supersnake.in');
   const [freeShippingThreshold, setFreeShippingThreshold] = useState<number>(storeThreshold || 1999);
-  const [deliveryDays, setDeliveryDays] = useState('2-4 Business Days');
+  const [deliveryDays, setDeliveryDays] = useState('4-7 Business Days');
   const [courierPartner, setCourierPartner] = useState('Authorised Courier Partners');
   const [studioLocation, setStudioLocation] = useState('Bengaluru, Karnataka, India');
   const [legalBusinessName, setLegalBusinessName] = useState('');
