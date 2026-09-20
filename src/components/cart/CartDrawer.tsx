@@ -106,20 +106,24 @@ export function CartDrawer() {
                   >
                     {/* Thumbnail */}
                     <div className="relative w-20 h-24 bg-neutral-900 flex-shrink-0 overflow-hidden rounded border border-white/5 flex items-center justify-center">
-                      {imgUrl ? (
-                        <Image
-                          src={imgUrl}
-                          alt={item.product.name}
-                          fill
-                          sizes="80px"
-                          unoptimized={Boolean(imgUrl.startsWith('data:') || imgUrl.startsWith('blob:'))}
-                          className="object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                      ) : (
-                        <span className="text-[10px] font-mono text-neutral-600 uppercase text-center px-1">
-                          ATELIER
-                        </span>
-                      )}
+                      <Image
+                        src="/product-fallback.png"
+                        alt="Fallback"
+                        fill
+                        sizes="80px"
+                        className="object-cover pointer-events-none"
+                      />
+                      <Image
+                        src={imgUrl || '/product-fallback.png'}
+                        alt={item.product.name}
+                        fill
+                        sizes="80px"
+                        unoptimized={Boolean(imgUrl.startsWith('data:') || imgUrl.startsWith('blob:'))}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = '/product-fallback.png';
+                        }}
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
                     </div>
 
                     {/* Details */}

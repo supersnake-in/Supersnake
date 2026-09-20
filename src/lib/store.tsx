@@ -99,6 +99,14 @@ export function cleanCommunityImages(images?: string[]): string[] {
   return cleaned.length > 0 ? cleaned : fallback;
 }
 
+export function cleanProductImage(url?: string): string {
+  if (!url || typeof url !== 'string' || !url.trim()) return '/product-fallback.png';
+  if (STOCK_HERO_IMAGE_SNIPPETS.some((stock) => url.includes(stock))) {
+    return '/product-fallback.png';
+  }
+  return url;
+}
+
 export const DEFAULT_HOMEPAGE_CONFIG: HomepageConfig = {
   heroImages: ['/hero2.png'],
   heroIntervalSeconds: 3,
@@ -266,11 +274,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                 return {
                   ...p,
                   images: Array.isArray(p.images)
-                    ? p.images.filter((img: any) => {
-                        if (!img?.url || seen.has(img.url)) return false;
-                        seen.add(img.url);
-                        return true;
-                      })
+                    ? p.images
+                        .map((img: any) => ({
+                          ...img,
+                          url: cleanProductImage(img?.url),
+                        }))
+                        .filter((img: any) => {
+                          if (!img?.url || seen.has(img.url)) return false;
+                          seen.add(img.url);
+                          return true;
+                        })
                     : [],
                 };
               });
@@ -387,11 +400,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             const seen = new Set<string>();
             return {
               ...p,
-              images: (p.images || []).filter((img) => {
-                if (!img?.url || seen.has(img.url)) return false;
-                seen.add(img.url);
-                return true;
-              }),
+              images: (p.images || [])
+                .map((img) => ({
+                  ...img,
+                  url: cleanProductImage(img?.url),
+                }))
+                .filter((img) => {
+                  if (!img?.url || seen.has(img.url)) return false;
+                  seen.add(img.url);
+                  return true;
+                }),
             };
           });
           const normalized = normalizeSignatureProduct(deduplicated);

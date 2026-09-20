@@ -24,8 +24,20 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
 
   const isFavorited = mounted ? isInWishlist(product.id) : false;
 
-  const primaryImage = product.images[0]?.url || '';
-  const alternateImage = product.images[1]?.url || primaryImage;
+  const initialPrimary = product.images[0]?.url || '/product-fallback.png';
+  const initialAlternate = product.images[1]?.url || initialPrimary;
+
+  const [primarySrc, setPrimarySrc] = useState(initialPrimary);
+  const [altSrc, setAltSrc] = useState(initialAlternate);
+  const [isPrimaryLoaded, setIsPrimaryLoaded] = useState(false);
+
+  useEffect(() => {
+    const p = product.images[0]?.url || '/product-fallback.png';
+    const a = product.images[1]?.url || p;
+    setPrimarySrc(p);
+    setAltSrc(a);
+    setIsPrimaryLoaded(false);
+  }, [product.images]);
 
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -56,6 +68,15 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
     >
       {/* Image Showcase Container */}
       <div className="relative aspect-[4/5] w-full overflow-hidden bg-[#0c0c0c] border border-white/[0.04] transition-colors group-hover:border-white/20">
+        {/* Underlying fallback image until original loads */}
+        <Image
+          src="/product-fallback.png"
+          alt={product.name}
+          fill
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+          className="object-cover pointer-events-none"
+        />
+
         {/* Clickable Image Link */}
         <Link
           href={`/product/${product.slug}`}
@@ -64,25 +85,30 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
         >
           {/* Primary Image */}
           <Image
-            src={primaryImage}
+            src={primarySrc}
             alt={product.name}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             priority={priority}
-            unoptimized={Boolean(primaryImage.startsWith('data:') || primaryImage.startsWith('blob:'))}
+            unoptimized={Boolean(primarySrc.startsWith('data:') || primarySrc.startsWith('blob:'))}
+            onLoad={() => setIsPrimaryLoaded(true)}
+            onError={() => setPrimarySrc('/product-fallback.png')}
             className={`object-cover transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-              isHovered && alternateImage !== primaryImage ? 'opacity-0 scale-105' : 'opacity-100 scale-100'
+              isPrimaryLoaded ? 'opacity-100' : 'opacity-0'
+            } ${
+              isHovered && altSrc !== primarySrc ? 'opacity-0 scale-105' : 'scale-100'
             }`}
           />
 
           {/* Alternate Image on Hover */}
-          {alternateImage !== primaryImage && (
+          {altSrc !== primarySrc && (
             <Image
-              src={alternateImage}
+              src={altSrc}
               alt={`${product.name} alternate`}
               fill
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              unoptimized={Boolean(alternateImage.startsWith('data:') || alternateImage.startsWith('blob:'))}
+              unoptimized={Boolean(altSrc.startsWith('data:') || altSrc.startsWith('blob:'))}
+              onError={() => setAltSrc('/product-fallback.png')}
               className={`object-cover transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                 isHovered ? 'opacity-100 scale-105' : 'opacity-0 scale-100'
               }`}

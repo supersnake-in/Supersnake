@@ -113,7 +113,7 @@ export async function fetchProductsFromSupabase(): Promise<Product[] | null> {
         shippingPolicy: row.shipping_policy || undefined,
         images: images.length > 0 ? images : [
           {
-            url: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=1600&auto=format&fit=crop',
+            url: '/product-fallback.png',
             alt: row.name,
             isPrimary: true,
             angle: 'front',

@@ -28,23 +28,23 @@ export const PRODUCTS: Product[] = [
     ],
     images: [
       {
-        url: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=1600&auto=format&fit=crop',
+        url: '/product-fallback.png',
         alt: 'The Signature Tee - Front View in Studio Lighting',
         isPrimary: true,
         angle: 'front',
       },
       {
-        url: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=1600&auto=format&fit=crop',
+        url: '/product-fallback.png',
         alt: 'The Signature Tee - Editorial Model Fit',
         angle: 'model',
       },
       {
-        url: 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?q=80&w=1600&auto=format&fit=crop',
+        url: '/product-fallback.png',
         alt: 'The Signature Tee - Texture and Collar Macro',
         angle: 'fabric',
       },
       {
-        url: 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=1600&auto=format&fit=crop',
+        url: '/product-fallback.png',
         alt: 'The Signature Tee - Back Drape',
         angle: 'back',
       },
@@ -96,18 +96,18 @@ export const PRODUCTS: Product[] = [
     ],
     images: [
       {
-        url: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&w=1600&auto=format&fit=crop',
+        url: '/product-fallback.png',
         alt: 'The Serpent Tee - Studio Front',
         isPrimary: true,
         angle: 'front',
       },
       {
-        url: 'https://images.unsplash.com/photo-1503341455253-b2e723bb3dbb?q=80&w=1600&auto=format&fit=crop',
+        url: '/product-fallback.png',
         alt: 'The Serpent Tee - Editorial Stance',
         angle: 'model',
       },
       {
-        url: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?q=80&w=1600&auto=format&fit=crop',
+        url: '/product-fallback.png',
         alt: 'The Serpent Tee - Crest Detail',
         angle: 'detail',
       },
@@ -150,13 +150,13 @@ export const PRODUCTS: Product[] = [
     ],
     images: [
       {
-        url: 'https://images.unsplash.com/photo-1503342394128-c104d54dba01?q=80&w=1600&auto=format&fit=crop',
+        url: '/product-fallback.png',
         alt: 'The Monolith Oversized Tee - Dark Studio',
         isPrimary: true,
         angle: 'front',
       },
       {
-        url: 'https://images.unsplash.com/photo-1562157873-818bc0726f68?q=80&w=1600&auto=format&fit=crop',
+        url: '/product-fallback.png',
         alt: 'The Monolith Oversized - Side Profile',
         angle: 'model',
       },
@@ -197,13 +197,13 @@ export const PRODUCTS: Product[] = [
     ],
     images: [
       {
-        url: 'https://images.unsplash.com/photo-1581655353564-df123a1eb820?q=80&w=1600&auto=format&fit=crop',
+        url: '/product-fallback.png',
         alt: 'The Venom Edition - Front',
         isPrimary: true,
         angle: 'front',
       },
       {
-        url: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=1600&auto=format&fit=crop',
+        url: '/product-fallback.png',
         alt: 'The Venom Edition - Styling',
         angle: 'model',
       },
@@ -243,13 +243,13 @@ export const PRODUCTS: Product[] = [
     ],
     images: [
       {
-        url: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=1600&auto=format&fit=crop',
+        url: '/product-fallback.png',
         alt: 'The Chalk Minimalist - Front',
         isPrimary: true,
         angle: 'front',
       },
       {
-        url: 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=1600&auto=format&fit=crop',
+        url: '/product-fallback.png',
         alt: 'The Chalk Minimalist - Editorial',
         angle: 'model',
       },
@@ -290,13 +290,13 @@ export const PRODUCTS: Product[] = [
     ],
     images: [
       {
-        url: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=1600&auto=format&fit=crop',
+        url: '/product-fallback.png',
         alt: 'The Meridian Cropped - Front View',
         isPrimary: true,
         angle: 'front',
       },
       {
-        url: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1600&auto=format&fit=crop',
+        url: '/product-fallback.png',
         alt: 'The Meridian Cropped - Editorial',
         angle: 'model',
       },
@@ -333,7 +333,7 @@ export const PRODUCTS: Product[] = [
     features: ['Laser-cut raw hems', 'Enzyme washed black', 'No exterior branding'],
     images: [
       {
-        url: 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?q=80&w=1600&auto=format&fit=crop',
+        url: '/product-fallback.png',
         alt: 'The Shadow Raw-Hem',
         isPrimary: true,
         angle: 'front',
@@ -364,7 +364,7 @@ export const PRODUCTS: Product[] = [
     features: ['Mulberry silk blend', 'Subtle natural luster', 'Featherlight on skin', 'French seam construction'],
     images: [
       {
-        url: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1600&auto=format&fit=crop',
+        url: '/product-fallback.png',
         alt: 'The Kinetic Silk-Cotton Tee',
         isPrimary: true,
         angle: 'front',

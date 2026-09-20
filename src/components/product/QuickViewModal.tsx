@@ -62,11 +62,21 @@ export function QuickViewModal() {
           {/* Left: Product Image */}
           <div className="relative w-full md:w-1/2 aspect-[4/5] bg-neutral-950 overflow-hidden">
             <Image
-              src={quickViewProduct.images[0]?.url || ''}
+              src="/product-fallback.png"
+              alt="Loading..."
+              fill
+              sizes="(max-width: 768px) 100vw, 400px"
+              className="object-cover pointer-events-none"
+            />
+            <Image
+              src={quickViewProduct.images[0]?.url || '/product-fallback.png'}
               alt={quickViewProduct.name}
               fill
               sizes="(max-width: 768px) 100vw, 400px"
               unoptimized={Boolean(quickViewProduct.images[0]?.url?.startsWith('data:') || quickViewProduct.images[0]?.url?.startsWith('blob:'))}
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/product-fallback.png';
+              }}
               className="object-cover"
               priority
             />

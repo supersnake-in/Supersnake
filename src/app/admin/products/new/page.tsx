@@ -44,7 +44,7 @@ export default function AdminNewProductPage() {
     { url: string; alt: string; angle: 'front' | 'model' | 'fabric' | 'back' | 'detail' | 'studio' | 'side' }[]
   >([
     {
-      url: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=1600&auto=format&fit=crop',
+      url: '/product-fallback.png',
       alt: 'Front View in Studio Lighting',
       angle: 'front',
     },

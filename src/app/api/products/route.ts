@@ -65,7 +65,7 @@ export async function POST(request: Request) {
 
     if (cleanImages.length === 0) {
       cleanImages.push({
-        url: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=1600&auto=format&fit=crop',
+        url: '/product-fallback.png',
         alt: `${cleanName} - Front View`,
         isPrimary: true,
         angle: 'front',

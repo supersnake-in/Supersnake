@@ -194,14 +194,24 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
                 }}
               >
                 {uniqueImages.map((img, idx) => (
-                  <div key={idx} className="relative w-full h-full flex-shrink-0 snap-center">
+                  <div key={idx} className="relative w-full h-full flex-shrink-0 snap-center bg-neutral-950">
                     <Image
-                      src={img.url}
+                      src="/product-fallback.png"
+                      alt="Loading..."
+                      fill
+                      sizes="(max-width: 1024px) 100vw, 60vw"
+                      className="object-cover pointer-events-none"
+                    />
+                    <Image
+                      src={img.url || '/product-fallback.png'}
                       alt={img.alt}
                       fill
                       priority={idx === 0}
                       sizes="(max-width: 1024px) 100vw, 60vw"
                       unoptimized={Boolean(img.url.startsWith('data:') || img.url.startsWith('blob:'))}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/product-fallback.png';
+                      }}
                       className="object-cover"
                     />
                   </div>
@@ -245,6 +255,13 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
             <div className="hidden lg:block space-y-4">
               {/* Active Hero Image with Zoom trigger and 10s Auto-Slide Crossfade */}
               <div className="relative aspect-[4/5] w-full rounded bg-[#0c0c0c] border border-white/10 overflow-hidden group">
+                <Image
+                  src="/product-fallback.png"
+                  alt="Loading..."
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 60vw"
+                  className="object-cover pointer-events-none"
+                />
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={activeImageIndex}
@@ -255,12 +272,15 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
                     className="absolute inset-0"
                   >
                     <Image
-                      src={activeImage.url}
+                      src={activeImage.url || '/product-fallback.png'}
                       alt={activeImage.alt}
                       fill
                       priority
                       sizes="(max-width: 1024px) 100vw, 60vw"
                       unoptimized={Boolean(activeImage.url.startsWith('data:') || activeImage.url.startsWith('blob:'))}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/product-fallback.png';
+                      }}
                       className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                     />
                   </motion.div>
@@ -294,11 +314,21 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
                     }`}
                   >
                     <Image
-                      src={img.url}
+                      src="/product-fallback.png"
+                      alt="Loading..."
+                      fill
+                      sizes="120px"
+                      className="object-cover pointer-events-none"
+                    />
+                    <Image
+                      src={img.url || '/product-fallback.png'}
                       alt={img.alt}
                       fill
                       sizes="120px"
                       unoptimized={Boolean(img.url.startsWith('data:') || img.url.startsWith('blob:'))}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/product-fallback.png';
+                      }}
                       className="object-cover"
                     />
                   </button>
