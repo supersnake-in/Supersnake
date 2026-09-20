@@ -737,8 +737,7 @@ export default function HomePage() {
               <div className="relative aspect-[4/5] rounded overflow-hidden bg-neutral-900 border border-white/10">
                 <Image
                   src={
-                    homepageConfig?.pillar1Image ||
-                    "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?q=80&w=800&auto=format&fit=crop"
+                    cleanCollectionImage(homepageConfig?.pillar1Image, '/brand-pillar-fabric.png')
                   }
                   alt="Premium Fabric Weave"
                   fill
@@ -764,8 +763,7 @@ export default function HomePage() {
               <div className="relative aspect-[4/5] rounded overflow-hidden bg-neutral-900 border border-white/10">
                 <Image
                   src={
-                    homepageConfig?.pillar2Image ||
-                    "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?q=80&w=800&auto=format&fit=crop"
+                    cleanCollectionImage(homepageConfig?.pillar2Image, '/brand-pillar-fit.png')
                   }
                   alt="Collar and Stitching"
                   fill
@@ -791,8 +789,7 @@ export default function HomePage() {
               <div className="relative aspect-[4/5] rounded overflow-hidden bg-neutral-900 border border-white/10">
                 <Image
                   src={
-                    homepageConfig?.pillar3Image ||
-                    "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=800&auto=format&fit=crop"
+                    cleanCollectionImage(homepageConfig?.pillar3Image, '/brand-pillar-finish.png')
                   }
                   alt="Drape and Geometry"
                   fill

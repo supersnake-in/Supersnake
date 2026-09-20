@@ -58,6 +58,8 @@ export const STOCK_HERO_IMAGE_SNIPPETS = [
   'photo-1521572267360',
   'photo-1576566588028',
   'photo-1583743814966',
+  'photo-1602810318383',
+  'photo-1618354691373',
   'photo-1515886657613',
   'photo-1509631179647',
 ];
@@ -89,9 +91,9 @@ export const DEFAULT_HOMEPAGE_CONFIG: HomepageConfig = {
   womenCollectionImage: '/women-collection.png',
   supersnakeTeeImage: '/hero-object-supersnake-tee.png',
   signatureTeeImage: '/signature-tee-spotlight.png',
-  pillar1Image: 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?q=80&w=800&auto=format&fit=crop',
-  pillar2Image: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?q=80&w=800&auto=format&fit=crop',
-  pillar3Image: 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=800&auto=format&fit=crop',
+  pillar1Image: '/brand-pillar-fabric.png',
+  pillar2Image: '/brand-pillar-fit.png',
+  pillar3Image: '/brand-pillar-finish.png',
   heroObjectEyebrow: 'THE HERO OBJECT',
   heroObjectTitle: 'THE SUPERSNAKE TEE',
   heroObjectQuote: '“Designed around the everyday. Built around you.”',
@@ -317,6 +319,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             if (parsed.supersnakeTeeImage) {
               parsed.supersnakeTeeImage = cleanCollectionImage(parsed.supersnakeTeeImage, '/hero-object-supersnake-tee.png');
             }
+            if (parsed.pillar1Image) {
+              parsed.pillar1Image = cleanCollectionImage(parsed.pillar1Image, '/brand-pillar-fabric.png');
+            }
+            if (parsed.pillar2Image) {
+              parsed.pillar2Image = cleanCollectionImage(parsed.pillar2Image, '/brand-pillar-fit.png');
+            }
+            if (parsed.pillar3Image) {
+              parsed.pillar3Image = cleanCollectionImage(parsed.pillar3Image, '/brand-pillar-finish.png');
+            }
             setHomepageConfig((prev) => ({ ...prev, ...parsed }));
           }
         } catch (e) {}
@@ -392,6 +403,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             womenCollectionImage: cleanCollectionImage(supabaseHomepage.womenCollectionImage, '/women-collection.png'),
             signatureTeeImage: cleanCollectionImage(supabaseHomepage.signatureTeeImage, '/signature-tee-spotlight.png'),
             supersnakeTeeImage: cleanCollectionImage(supabaseHomepage.supersnakeTeeImage, '/hero-object-supersnake-tee.png'),
+            pillar1Image: cleanCollectionImage(supabaseHomepage.pillar1Image, '/brand-pillar-fabric.png'),
+            pillar2Image: cleanCollectionImage(supabaseHomepage.pillar2Image, '/brand-pillar-fit.png'),
+            pillar3Image: cleanCollectionImage(supabaseHomepage.pillar3Image, '/brand-pillar-finish.png'),
           };
           setHomepageConfig(cleaned);
           try {
@@ -825,6 +839,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         : {}),
       ...(config.supersnakeTeeImage !== undefined
         ? { supersnakeTeeImage: cleanCollectionImage(config.supersnakeTeeImage, '/hero-object-supersnake-tee.png') }
+        : {}),
+      ...(config.pillar1Image !== undefined
+        ? { pillar1Image: cleanCollectionImage(config.pillar1Image, '/brand-pillar-fabric.png') }
+        : {}),
+      ...(config.pillar2Image !== undefined
+        ? { pillar2Image: cleanCollectionImage(config.pillar2Image, '/brand-pillar-fit.png') }
+        : {}),
+      ...(config.pillar3Image !== undefined
+        ? { pillar3Image: cleanCollectionImage(config.pillar3Image, '/brand-pillar-finish.png') }
         : {}),
     };
 

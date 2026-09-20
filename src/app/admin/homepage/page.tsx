@@ -121,13 +121,13 @@ export default function AdminHomepageConfigPage() {
     cleanCollectionImage(homepageConfig?.signatureTeeImage, DEFAULT_HOMEPAGE_CONFIG.signatureTeeImage || '/signature-tee-spotlight.png')
   );
   const [pillar1Image, setPillar1Image] = useState<string>(
-    homepageConfig?.pillar1Image || DEFAULT_HOMEPAGE_CONFIG.pillar1Image || ''
+    cleanCollectionImage(homepageConfig?.pillar1Image, DEFAULT_HOMEPAGE_CONFIG.pillar1Image || '/brand-pillar-fabric.png')
   );
   const [pillar2Image, setPillar2Image] = useState<string>(
-    homepageConfig?.pillar2Image || DEFAULT_HOMEPAGE_CONFIG.pillar2Image || ''
+    cleanCollectionImage(homepageConfig?.pillar2Image, DEFAULT_HOMEPAGE_CONFIG.pillar2Image || '/brand-pillar-fit.png')
   );
   const [pillar3Image, setPillar3Image] = useState<string>(
-    homepageConfig?.pillar3Image || DEFAULT_HOMEPAGE_CONFIG.pillar3Image || ''
+    cleanCollectionImage(homepageConfig?.pillar3Image, DEFAULT_HOMEPAGE_CONFIG.pillar3Image || '/brand-pillar-finish.png')
   );
 
   // The Hero Object editable text states
@@ -231,13 +231,13 @@ export default function AdminHomepageConfigPage() {
         setSignatureTeeImage(cleanCollectionImage(homepageConfig.signatureTeeImage, '/signature-tee-spotlight.png'));
       }
       if (homepageConfig.pillar1Image) {
-        setPillar1Image(homepageConfig.pillar1Image);
+        setPillar1Image(cleanCollectionImage(homepageConfig.pillar1Image, '/brand-pillar-fabric.png'));
       }
       if (homepageConfig.pillar2Image) {
-        setPillar2Image(homepageConfig.pillar2Image);
+        setPillar2Image(cleanCollectionImage(homepageConfig.pillar2Image, '/brand-pillar-fit.png'));
       }
       if (homepageConfig.pillar3Image) {
-        setPillar3Image(homepageConfig.pillar3Image);
+        setPillar3Image(cleanCollectionImage(homepageConfig.pillar3Image, '/brand-pillar-finish.png'));
       }
       if (homepageConfig.heroObjectEyebrow) setHeroObjectEyebrow(homepageConfig.heroObjectEyebrow);
       if (homepageConfig.heroObjectTitle) setHeroObjectTitle(homepageConfig.heroObjectTitle);
@@ -1501,7 +1501,7 @@ export default function AdminHomepageConfigPage() {
                   type="button"
                   onClick={() => {
                     isDirty.current = true;
-                    setPillar1Image(DEFAULT_HOMEPAGE_CONFIG.pillar1Image || '');
+                    setPillar1Image(DEFAULT_HOMEPAGE_CONFIG.pillar1Image || '/brand-pillar-fabric.png');
                   }}
                   className="text-[10px] text-neutral-400 hover:text-white uppercase transition-colors"
                 >
@@ -1512,7 +1512,7 @@ export default function AdminHomepageConfigPage() {
               {/* Preview Thumbnail */}
               <div className="relative aspect-[4/5] w-full bg-neutral-900 rounded-md overflow-hidden border border-neutral-800">
                 <Image
-                  src={pillar1Image || DEFAULT_HOMEPAGE_CONFIG.pillar1Image || ''}
+                  src={cleanCollectionImage(pillar1Image, DEFAULT_HOMEPAGE_CONFIG.pillar1Image || '/brand-pillar-fabric.png')}
                   alt="Pillar 1: Premium Fabric"
                   fill
                   unoptimized={pillar1Image?.startsWith('data:') || (pillar1Image ? !pillar1Image.includes('unsplash.com') : false)}
@@ -1582,7 +1582,7 @@ export default function AdminHomepageConfigPage() {
                   type="button"
                   onClick={() => {
                     isDirty.current = true;
-                    setPillar2Image(DEFAULT_HOMEPAGE_CONFIG.pillar2Image || '');
+                    setPillar2Image(DEFAULT_HOMEPAGE_CONFIG.pillar2Image || '/brand-pillar-fit.png');
                   }}
                   className="text-[10px] text-neutral-400 hover:text-white uppercase transition-colors"
                 >
@@ -1593,7 +1593,7 @@ export default function AdminHomepageConfigPage() {
               {/* Preview Thumbnail */}
               <div className="relative aspect-[4/5] w-full bg-neutral-900 rounded-md overflow-hidden border border-neutral-800">
                 <Image
-                  src={pillar2Image || DEFAULT_HOMEPAGE_CONFIG.pillar2Image || ''}
+                  src={cleanCollectionImage(pillar2Image, DEFAULT_HOMEPAGE_CONFIG.pillar2Image || '/brand-pillar-fit.png')}
                   alt="Pillar 2: Built for Comfort"
                   fill
                   unoptimized={pillar2Image?.startsWith('data:') || (pillar2Image ? !pillar2Image.includes('unsplash.com') : false)}
@@ -1663,7 +1663,7 @@ export default function AdminHomepageConfigPage() {
                   type="button"
                   onClick={() => {
                     isDirty.current = true;
-                    setPillar3Image(DEFAULT_HOMEPAGE_CONFIG.pillar3Image || '');
+                    setPillar3Image(DEFAULT_HOMEPAGE_CONFIG.pillar3Image || '/brand-pillar-finish.png');
                   }}
                   className="text-[10px] text-neutral-400 hover:text-white uppercase transition-colors"
                 >
@@ -1674,7 +1674,7 @@ export default function AdminHomepageConfigPage() {
               {/* Preview Thumbnail */}
               <div className="relative aspect-[4/5] w-full bg-neutral-900 rounded-md overflow-hidden border border-neutral-800">
                 <Image
-                  src={pillar3Image || DEFAULT_HOMEPAGE_CONFIG.pillar3Image || ''}
+                  src={cleanCollectionImage(pillar3Image, DEFAULT_HOMEPAGE_CONFIG.pillar3Image || '/brand-pillar-finish.png')}
                   alt="Pillar 3: Designed to Last"
                   fill
                   unoptimized={pillar3Image?.startsWith('data:') || (pillar3Image ? !pillar3Image.includes('unsplash.com') : false)}
