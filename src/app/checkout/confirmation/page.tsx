@@ -7,8 +7,6 @@ import { CheckCircle2, ArrowRight, Package, Truck } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { formatPrice } from '@/lib/design-tokens';
 
-import confetti from 'canvas-confetti';
-
 function OrderConfirmationContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get('orderId');
@@ -31,15 +29,6 @@ function OrderConfirmationContent() {
         },
       });
     }
-
-    try {
-      confetti({
-        particleCount: 80,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#04fc21', '#ffffff', '#000000'],
-      });
-    } catch (e) {}
   }, [orderId, paymentId, order, updateOrder, clearCart]);
 
   return (

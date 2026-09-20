@@ -12,7 +12,6 @@ import { formatPrice, BRAND } from '@/lib/design-tokens';
 import { loadLastCheckout, loadCartFromStorageAsync, loadCartFromStorageSync } from '@/lib/storage-helper';
 import { fetchProductsFromSupabase } from '@/lib/supabase/db';
 import { Size } from '@/lib/types';
-import confetti from 'canvas-confetti';
 
 const loadRazorpayScript = (): Promise<boolean> => {
   return new Promise((resolve) => {
