@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     siteName: 'SUPERSNAKE',
     images: [
       {
-        url: '/supersnake logonobg.png',
+        url: '/logo.png',
         width: 800,
         height: 1200,
         alt: 'SUPERSNAKE Official Brand Identity',
@@ -44,8 +44,8 @@ export const metadata: Metadata = {
     type: 'website',
   },
   icons: {
-    icon: '/supersnake logonobg.png',
-    apple: '/supersnake logonobg.png',
+    icon: '/logo.png',
+    apple: '/logo.png',
   },
 };
 

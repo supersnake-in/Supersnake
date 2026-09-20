@@ -28,12 +28,13 @@ export function SuperSnakeLogo({
     <div className={`inline-flex items-center gap-3.5 group select-none ${className}`}>
       <div className={`relative transition-transform duration-500 ease-out group-hover:scale-105 ${withGlow ? 'filter drop-shadow-[0_0_12px_rgba(4,252,33,0.4)]' : ''}`}>
         <Image
-          src="/supersnake logonobg.png"
+          src="/logo.png"
           alt="SuperSnake"
           width={dimensions.width}
           height={dimensions.height}
           className="object-contain transition-all duration-300 group-hover:brightness-110"
           priority
+          unoptimized
         />
       </div>
 

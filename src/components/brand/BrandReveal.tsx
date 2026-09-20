@@ -58,11 +58,12 @@ export function BrandReveal() {
               className="relative"
             >
               <Image
-                src="/supersnake logonobg.png"
+                src="/logo.png"
                 alt="SUPERSNAKE"
                 width={48}
                 height={85}
                 priority
+                unoptimized
                 className="object-contain"
               />
 
