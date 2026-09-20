@@ -55,7 +55,10 @@ export interface HomepageConfig {
 
 export const DEFAULT_HOMEPAGE_CONFIG: HomepageConfig = {
   heroImages: [
-    '/hero2.png',
+    'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=2400&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=2400&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&w=2400&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?q=80&w=2400&auto=format&fit=crop',
   ],
   heroIntervalSeconds: 3,
   heroHeadline: 'WEAR YOUR INSTINCT.',

@@ -23,7 +23,7 @@ import { useStore, DEFAULT_HOMEPAGE_CONFIG } from '@/lib/store';
 const SUPABASE_HOMEPAGE_SQL = `-- Run this in your Supabase SQL Editor:
 CREATE TABLE IF NOT EXISTS public.homepage_config (
   id TEXT PRIMARY KEY DEFAULT 'default',
-  hero_images TEXT[] NOT NULL DEFAULT '{"/hero2.png"}',
+  hero_images TEXT[] NOT NULL DEFAULT '{}',
   hero_interval_seconds INTEGER DEFAULT 3,
   hero_headline TEXT DEFAULT 'WEAR YOUR INSTINCT.',
   hero_supporting_copy TEXT DEFAULT 'Premium T-shirts. Designed for your everyday. Engineered for presence.',

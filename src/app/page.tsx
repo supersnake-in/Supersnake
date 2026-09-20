@@ -35,6 +35,7 @@ export default function HomePage() {
       : DEFAULT_HOMEPAGE_CONFIG.heroImages;
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [loadedSlides, setLoadedSlides] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     if (heroImages.length <= 1) return;
@@ -65,16 +66,30 @@ export default function HomePage() {
         ref={heroRef}
         className="relative bg-black min-h-[100dvh] lg:min-h-screen w-full overflow-hidden flex flex-col justify-end pt-28 sm:pt-32 lg:pt-36 pb-8 sm:pb-12 md:pb-16 px-4 sm:px-6 md:px-12"
       >
+        {/* Instant Fallback / Loading Base Layer: visible while admin images load or if network is slow */}
+        <div className="absolute inset-0 z-0 bg-black overflow-hidden pointer-events-none">
+          <Image
+            src="/hero2.png"
+            alt="SuperSnake Hero Backdrop"
+            fill
+            priority
+            className="object-cover object-[center_35%] lg:object-center"
+          />
+          {/* Subtle black gradient & vignette overlay matching hero aesthetic */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 [background:radial-gradient(ellipse_at_center,transparent_50%,rgba(0,0,0,0.4)_100%)] pointer-events-none" />
+        </div>
+
         {/* Background Image Carousel with 3-second auto-scroll & smooth crossfade */}
         <motion.div
           style={{ scale: heroImageScale }}
-          className="absolute inset-0 z-0 bg-black will-change-transform overflow-hidden"
+          className="absolute inset-0 z-[1] will-change-transform overflow-hidden"
         >
           <AnimatePresence mode="popLayout">
             <motion.div
               key={currentImageIndex}
               initial={{ opacity: 0, scale: 1.04 }}
-              animate={{ opacity: 1, scale: 1 }}
+              animate={{ opacity: loadedSlides[currentImageIndex] ? 1 : 0, scale: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
               className="absolute inset-0 z-0"
@@ -83,11 +98,14 @@ export default function HomePage() {
                 src={heroImages[currentImageIndex] || heroImages[0]}
                 alt={`SuperSnake Heavyweight Campaign ${currentImageIndex + 1}`}
                 fill
-                priority
+                priority={currentImageIndex === 0}
                 unoptimized={
                   heroImages[currentImageIndex]?.startsWith('data:') ||
                   !heroImages[currentImageIndex]?.includes('unsplash.com')
                 }
+                onLoad={() => {
+                  setLoadedSlides((prev) => ({ ...prev, [currentImageIndex]: true }));
+                }}
                 className="object-cover object-[center_35%] lg:object-center"
               />
               {/* Subtle black gradient & vignette overlay for text legibility */}
