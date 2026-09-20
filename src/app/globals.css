@@ -158,9 +158,9 @@ body {
   }
 
   /* Hide entire website chrome, navigation, footers, account portal chrome, and screen-only UI */
-  header,
-  footer,
-  nav,
+  header:not(#supersnake-invoice *),
+  footer:not(#supersnake-invoice *),
+  nav:not(#supersnake-invoice *),
   aside,
   .no-print,
   [data-no-print="true"],
@@ -194,11 +194,25 @@ body {
     visibility: visible !important;
   }
 
+  #supersnake-invoice .invoice-header {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 1.5rem !important;
+    visibility: visible !important;
+  }
+
+  #supersnake-invoice .invoice-footer {
+    display: block !important;
+    visibility: visible !important;
+  }
+
   #supersnake-invoice header,
   #supersnake-invoice section,
   #supersnake-invoice table,
   #supersnake-invoice tr,
-  #supersnake-invoice footer {
+  #supersnake-invoice footer,
+  #supersnake-invoice .invoice-header,
+  #supersnake-invoice .invoice-footer {
     break-inside: avoid !important;
     page-break-inside: avoid !important;
   }

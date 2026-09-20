@@ -161,7 +161,7 @@ export default function OrderDetailPage() {
 
   const handlePrint = () => {
     if (typeof window !== 'undefined') {
-      window.print();
+      router.push(`/account/orders/${order?.orderNumber || orderId}/invoice?print=true`);
     }
   };
 

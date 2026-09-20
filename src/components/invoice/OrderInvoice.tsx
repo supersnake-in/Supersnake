@@ -86,7 +86,7 @@ export default function OrderInvoice({ order, className = '' }: OrderInvoiceProp
     >
       <div className="p-8 sm:p-12 print:p-0 space-y-6 sm:space-y-8 print:space-y-5">
         {/* TWO-COLUMN HEADER: Brand & Seller Left, INVOICE + Meta Right */}
-        <header className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start border-b border-neutral-900/15 pb-6">
+        <div className="invoice-header grid grid-cols-1 sm:grid-cols-2 gap-6 items-start border-b border-neutral-900/15 pb-6">
           {/* Left Column: SuperSnake Branding & Seller Information */}
           <div className="space-y-3 font-sans">
             <div className="flex items-center gap-3">
@@ -145,7 +145,7 @@ export default function OrderInvoice({ order, className = '' }: OrderInvoiceProp
               </p>
             </div>
           </div>
-        </header>
+        </div>
 
         {/* CUSTOMER & DELIVERY ADDRESS SECTION */}
         <section className="pt-1">
@@ -281,7 +281,7 @@ export default function OrderInvoice({ order, className = '' }: OrderInvoiceProp
         </section>
 
         {/* REBALANCED ELEGANT FOOTER */}
-        <footer className="pt-10 sm:pt-16 mt-8 sm:mt-12 border-t border-neutral-200 text-center space-y-1.5 font-sans">
+        <div className="invoice-footer pt-10 sm:pt-16 mt-8 sm:mt-12 border-t border-neutral-200 text-center space-y-1.5 font-sans">
           <p className="font-mono text-[11px] uppercase tracking-widest text-black font-semibold">
             SUPERSNAKE — WEAR YOUR INSTINCT.
           </p>
@@ -291,7 +291,7 @@ export default function OrderInvoice({ order, className = '' }: OrderInvoiceProp
           <p className="text-[10px] text-neutral-400 font-mono pt-2">
             This is a computer-generated invoice and does not require a signature.
           </p>
-        </footer>
+        </div>
       </div>
     </div>
   );

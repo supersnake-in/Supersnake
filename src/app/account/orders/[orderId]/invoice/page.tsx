@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Printer, Download, Package } from 'lucide-react';
 import { useStore } from '@/lib/store';
@@ -11,6 +11,7 @@ import OrderInvoice from '@/components/invoice/OrderInvoice';
 
 export default function DedicatedInvoicePage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const { getOrderById } = useStore();
   const orderId = params?.orderId as string;
   const storeOrder = getOrderById(orderId);
@@ -18,6 +19,15 @@ export default function DedicatedInvoicePage() {
   const [isFetching, setIsFetching] = useState(!storeOrder);
 
   const order = storeOrder || asyncOrder;
+
+  useEffect(() => {
+    if (order && searchParams?.get('print') === 'true') {
+      const timer = setTimeout(() => {
+        if (typeof window !== 'undefined') window.print();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [order, searchParams]);
 
   useEffect(() => {
     if (storeOrder) {
