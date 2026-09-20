@@ -13,8 +13,8 @@ function LoginContent() {
   const next = searchParams.get('next') || searchParams.get('redirect') || '/account';
   const { user, signIn, signInWithOtp, sendEmailOtp, signInWithGoogle, authenticateWithOtp, isLoading } = useAuth();
   
-  // Login mode: 'otp' | 'password' (Email OTP is primary)
-  const [loginMode, setLoginMode] = useState<'otp' | 'password'>('otp');
+  // Login mode: 'password' | 'otp' (Password is default)
+  const [loginMode, setLoginMode] = useState<'password' | 'otp'>('password');
   const [otpStep, setOtpStep] = useState<'email' | 'code'>('email');
 
   const [email, setEmail] = useState('');
@@ -211,22 +211,8 @@ function LoginContent() {
             </div>
           </div>
 
-          {/* Tab Selector: Email OTP vs Password */}
+          {/* Tab Selector: Password vs Email OTP */}
           <div className="grid grid-cols-2 gap-2 mb-6 p-1 bg-[#121212] border border-white/10 rounded">
-            <button
-              type="button"
-              onClick={() => {
-                setLoginMode('otp');
-                setError(null);
-              }}
-              className={`py-2 text-[11px] font-mono uppercase tracking-wider transition-colors ${
-                loginMode === 'otp'
-                  ? 'bg-white text-black font-bold'
-                  : 'text-neutral-400 hover:text-white'
-              }`}
-            >
-              Email OTP
-            </button>
             <button
               type="button"
               onClick={() => {
@@ -240,6 +226,20 @@ function LoginContent() {
               }`}
             >
               Password
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setLoginMode('otp');
+                setError(null);
+              }}
+              className={`py-2 text-[11px] font-mono uppercase tracking-wider transition-colors ${
+                loginMode === 'otp'
+                  ? 'bg-white text-black font-bold'
+                  : 'text-neutral-400 hover:text-white'
+              }`}
+            >
+              Email OTP
             </button>
           </div>
 
