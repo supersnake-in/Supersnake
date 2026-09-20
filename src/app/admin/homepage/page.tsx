@@ -18,7 +18,7 @@ import {
   AlertTriangle,
   Loader2,
 } from 'lucide-react';
-import { useStore, DEFAULT_HOMEPAGE_CONFIG, cleanHeroImages } from '@/lib/store';
+import { useStore, DEFAULT_HOMEPAGE_CONFIG, cleanHeroImages, cleanCollectionImage } from '@/lib/store';
 
 const SUPABASE_HOMEPAGE_SQL = `-- Run this in your Supabase SQL Editor:
 CREATE TABLE IF NOT EXISTS public.homepage_config (
@@ -107,10 +107,10 @@ export default function AdminHomepageConfigPage() {
     homepageConfig?.brandStatement || DEFAULT_HOMEPAGE_CONFIG.brandStatement
   );
   const [menCollectionImage, setMenCollectionImage] = useState<string>(
-    homepageConfig?.menCollectionImage || DEFAULT_HOMEPAGE_CONFIG.menCollectionImage || ''
+    cleanCollectionImage(homepageConfig?.menCollectionImage, DEFAULT_HOMEPAGE_CONFIG.menCollectionImage || '/men-collection.png')
   );
   const [womenCollectionImage, setWomenCollectionImage] = useState<string>(
-    homepageConfig?.womenCollectionImage || DEFAULT_HOMEPAGE_CONFIG.womenCollectionImage || ''
+    cleanCollectionImage(homepageConfig?.womenCollectionImage, DEFAULT_HOMEPAGE_CONFIG.womenCollectionImage || '/women-collection.png')
   );
 
   // New section image states
@@ -219,10 +219,10 @@ export default function AdminHomepageConfigPage() {
         setBrandStatement(homepageConfig.brandStatement);
       }
       if (homepageConfig.menCollectionImage) {
-        setMenCollectionImage(homepageConfig.menCollectionImage);
+        setMenCollectionImage(cleanCollectionImage(homepageConfig.menCollectionImage, '/men-collection.png'));
       }
       if (homepageConfig.womenCollectionImage) {
-        setWomenCollectionImage(homepageConfig.womenCollectionImage);
+        setWomenCollectionImage(cleanCollectionImage(homepageConfig.womenCollectionImage, '/women-collection.png'));
       }
       if (homepageConfig.supersnakeTeeImage) {
         setSupersnakeTeeImage(homepageConfig.supersnakeTeeImage);

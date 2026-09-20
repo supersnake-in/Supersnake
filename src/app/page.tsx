@@ -8,7 +8,7 @@ import { ArrowRight, ArrowDown, Sparkles, Instagram, ChevronLeft, ChevronRight }
 import { ProductCard } from '@/components/product/ProductCard';
 import { SuperSnakeLogo } from '@/components/brand/SuperSnakeLogo';
 import { formatPrice } from '@/lib/design-tokens';
-import { useStore, DEFAULT_HOMEPAGE_CONFIG, cleanHeroImages } from '@/lib/store';
+import { useStore, DEFAULT_HOMEPAGE_CONFIG, cleanHeroImages, cleanCollectionImage } from '@/lib/store';
 
 export default function HomePage() {
   const heroRef = useRef<HTMLDivElement>(null);
@@ -248,7 +248,7 @@ export default function HomePage() {
           >
             <div className="absolute inset-0 z-0 overflow-hidden">
               <Image
-                src={homepageConfig?.menCollectionImage || "https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&w=1600&auto=format&fit=crop"}
+                src={cleanCollectionImage(homepageConfig?.menCollectionImage, '/men-collection.png')}
                 alt="SuperSnake Men Collection"
                 fill
                 sizes="(max-width: 768px) 100vw, 50vw"
@@ -283,7 +283,7 @@ export default function HomePage() {
           >
             <div className="absolute inset-0 z-0 overflow-hidden">
               <Image
-                src={homepageConfig?.womenCollectionImage || "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1600&auto=format&fit=crop"}
+                src={cleanCollectionImage(homepageConfig?.womenCollectionImage, '/women-collection.png')}
                 alt="SuperSnake Women Collection"
                 fill
                 sizes="(max-width: 768px) 100vw, 50vw"

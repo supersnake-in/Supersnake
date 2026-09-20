@@ -70,6 +70,14 @@ export function cleanHeroImages(images?: string[]): string[] {
   return filtered.length > 0 ? filtered : ['/hero2.png'];
 }
 
+export function cleanCollectionImage(url?: string, defaultFallback: string = ''): string {
+  if (!url || typeof url !== 'string') return defaultFallback;
+  if (STOCK_HERO_IMAGE_SNIPPETS.some((stock) => url.includes(stock))) {
+    return defaultFallback;
+  }
+  return url;
+}
+
 export const DEFAULT_HOMEPAGE_CONFIG: HomepageConfig = {
   heroImages: ['/hero2.png'],
   heroIntervalSeconds: 3,
@@ -77,8 +85,8 @@ export const DEFAULT_HOMEPAGE_CONFIG: HomepageConfig = {
   heroSupportingCopy: 'Premium T-shirts. Designed for your everyday. Engineered for presence.',
   spotlightProductId: 'the-signature-tee',
   brandStatement: 'NOT MADE TO BLEND IN.',
-  menCollectionImage: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&w=1600&auto=format&fit=crop',
-  womenCollectionImage: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1600&auto=format&fit=crop',
+  menCollectionImage: '/men-collection.png',
+  womenCollectionImage: '/women-collection.png',
   supersnakeTeeImage: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=1800&auto=format&fit=crop',
   signatureTeeImage: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=2400&auto=format&fit=crop',
   pillar1Image: 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?q=80&w=800&auto=format&fit=crop',
@@ -297,6 +305,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             if (Array.isArray(parsed.heroImages)) {
               parsed.heroImages = cleanHeroImages(parsed.heroImages);
             }
+            if (parsed.menCollectionImage) {
+              parsed.menCollectionImage = cleanCollectionImage(parsed.menCollectionImage, '/men-collection.png');
+            }
+            if (parsed.womenCollectionImage) {
+              parsed.womenCollectionImage = cleanCollectionImage(parsed.womenCollectionImage, '/women-collection.png');
+            }
             setHomepageConfig((prev) => ({ ...prev, ...parsed }));
           }
         } catch (e) {}
@@ -368,6 +382,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           const cleaned = {
             ...supabaseHomepage,
             heroImages: cleanHeroImages(supabaseHomepage.heroImages),
+            menCollectionImage: cleanCollectionImage(supabaseHomepage.menCollectionImage, '/men-collection.png'),
+            womenCollectionImage: cleanCollectionImage(supabaseHomepage.womenCollectionImage, '/women-collection.png'),
           };
           setHomepageConfig(cleaned);
           try {
@@ -790,6 +806,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       ...homepageConfig,
       ...config,
       ...(config.heroImages ? { heroImages: cleanHeroImages(config.heroImages) } : {}),
+      ...(config.menCollectionImage !== undefined
+        ? { menCollectionImage: cleanCollectionImage(config.menCollectionImage, '/men-collection.png') }
+        : {}),
+      ...(config.womenCollectionImage !== undefined
+        ? { womenCollectionImage: cleanCollectionImage(config.womenCollectionImage, '/women-collection.png') }
+        : {}),
     };
 
     setHomepageConfig(nextConfig);
