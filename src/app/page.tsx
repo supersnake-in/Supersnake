@@ -307,7 +307,7 @@ export default function HomePage() {
           05 — PRODUCT SPOTLIGHT (IMMERSIVE PRESENTATION)
           ============================================================ */}
       {signatureProduct && (
-        <section className="relative min-h-[480px] sm:min-h-[520px] md:min-h-[580px] lg:min-h-[620px] w-full border-t border-white/[0.06] overflow-hidden flex items-center px-4 sm:px-6 md:px-16 py-12 sm:py-14 md:py-16 bg-black">
+        <section className="relative min-h-[440px] sm:min-h-[480px] md:min-h-[520px] lg:min-h-[560px] w-full border-t border-white/[0.06] overflow-hidden flex items-center px-4 sm:px-6 md:px-16 py-10 sm:py-12 md:py-14 lg:py-16 bg-black">
           <div className="absolute inset-0 z-0">
             <Image
               src={signatureProduct.images?.[0]?.url || homepageConfig?.signatureTeeImage || ''}
@@ -323,7 +323,8 @@ export default function HomePage() {
             <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-black via-black/80 to-transparent" />
           </div>
 
-          <div className="relative z-10 max-w-2xl space-y-4 sm:space-y-6">
+          <div className="relative z-10 max-w-2xl space-y-6 sm:space-y-8 md:space-y-12 lg:space-y-14">
+            {/* Top Unit: Campaign Eyebrow, Title & Price */}
             <div className="space-y-1.5 sm:space-y-2">
               <span className="text-[10px] font-mono tracking-mega text-snake-green uppercase">
                 SPOTLIGHT CAMPAIGN
@@ -331,25 +332,26 @@ export default function HomePage() {
               <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-display font-black tracking-tighter uppercase leading-[0.92] text-white">
                 {signatureProduct.name}
               </h2>
-            </div>
-
-            <div className="space-y-1.5 sm:space-y-2">
-              <span className="font-mono text-lg sm:text-xl md:text-2xl text-white font-semibold">
+              <span className="font-mono text-lg sm:text-xl md:text-2xl text-white font-semibold block pt-0.5 sm:pt-1">
                 {formatPrice(signatureProduct.price)}
               </span>
-              <p className="pt-8 sm:pt-0 text-xs sm:text-sm font-mono text-neutral-300 max-w-md leading-relaxed">
-                {signatureProduct.description}
-              </p>
             </div>
 
-            <div className="flex flex-wrap gap-4 pt-2 sm:pt-3">
-              <Link
-                href={`/product/${signatureProduct.slug}`}
-                className="w-full sm:w-auto px-7 py-3 sm:py-3.5 bg-snake-green text-black font-mono text-xs tracking-widest font-bold uppercase transition-all duration-300 hover:bg-white hover:shadow-[0_0_30px_rgba(4,252,33,0.5)] flex items-center justify-center gap-2 active:scale-98"
-              >
-                <span>SHOP NOW</span>
-                <ArrowRight size={14} />
-              </Link>
+            {/* Bottom Unit: Description & CTA */}
+            <div className="space-y-3 sm:space-y-4">
+              <p className="text-xs sm:text-sm font-mono text-neutral-300 max-w-md leading-relaxed">
+                {signatureProduct.description}
+              </p>
+
+              <div className="flex flex-wrap gap-4 pt-1 sm:pt-2">
+                <Link
+                  href={`/product/${signatureProduct.slug}`}
+                  className="w-full sm:w-auto px-7 py-3 sm:py-3.5 bg-snake-green text-black font-mono text-xs tracking-widest font-bold uppercase transition-all duration-300 hover:bg-white hover:shadow-[0_0_30px_rgba(4,252,33,0.5)] flex items-center justify-center gap-2 active:scale-98"
+                >
+                  <span>SHOP NOW</span>
+                  <ArrowRight size={14} />
+                </Link>
+              </div>
             </div>
           </div>
         </section>
