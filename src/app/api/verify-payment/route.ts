@@ -95,12 +95,30 @@ export async function POST(request: Request) {
             payment_method: 'razorpay',
             payment_status: 'paid',
             transaction_id: razorpay_payment_id,
-            verification_status: 'Pending',
-            phone_verified: false,
+            tracking_info: {
+              carrier: 'SuperSnake Express',
+              trackingNumber: `SS-EXP-${orderNumber.replace(/[^0-9]/g, '').slice(-4) || '7471'}`,
+              estimatedDelivery: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+              }),
+              updates: [
+                {
+                  status: 'Order Confirmed & Sent to Atelier',
+                  location: 'SuperSnake Studio, Bengaluru',
+                  timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+                },
+              ],
+            },
             created_at: new Date().toISOString(),
           })
           .select()
           .single();
+
+        if (insertErr) {
+          console.error('Supabase order insertion error:', insertErr);
+        }
 
         if (inserted) {
           confirmedOrderId = inserted.id;
