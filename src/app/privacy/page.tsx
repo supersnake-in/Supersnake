@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { PolicyLayout } from '@/components/legal/PolicyLayout';
 import { LEGAL_CONFIG, OFFICIAL_EMAILS, getLegalValue } from '@/lib/legal-config';
 import { ShieldCheck, Cookie, Check, Lock, ArrowRight } from 'lucide-react';
@@ -321,13 +320,6 @@ export default function PrivacyPolicyPage() {
             {OFFICIAL_EMAILS.office}
           </a>
           .
-        </p>
-        <p>
-          For customer complaints and grievances under the Consumer Protection (E-Commerce) Rules, 2020, please refer to our{' '}
-          <Link href="/contact#grievance" className="text-snake-green hover:underline">
-            Customer Complaints &amp; Grievance Mechanism
-          </Link>{' '}
-          on our Contact Us page.
         </p>
       </section>
     </PolicyLayout>

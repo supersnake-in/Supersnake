@@ -3,8 +3,8 @@
 import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Mail, Clock, Send, CheckCircle2, ArrowRight, ShieldCheck, AlertCircle, FileText, Phone } from 'lucide-react';
-import { LEGAL_CONFIG, OFFICIAL_EMAILS, getLegalValue } from '@/lib/legal-config';
+import { Mail, Clock, Send, CheckCircle2, ArrowRight, AlertCircle, FileText, Phone } from 'lucide-react';
+import { LEGAL_CONFIG, OFFICIAL_EMAILS } from '@/lib/legal-config';
 import { useStore } from '@/lib/store';
 
 function ContactFormContent() {
@@ -194,23 +194,6 @@ function ContactFormContent() {
                 </li>
               </ul>
             </div>
-
-            {/* Quick Grievance Jump Card */}
-            <div className="bg-[#0a0a0a] border border-white/10 p-6 rounded-sm space-y-3 text-xs font-mono">
-              <span className="text-[10px] font-mono tracking-widest text-snake-green uppercase block border-b border-white/10 pb-2">
-                CONSUMER GRIEVANCES
-              </span>
-              <p className="text-neutral-400 leading-relaxed text-[11px]">
-                Under the Consumer Protection (E-Commerce) Rules, 2020, SuperSnake acknowledges grievances within 48 hours and provides redressal within one month.
-              </p>
-              <a
-                href="#grievance"
-                className="text-snake-green hover:underline inline-flex items-center gap-1 text-[11px] uppercase tracking-wider font-semibold pt-1"
-              >
-                <span>View Grievance Redressal Mechanism</span>
-                <ArrowRight size={12} />
-              </a>
-            </div>
           </div>
 
           {/* Right: Contact Form */}
@@ -255,7 +238,7 @@ function ContactFormContent() {
                     <option value="Size & Fit Consultation">Size &amp; Fit Consultation</option>
                     <option value="Product Information">Product Information</option>
                     <option value="Account Help">Account Help</option>
-                    <option value="Customer Complaint / Grievance">Customer Complaint / Grievance</option>
+                    <option value="Customer Complaint">Customer Complaint</option>
                     <option value="Other General Inquiry">Other General Inquiry</option>
                   </select>
                 </div>
@@ -272,19 +255,6 @@ function ContactFormContent() {
                           {OFFICIAL_EMAILS.support}
                         </a>
                         .
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Contextual Advisory for Grievances */}
-                {category === 'Customer Complaint / Grievance' && (
-                  <div className="p-3 bg-white/[0.02] border border-snake-green/30 rounded text-[11px] text-neutral-300 flex items-start gap-2.5 leading-relaxed">
-                    <ShieldCheck size={15} className="text-snake-green shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-semibold text-white">Statutory Redressal Protocol:</p>
-                      <p className="text-neutral-400 mt-0.5">
-                        In accordance with the Consumer Protection (E-Commerce) Rules, 2020, consumer grievances are acknowledged within 48 hours and resolved within one month.
                       </p>
                     </div>
                   </div>
@@ -365,111 +335,6 @@ function ContactFormContent() {
             )}
           </div>
         </div>
-
-        {/* Discreet Section: Customer Complaints & Grievance Mechanism */}
-        <section id="grievance" className="pt-8 border-t border-white/10 space-y-8 font-mono text-xs text-neutral-300">
-          <div className="space-y-2">
-            <span className="text-[10px] tracking-[0.25em] text-snake-green uppercase block">
-              STATUTORY REDRESSAL MECHANISM
-            </span>
-            <h2 className="text-xl sm:text-2xl font-display font-medium uppercase tracking-tight text-white">
-              CUSTOMER COMPLAINTS &amp; GRIEVANCE
-            </h2>
-            <p className="text-neutral-400 max-w-3xl leading-relaxed text-[11px] sm:text-xs">
-              In compliance with Rule 5(9) of the Consumer Protection (E-Commerce) Rules, 2020, SuperSnake provides a structured grievance redressal mechanism for the resolution of consumer complaints.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-[#0a0a0a] border border-white/10 p-5 rounded-sm space-y-2">
-              <span className="text-[10px] text-snake-green uppercase tracking-wider block font-semibold">
-                STEP 1: INITIAL COMPLAINT
-              </span>
-              <p className="text-white font-medium">Customer Support</p>
-              <p className="text-[11px] text-neutral-400 leading-relaxed">
-                Contact customer care at{' '}
-                <a href={`mailto:${OFFICIAL_EMAILS.support}`} className="text-snake-green hover:underline">
-                  {OFFICIAL_EMAILS.support}
-                </a>{' '}
-                or submit an inquiry via the form above selecting &ldquo;Customer Complaint / Grievance&rdquo;.
-              </p>
-            </div>
-
-            <div className="bg-[#0a0a0a] border border-white/10 p-5 rounded-sm space-y-2">
-              <span className="text-[10px] text-snake-green uppercase tracking-wider block font-semibold">
-                STEP 2: ACKNOWLEDGMENT
-              </span>
-              <p className="text-white font-medium">Within 48 Hours</p>
-              <p className="text-[11px] text-neutral-400 leading-relaxed">
-                SuperSnake will acknowledge receipt of your consumer complaint within forty-eight (48) hours and provide a reference tracking identifier.
-              </p>
-            </div>
-
-            <div className="bg-[#0a0a0a] border border-white/10 p-5 rounded-sm space-y-2">
-              <span className="text-[10px] text-snake-green uppercase tracking-wider block font-semibold">
-                STEP 3: REDRESSAL
-              </span>
-              <p className="text-white font-medium">Within 1 Month</p>
-              <p className="text-[11px] text-neutral-400 leading-relaxed">
-                We endeavor to resolve consumer grievances within one (1) month from the date of receipt, in accordance with applicable statutory timelines.
-              </p>
-            </div>
-          </div>
-
-          {/* Grievance Officer Disclosures */}
-          <div className="bg-[#0a0a0a] border border-white/10 p-6 rounded-sm space-y-4">
-            <div className="flex items-center gap-2 text-white font-display uppercase tracking-wider text-sm border-b border-white/10 pb-3">
-              <ShieldCheck size={16} className="text-snake-green" />
-              <span>GRIEVANCE OFFICER DETAILS</span>
-            </div>
-
-            <p className="text-[11px] text-neutral-400 leading-relaxed">
-              Where applicable law requires the identity, designation, and contact details of a grievance officer to be published, those legally required details are maintained below using verified business information:
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-              <div>
-                <span className="text-[10px] text-neutral-500 uppercase block">OFFICER NAME</span>
-                <span className="text-white font-medium">
-                  {LEGAL_CONFIG.grievanceOfficerName || getLegalValue(null, 'GRIEVANCE OFFICER NAME')}
-                </span>
-              </div>
-
-              <div>
-                <span className="text-[10px] text-neutral-500 uppercase block">DESIGNATION</span>
-                <span className="text-white font-medium">
-                  {LEGAL_CONFIG.grievanceDesignation || getLegalValue(null, 'DESIGNATION')}
-                </span>
-              </div>
-
-              <div>
-                <span className="text-[10px] text-neutral-500 uppercase block">OFFICIAL EMAIL</span>
-                <a href={`mailto:${LEGAL_CONFIG.grievanceEmail}`} className="text-snake-green hover:underline font-medium">
-                  {LEGAL_CONFIG.grievanceEmail}
-                </a>
-              </div>
-
-              <div>
-                <span className="text-[10px] text-neutral-500 uppercase block">POSTAL ADDRESS</span>
-                <span className="text-neutral-300">
-                  {LEGAL_CONFIG.grievanceAddress || getLegalValue(null, 'POSTAL ADDRESS')}
-                </span>
-              </div>
-            </div>
-
-            {(socialConfig?.contactPhone || LEGAL_CONFIG.grievancePhone) && (
-              <div className="pt-2 border-t border-white/5 text-[11px]">
-                <span className="text-[10px] text-neutral-500 uppercase block">CONTACT TELEPHONE</span>
-                <a
-                  href={`tel:${(socialConfig?.contactPhone || LEGAL_CONFIG.grievancePhone || '').replace(/[^+\d]/g, '')}`}
-                  className="text-white hover:text-snake-green transition-colors"
-                >
-                  {socialConfig?.contactPhone || LEGAL_CONFIG.grievancePhone}
-                </a>
-              </div>
-            )}
-          </div>
-        </section>
       </div>
     </div>
   );
