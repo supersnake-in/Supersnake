@@ -36,6 +36,19 @@ export interface HomepageConfig {
   pillar1Image?: string;
   pillar2Image?: string;
   pillar3Image?: string;
+  heroObjectEyebrow?: string;
+  heroObjectTitle?: string;
+  heroObjectQuote?: string;
+  heroObjectBadge?: string;
+  heroObjectSpec1Eyebrow?: string;
+  heroObjectSpec1Title?: string;
+  heroObjectSpec1Desc?: string;
+  heroObjectSpec2Eyebrow?: string;
+  heroObjectSpec2Title?: string;
+  heroObjectSpec2Desc?: string;
+  heroObjectSpec3Eyebrow?: string;
+  heroObjectSpec3Title?: string;
+  heroObjectSpec3Desc?: string;
 }
 
 export interface Product {

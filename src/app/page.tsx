@@ -8,7 +8,7 @@ import { ArrowRight, ArrowDown, Sparkles, Instagram, ChevronLeft, ChevronRight }
 import { ProductCard } from '@/components/product/ProductCard';
 import { SuperSnakeLogo } from '@/components/brand/SuperSnakeLogo';
 import { formatPrice } from '@/lib/design-tokens';
-import { useStore } from '@/lib/store';
+import { useStore, DEFAULT_HOMEPAGE_CONFIG } from '@/lib/store';
 
 export default function HomePage() {
   const heroRef = useRef<HTMLDivElement>(null);
@@ -310,13 +310,17 @@ export default function HomePage() {
         <section className="relative min-h-[580px] sm:min-h-[620px] md:min-h-[520px] lg:min-h-[560px] w-full border-t border-white/[0.06] overflow-hidden flex items-end md:items-center px-4 sm:px-6 md:px-16 pt-20 sm:pt-24 md:py-14 lg:py-16 pb-8 sm:pb-10 bg-black">
           <div className="absolute inset-0 z-0">
             <Image
-              src={signatureProduct.images?.[0]?.url || homepageConfig?.signatureTeeImage || ''}
+              src={
+                homepageConfig?.signatureTeeImage ||
+                DEFAULT_HOMEPAGE_CONFIG.signatureTeeImage ||
+                'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=2400&auto=format&fit=crop'
+              }
               alt={signatureProduct.name}
               fill
               sizes="100vw"
               unoptimized={
-                signatureProduct.images?.[0]?.url?.startsWith('data:') ||
-                (homepageConfig?.signatureTeeImage?.startsWith('data:') ?? false)
+                homepageConfig?.signatureTeeImage?.startsWith('data:') ||
+                (homepageConfig?.signatureTeeImage ? !homepageConfig.signatureTeeImage.includes('unsplash.com') : false)
               }
               className="object-cover object-[center_20%] md:object-center brightness-70 md:brightness-50 contrast-115 md:contrast-125"
             />
@@ -466,14 +470,14 @@ export default function HomePage() {
           <div className="mb-12 md:mb-24 flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6">
             <div className="space-y-2">
               <span className="text-[10px] font-mono tracking-mega text-snake-green uppercase">
-                THE HERO OBJECT
+                {homepageConfig?.heroObjectEyebrow || 'THE HERO OBJECT'}
               </span>
               <h2 className="text-3xl sm:text-5xl md:text-7xl font-display font-bold uppercase tracking-tight text-white">
-                THE SUPERSNAKE TEE
+                {homepageConfig?.heroObjectTitle || 'THE SUPERSNAKE TEE'}
               </h2>
             </div>
             <p className="text-xs sm:text-sm md:text-base font-mono text-neutral-400 max-w-md italic">
-              &ldquo;Designed around the everyday. Built around you.&rdquo;
+              {homepageConfig?.heroObjectQuote || '“Designed around the everyday. Built around you.”'}
             </p>
           </div>
 
@@ -482,26 +486,38 @@ export default function HomePage() {
             {/* Left: Macro Specs */}
             <div className="lg:col-span-4 space-y-8 lg:space-y-10 order-2 lg:order-1">
               <div className="space-y-2 border-l-2 border-snake-green pl-4">
-                <span className="text-xs font-mono text-neutral-400">01 / WEIGHT & STABILITY</span>
-                <h4 className="text-base sm:text-lg font-mono font-semibold text-white uppercase">280 GSM SUPIMA® COTTON</h4>
+                <span className="text-xs font-mono text-neutral-400">
+                  {homepageConfig?.heroObjectSpec1Eyebrow || '01 / WEIGHT & STABILITY'}
+                </span>
+                <h4 className="text-base sm:text-lg font-mono font-semibold text-white uppercase">
+                  {homepageConfig?.heroObjectSpec1Title || '280 GSM SUPIMA® COTTON'}
+                </h4>
                 <p className="text-xs font-mono text-neutral-400 leading-relaxed">
-                  Long-staple fibers combed to perfection. Substantial architectural drape that holds its form all day without feeling stiff.
+                  {homepageConfig?.heroObjectSpec1Desc || 'Long-staple fibers combed to perfection. Substantial architectural drape that holds its form all day without feeling stiff.'}
                 </p>
               </div>
 
               <div className="space-y-2 border-l-2 border-neutral-700 pl-4 hover:border-snake-green transition-colors">
-                <span className="text-xs font-mono text-neutral-400">02 / STRUCTURAL INTEGRITY</span>
-                <h4 className="text-base sm:text-lg font-mono font-semibold text-white uppercase">ZERO-SAG 1-INCH COLLAR</h4>
+                <span className="text-xs font-mono text-neutral-400">
+                  {homepageConfig?.heroObjectSpec2Eyebrow || '02 / STRUCTURAL INTEGRITY'}
+                </span>
+                <h4 className="text-base sm:text-lg font-mono font-semibold text-white uppercase">
+                  {homepageConfig?.heroObjectSpec2Title || 'ZERO-SAG 1-INCH COLLAR'}
+                </h4>
                 <p className="text-xs font-mono text-neutral-400 leading-relaxed">
-                  Twin-needle reinforced collar band with internal cotton herringbone tape. Retains razor-sharp neck tension through 100+ washes.
+                  {homepageConfig?.heroObjectSpec2Desc || 'Twin-needle reinforced collar band with internal cotton herringbone tape. Retains razor-sharp neck tension through 100+ washes.'}
                 </p>
               </div>
 
               <div className="space-y-2 border-l-2 border-neutral-700 pl-4 hover:border-snake-green transition-colors">
-                <span className="text-xs font-mono text-neutral-400">03 / ATELIER FINISH</span>
-                <h4 className="text-base sm:text-lg font-mono font-semibold text-white uppercase">BLIND-STITCHED HEMS</h4>
+                <span className="text-xs font-mono text-neutral-400">
+                  {homepageConfig?.heroObjectSpec3Eyebrow || '03 / ATELIER FINISH'}
+                </span>
+                <h4 className="text-base sm:text-lg font-mono font-semibold text-white uppercase">
+                  {homepageConfig?.heroObjectSpec3Title || 'BLIND-STITCHED HEMS'}
+                </h4>
                 <p className="text-xs font-mono text-neutral-400 leading-relaxed">
-                  Seamless Japanese blind-hem technique for an uninterrupted silhouette. No curling, no puckering, zero exterior stitch noise.
+                  {homepageConfig?.heroObjectSpec3Desc || 'Seamless Japanese blind-hem technique for an uninterrupted silhouette. No curling, no puckering, zero exterior stitch noise.'}
                 </p>
               </div>
 
@@ -521,6 +537,7 @@ export default function HomePage() {
                 <Image
                   src={
                     homepageConfig?.supersnakeTeeImage ||
+                    DEFAULT_HOMEPAGE_CONFIG.supersnakeTeeImage ||
                     "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=1800&auto=format&fit=crop"
                   }
                   alt="The SuperSnake Tee - Sculpture"
@@ -533,7 +550,9 @@ export default function HomePage() {
                   className="object-cover transition-transform duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105"
                 />
                 <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 right-4 sm:right-6 p-3 sm:p-4 bg-black/70 backdrop-blur-md border border-white/10 flex justify-between items-center text-xs font-mono">
-                  <span className="text-neutral-300 tracking-wider">ARCHITECTURAL BOXY FIT</span>
+                  <span className="text-neutral-300 tracking-wider">
+                    {homepageConfig?.heroObjectBadge || 'ARCHITECTURAL BOXY FIT'}
+                  </span>
                   <span className="text-snake-green font-bold">₹1,499</span>
                 </div>
               </div>

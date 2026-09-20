@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS public.homepage_config (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- If the table was already created, add the new image columns:
+-- If the table was already created, add the new image and Hero Object columns:
 ALTER TABLE public.homepage_config 
   ADD COLUMN IF NOT EXISTS men_collection_image TEXT,
   ADD COLUMN IF NOT EXISTS women_collection_image TEXT,
@@ -42,7 +42,20 @@ ALTER TABLE public.homepage_config
   ADD COLUMN IF NOT EXISTS signature_tee_image TEXT,
   ADD COLUMN IF NOT EXISTS pillar1_image TEXT,
   ADD COLUMN IF NOT EXISTS pillar2_image TEXT,
-  ADD COLUMN IF NOT EXISTS pillar3_image TEXT;
+  ADD COLUMN IF NOT EXISTS pillar3_image TEXT,
+  ADD COLUMN IF NOT EXISTS hero_object_eyebrow TEXT,
+  ADD COLUMN IF NOT EXISTS hero_object_title TEXT,
+  ADD COLUMN IF NOT EXISTS hero_object_quote TEXT,
+  ADD COLUMN IF NOT EXISTS hero_object_badge TEXT,
+  ADD COLUMN IF NOT EXISTS hero_object_spec1_eyebrow TEXT,
+  ADD COLUMN IF NOT EXISTS hero_object_spec1_title TEXT,
+  ADD COLUMN IF NOT EXISTS hero_object_spec1_desc TEXT,
+  ADD COLUMN IF NOT EXISTS hero_object_spec2_eyebrow TEXT,
+  ADD COLUMN IF NOT EXISTS hero_object_spec2_title TEXT,
+  ADD COLUMN IF NOT EXISTS hero_object_spec2_desc TEXT,
+  ADD COLUMN IF NOT EXISTS hero_object_spec3_eyebrow TEXT,
+  ADD COLUMN IF NOT EXISTS hero_object_spec3_title TEXT,
+  ADD COLUMN IF NOT EXISTS hero_object_spec3_desc TEXT;
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE public.homepage_config ENABLE ROW LEVEL SECURITY;
@@ -137,6 +150,47 @@ export default function AdminHomepageConfigPage() {
     homepageConfig?.pillar3Image || DEFAULT_HOMEPAGE_CONFIG.pillar3Image || ''
   );
 
+  // The Hero Object editable text states
+  const [heroObjectEyebrow, setHeroObjectEyebrow] = useState<string>(
+    homepageConfig?.heroObjectEyebrow || DEFAULT_HOMEPAGE_CONFIG.heroObjectEyebrow || 'THE HERO OBJECT'
+  );
+  const [heroObjectTitle, setHeroObjectTitle] = useState<string>(
+    homepageConfig?.heroObjectTitle || DEFAULT_HOMEPAGE_CONFIG.heroObjectTitle || 'THE SUPERSNAKE TEE'
+  );
+  const [heroObjectQuote, setHeroObjectQuote] = useState<string>(
+    homepageConfig?.heroObjectQuote || DEFAULT_HOMEPAGE_CONFIG.heroObjectQuote || '“Designed around the everyday. Built around you.”'
+  );
+  const [heroObjectBadge, setHeroObjectBadge] = useState<string>(
+    homepageConfig?.heroObjectBadge || DEFAULT_HOMEPAGE_CONFIG.heroObjectBadge || 'ARCHITECTURAL BOXY FIT'
+  );
+  const [heroObjectSpec1Eyebrow, setHeroObjectSpec1Eyebrow] = useState<string>(
+    homepageConfig?.heroObjectSpec1Eyebrow || DEFAULT_HOMEPAGE_CONFIG.heroObjectSpec1Eyebrow || '01 / WEIGHT & STABILITY'
+  );
+  const [heroObjectSpec1Title, setHeroObjectSpec1Title] = useState<string>(
+    homepageConfig?.heroObjectSpec1Title || DEFAULT_HOMEPAGE_CONFIG.heroObjectSpec1Title || '280 GSM SUPIMA® COTTON'
+  );
+  const [heroObjectSpec1Desc, setHeroObjectSpec1Desc] = useState<string>(
+    homepageConfig?.heroObjectSpec1Desc || DEFAULT_HOMEPAGE_CONFIG.heroObjectSpec1Desc || 'Long-staple fibers combed to perfection. Substantial architectural drape that holds its form all day without feeling stiff.'
+  );
+  const [heroObjectSpec2Eyebrow, setHeroObjectSpec2Eyebrow] = useState<string>(
+    homepageConfig?.heroObjectSpec2Eyebrow || DEFAULT_HOMEPAGE_CONFIG.heroObjectSpec2Eyebrow || '02 / STRUCTURAL INTEGRITY'
+  );
+  const [heroObjectSpec2Title, setHeroObjectSpec2Title] = useState<string>(
+    homepageConfig?.heroObjectSpec2Title || DEFAULT_HOMEPAGE_CONFIG.heroObjectSpec2Title || 'ZERO-SAG 1-INCH COLLAR'
+  );
+  const [heroObjectSpec2Desc, setHeroObjectSpec2Desc] = useState<string>(
+    homepageConfig?.heroObjectSpec2Desc || DEFAULT_HOMEPAGE_CONFIG.heroObjectSpec2Desc || 'Twin-needle reinforced collar band with internal cotton herringbone tape. Retains razor-sharp neck tension through 100+ washes.'
+  );
+  const [heroObjectSpec3Eyebrow, setHeroObjectSpec3Eyebrow] = useState<string>(
+    homepageConfig?.heroObjectSpec3Eyebrow || DEFAULT_HOMEPAGE_CONFIG.heroObjectSpec3Eyebrow || '03 / ATELIER FINISH'
+  );
+  const [heroObjectSpec3Title, setHeroObjectSpec3Title] = useState<string>(
+    homepageConfig?.heroObjectSpec3Title || DEFAULT_HOMEPAGE_CONFIG.heroObjectSpec3Title || 'BLIND-STITCHED HEMS'
+  );
+  const [heroObjectSpec3Desc, setHeroObjectSpec3Desc] = useState<string>(
+    homepageConfig?.heroObjectSpec3Desc || DEFAULT_HOMEPAGE_CONFIG.heroObjectSpec3Desc || 'Seamless Japanese blind-hem technique for an uninterrupted silhouette. No curling, no puckering, zero exterior stitch noise.'
+  );
+
   const [newImageUrl, setNewImageUrl] = useState('');
   const [menImageUrl, setMenImageUrl] = useState('');
   const [womenImageUrl, setWomenImageUrl] = useState('');
@@ -205,6 +259,19 @@ export default function AdminHomepageConfigPage() {
       if (homepageConfig.pillar3Image) {
         setPillar3Image(homepageConfig.pillar3Image);
       }
+      if (homepageConfig.heroObjectEyebrow) setHeroObjectEyebrow(homepageConfig.heroObjectEyebrow);
+      if (homepageConfig.heroObjectTitle) setHeroObjectTitle(homepageConfig.heroObjectTitle);
+      if (homepageConfig.heroObjectQuote) setHeroObjectQuote(homepageConfig.heroObjectQuote);
+      if (homepageConfig.heroObjectBadge) setHeroObjectBadge(homepageConfig.heroObjectBadge);
+      if (homepageConfig.heroObjectSpec1Eyebrow) setHeroObjectSpec1Eyebrow(homepageConfig.heroObjectSpec1Eyebrow);
+      if (homepageConfig.heroObjectSpec1Title) setHeroObjectSpec1Title(homepageConfig.heroObjectSpec1Title);
+      if (homepageConfig.heroObjectSpec1Desc) setHeroObjectSpec1Desc(homepageConfig.heroObjectSpec1Desc);
+      if (homepageConfig.heroObjectSpec2Eyebrow) setHeroObjectSpec2Eyebrow(homepageConfig.heroObjectSpec2Eyebrow);
+      if (homepageConfig.heroObjectSpec2Title) setHeroObjectSpec2Title(homepageConfig.heroObjectSpec2Title);
+      if (homepageConfig.heroObjectSpec2Desc) setHeroObjectSpec2Desc(homepageConfig.heroObjectSpec2Desc);
+      if (homepageConfig.heroObjectSpec3Eyebrow) setHeroObjectSpec3Eyebrow(homepageConfig.heroObjectSpec3Eyebrow);
+      if (homepageConfig.heroObjectSpec3Title) setHeroObjectSpec3Title(homepageConfig.heroObjectSpec3Title);
+      if (homepageConfig.heroObjectSpec3Desc) setHeroObjectSpec3Desc(homepageConfig.heroObjectSpec3Desc);
       hasInitialized.current = true;
     }
   }, [homepageConfig]);
@@ -412,6 +479,19 @@ export default function AdminHomepageConfigPage() {
         pillar1Image,
         pillar2Image,
         pillar3Image,
+        heroObjectEyebrow,
+        heroObjectTitle,
+        heroObjectQuote,
+        heroObjectBadge,
+        heroObjectSpec1Eyebrow,
+        heroObjectSpec1Title,
+        heroObjectSpec1Desc,
+        heroObjectSpec2Eyebrow,
+        heroObjectSpec2Title,
+        heroObjectSpec2Desc,
+        heroObjectSpec3Eyebrow,
+        heroObjectSpec3Title,
+        heroObjectSpec3Desc,
       });
 
       if (syncedToSupabase) {
@@ -926,17 +1006,17 @@ export default function AdminHomepageConfigPage() {
         </div>
 
         {/* ============================================================
-            SECTION 3: THE SUPERSNAKE TEE (HERO OBJECT EDITORIAL)
+            SECTION 3: THE HERO OBJECT — THE SUPERSNAKE TEE (IMAGE & TEXT SPECS)
             ============================================================ */}
         <div className="bg-[#0d0d0d] border border-neutral-800/80 rounded-lg p-6 sm:p-8 space-y-6">
           <div className="border-b border-neutral-800 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h2 className="text-sm font-bold uppercase text-white tracking-wider flex items-center gap-2">
                 <Layers size={16} className="text-snake-green" />
-                THE SUPERSNAKE TEE — HERO OBJECT VISUAL
+                THE HERO OBJECT — THE SUPERSNAKE TEE (IMAGE & TEXT SPECS)
               </h2>
               <p className="text-[11px] text-neutral-400 mt-0.5">
-                Manage the monumental macro hero photography displayed in &ldquo;THE SUPERSNAKE TEE&rdquo; section on the homepage.
+                Manage the monumental macro hero photography, floating badge text, and the 3 craftsmanship specs displayed on the homepage.
               </p>
             </div>
 
@@ -947,16 +1027,17 @@ export default function AdminHomepageConfigPage() {
               className="px-4 py-1.5 bg-snake-green text-black font-bold uppercase text-xs rounded hover:bg-white transition-colors flex items-center gap-1.5 disabled:opacity-50 self-start sm:self-auto"
             >
               {isSaving ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
-              <span>SAVE IMAGE</span>
+              <span>SAVE SECTION 3</span>
             </button>
           </div>
 
+          {/* Top Row: Image Preview & Image Upload Controls */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             {/* Preview Thumbnail */}
             <div className="lg:col-span-7 bg-black border border-neutral-800 rounded-lg p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase text-white tracking-wider">
-                  LIVE PREVIEW
+                  IMAGE & BADGE LIVE PREVIEW
                 </span>
                 <button
                   type="button"
@@ -966,7 +1047,7 @@ export default function AdminHomepageConfigPage() {
                   }}
                   className="text-[10px] text-neutral-400 hover:text-white uppercase transition-colors"
                 >
-                  RESET DEFAULT
+                  RESET DEFAULT IMAGE
                 </button>
               </div>
 
@@ -980,13 +1061,35 @@ export default function AdminHomepageConfigPage() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
                 <div className="absolute bottom-3 left-3 right-3 p-2.5 bg-black/70 backdrop-blur-md border border-white/10 flex justify-between items-center text-xs font-mono rounded">
-                  <span className="text-neutral-300 tracking-wider">ARCHITECTURAL BOXY FIT</span>
+                  <span className="text-neutral-300 tracking-wider">
+                    {heroObjectBadge || 'ARCHITECTURAL BOXY FIT'}
+                  </span>
                   <span className="text-snake-green font-bold">₹1,499</span>
                 </div>
               </div>
+
+              {/* Floating Badge Text Input right below the preview */}
+              <div className="pt-2 border-t border-neutral-800 space-y-1.5">
+                <label className="text-[11px] font-bold text-white uppercase tracking-wider block">
+                  IMAGE FLOATING BADGE TEXT:
+                </label>
+                <input
+                  type="text"
+                  value={heroObjectBadge}
+                  onChange={(e) => {
+                    isDirty.current = true;
+                    setHeroObjectBadge(e.target.value);
+                  }}
+                  placeholder="ARCHITECTURAL BOXY FIT"
+                  className="w-full bg-[#111] border border-neutral-800 px-3 py-2 text-white text-xs rounded focus:border-snake-green focus:outline-none"
+                />
+                <span className="text-[10px] text-neutral-500 block">
+                  This text appears inside the pill overlay at the bottom-left of the photography.
+                </span>
+              </div>
             </div>
 
-            {/* Controls */}
+            {/* Image Upload Controls */}
             <div className="lg:col-span-5 bg-black border border-neutral-800 rounded-lg p-5 space-y-4">
               <span className="text-xs font-bold uppercase text-white tracking-wider block border-b border-neutral-800 pb-2">
                 UPLOAD / UPDATE VISUAL
@@ -1043,8 +1146,209 @@ export default function AdminHomepageConfigPage() {
                 </div>
 
                 <p className="text-[10px] text-neutral-500 leading-relaxed pt-1">
-                  Recommended: High-resolution landscape or square photograph showcasing garment drape and collar construction.
+                  Recommended: High-resolution landscape (`1600 × 1100 px` or `1600 × 1200 px`) photograph showcasing garment drape and collar construction. Completely independent of product images.
                 </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Row: Section Headlines & 3 Craftsmanship Specs Editing */}
+          <div className="bg-black border border-neutral-800 rounded-lg p-5 space-y-6">
+            <div className="border-b border-neutral-800 pb-3">
+              <span className="text-xs font-bold uppercase text-white tracking-wider block">
+                SECTION HEADLINES & CRAFTSMANSHIP SPECS
+              </span>
+              <p className="text-[11px] text-neutral-400 mt-0.5">
+                Customize the headlines and the 3 architectural specifications displayed to the left of the photography.
+              </p>
+            </div>
+
+            {/* Section Header Inputs */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-neutral-400 uppercase block">SECTION EYEBROW:</label>
+                <input
+                  type="text"
+                  value={heroObjectEyebrow}
+                  onChange={(e) => {
+                    isDirty.current = true;
+                    setHeroObjectEyebrow(e.target.value);
+                  }}
+                  placeholder="THE HERO OBJECT"
+                  className="w-full bg-[#111] border border-neutral-800 px-3 py-2 text-white text-xs rounded focus:border-snake-green focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-neutral-400 uppercase block">SECTION TITLE:</label>
+                <input
+                  type="text"
+                  value={heroObjectTitle}
+                  onChange={(e) => {
+                    isDirty.current = true;
+                    setHeroObjectTitle(e.target.value);
+                  }}
+                  placeholder="THE SUPERSNAKE TEE"
+                  className="w-full bg-[#111] border border-neutral-800 px-3 py-2 text-white text-xs rounded focus:border-snake-green focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-neutral-400 uppercase block">SECTION QUOTE:</label>
+                <input
+                  type="text"
+                  value={heroObjectQuote}
+                  onChange={(e) => {
+                    isDirty.current = true;
+                    setHeroObjectQuote(e.target.value);
+                  }}
+                  placeholder="“Designed around the everyday. Built around you.”"
+                  className="w-full bg-[#111] border border-neutral-800 px-3 py-2 text-white text-xs rounded focus:border-snake-green focus:outline-none"
+                />
+              </div>
+            </div>
+
+            {/* The 3 Craftsmanship Specs Inputs */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-2">
+              {/* SPEC 01 */}
+              <div className="bg-[#111] border border-neutral-800 rounded-lg p-4 space-y-3 border-l-2 border-l-snake-green">
+                <span className="text-[11px] font-bold uppercase text-snake-green block">SPECIFICATION 01</span>
+                
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-neutral-500 uppercase block">EYEBROW:</label>
+                  <input
+                    type="text"
+                    value={heroObjectSpec1Eyebrow}
+                    onChange={(e) => {
+                      isDirty.current = true;
+                      setHeroObjectSpec1Eyebrow(e.target.value);
+                    }}
+                    placeholder="01 / WEIGHT & STABILITY"
+                    className="w-full bg-black border border-neutral-800 px-2.5 py-1.5 text-white text-xs rounded focus:border-snake-green focus:outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-neutral-500 uppercase block">TITLE:</label>
+                  <input
+                    type="text"
+                    value={heroObjectSpec1Title}
+                    onChange={(e) => {
+                      isDirty.current = true;
+                      setHeroObjectSpec1Title(e.target.value);
+                    }}
+                    placeholder="280 GSM SUPIMA® COTTON"
+                    className="w-full bg-black border border-neutral-800 px-2.5 py-1.5 text-white text-xs rounded focus:border-snake-green focus:outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-neutral-500 uppercase block">DESCRIPTION:</label>
+                  <textarea
+                    rows={3}
+                    value={heroObjectSpec1Desc}
+                    onChange={(e) => {
+                      isDirty.current = true;
+                      setHeroObjectSpec1Desc(e.target.value);
+                    }}
+                    placeholder="Long-staple fibers combed to perfection..."
+                    className="w-full bg-black border border-neutral-800 px-2.5 py-1.5 text-white text-xs rounded focus:border-snake-green focus:outline-none resize-none"
+                  />
+                </div>
+              </div>
+
+              {/* SPEC 02 */}
+              <div className="bg-[#111] border border-neutral-800 rounded-lg p-4 space-y-3 border-l-2 border-l-neutral-600">
+                <span className="text-[11px] font-bold uppercase text-neutral-300 block">SPECIFICATION 02</span>
+                
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-neutral-500 uppercase block">EYEBROW:</label>
+                  <input
+                    type="text"
+                    value={heroObjectSpec2Eyebrow}
+                    onChange={(e) => {
+                      isDirty.current = true;
+                      setHeroObjectSpec2Eyebrow(e.target.value);
+                    }}
+                    placeholder="02 / STRUCTURAL INTEGRITY"
+                    className="w-full bg-black border border-neutral-800 px-2.5 py-1.5 text-white text-xs rounded focus:border-snake-green focus:outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-neutral-500 uppercase block">TITLE:</label>
+                  <input
+                    type="text"
+                    value={heroObjectSpec2Title}
+                    onChange={(e) => {
+                      isDirty.current = true;
+                      setHeroObjectSpec2Title(e.target.value);
+                    }}
+                    placeholder="ZERO-SAG 1-INCH COLLAR"
+                    className="w-full bg-black border border-neutral-800 px-2.5 py-1.5 text-white text-xs rounded focus:border-snake-green focus:outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-neutral-500 uppercase block">DESCRIPTION:</label>
+                  <textarea
+                    rows={3}
+                    value={heroObjectSpec2Desc}
+                    onChange={(e) => {
+                      isDirty.current = true;
+                      setHeroObjectSpec2Desc(e.target.value);
+                    }}
+                    placeholder="Twin-needle reinforced collar band with internal cotton herringbone tape..."
+                    className="w-full bg-black border border-neutral-800 px-2.5 py-1.5 text-white text-xs rounded focus:border-snake-green focus:outline-none resize-none"
+                  />
+                </div>
+              </div>
+
+              {/* SPEC 03 */}
+              <div className="bg-[#111] border border-neutral-800 rounded-lg p-4 space-y-3 border-l-2 border-l-neutral-600">
+                <span className="text-[11px] font-bold uppercase text-neutral-300 block">SPECIFICATION 03</span>
+                
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-neutral-500 uppercase block">EYEBROW:</label>
+                  <input
+                    type="text"
+                    value={heroObjectSpec3Eyebrow}
+                    onChange={(e) => {
+                      isDirty.current = true;
+                      setHeroObjectSpec3Eyebrow(e.target.value);
+                    }}
+                    placeholder="03 / ATELIER FINISH"
+                    className="w-full bg-black border border-neutral-800 px-2.5 py-1.5 text-white text-xs rounded focus:border-snake-green focus:outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-neutral-500 uppercase block">TITLE:</label>
+                  <input
+                    type="text"
+                    value={heroObjectSpec3Title}
+                    onChange={(e) => {
+                      isDirty.current = true;
+                      setHeroObjectSpec3Title(e.target.value);
+                    }}
+                    placeholder="BLIND-STITCHED HEMS"
+                    className="w-full bg-black border border-neutral-800 px-2.5 py-1.5 text-white text-xs rounded focus:border-snake-green focus:outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-neutral-500 uppercase block">DESCRIPTION:</label>
+                  <textarea
+                    rows={3}
+                    value={heroObjectSpec3Desc}
+                    onChange={(e) => {
+                      isDirty.current = true;
+                      setHeroObjectSpec3Desc(e.target.value);
+                    }}
+                    placeholder="Seamless Japanese blind-hem technique for an uninterrupted silhouette..."
+                    className="w-full bg-black border border-neutral-800 px-2.5 py-1.5 text-white text-xs rounded focus:border-snake-green focus:outline-none resize-none"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -1061,7 +1365,7 @@ export default function AdminHomepageConfigPage() {
                 THE SIGNATURE TEE — SPOTLIGHT CAMPAIGN VISUAL
               </h2>
               <p className="text-[11px] text-neutral-400 mt-0.5">
-                Upload and manage the full-bleed campaign backdrop for the Spotlight Campaign section on the homepage.
+                Upload and manage the full-bleed campaign backdrop for the Spotlight Campaign section on the homepage. Completely independent of product catalog images.
               </p>
             </div>
 
@@ -1087,11 +1391,11 @@ export default function AdminHomepageConfigPage() {
                   type="button"
                   onClick={() => {
                     isDirty.current = true;
-                    setSignatureTeeImage('');
+                    setSignatureTeeImage(DEFAULT_HOMEPAGE_CONFIG.signatureTeeImage || '');
                   }}
                   className="text-[10px] text-neutral-400 hover:text-white uppercase transition-colors"
                 >
-                  USE PRODUCT DEFAULT
+                  RESET DEFAULT
                 </button>
               </div>
 
@@ -1099,7 +1403,7 @@ export default function AdminHomepageConfigPage() {
                 <Image
                   src={
                     signatureTeeImage ||
-                    (products.find((p) => p.slug === 'the-signature-tee')?.images?.[0]?.url) ||
+                    DEFAULT_HOMEPAGE_CONFIG.signatureTeeImage ||
                     'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=2400&auto=format&fit=crop'
                   }
                   alt="The Signature Tee Spotlight"

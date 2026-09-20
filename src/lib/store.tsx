@@ -38,6 +38,19 @@ export interface HomepageConfig {
   pillar1Image?: string;
   pillar2Image?: string;
   pillar3Image?: string;
+  heroObjectEyebrow?: string;
+  heroObjectTitle?: string;
+  heroObjectQuote?: string;
+  heroObjectBadge?: string;
+  heroObjectSpec1Eyebrow?: string;
+  heroObjectSpec1Title?: string;
+  heroObjectSpec1Desc?: string;
+  heroObjectSpec2Eyebrow?: string;
+  heroObjectSpec2Title?: string;
+  heroObjectSpec2Desc?: string;
+  heroObjectSpec3Eyebrow?: string;
+  heroObjectSpec3Title?: string;
+  heroObjectSpec3Desc?: string;
 }
 
 export const DEFAULT_HOMEPAGE_CONFIG: HomepageConfig = {
@@ -55,10 +68,23 @@ export const DEFAULT_HOMEPAGE_CONFIG: HomepageConfig = {
   menCollectionImage: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&w=1600&auto=format&fit=crop',
   womenCollectionImage: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1600&auto=format&fit=crop',
   supersnakeTeeImage: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=1800&auto=format&fit=crop',
-  signatureTeeImage: '',
+  signatureTeeImage: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=2400&auto=format&fit=crop',
   pillar1Image: 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?q=80&w=800&auto=format&fit=crop',
   pillar2Image: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?q=80&w=800&auto=format&fit=crop',
   pillar3Image: 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=800&auto=format&fit=crop',
+  heroObjectEyebrow: 'THE HERO OBJECT',
+  heroObjectTitle: 'THE SUPERSNAKE TEE',
+  heroObjectQuote: '“Designed around the everyday. Built around you.”',
+  heroObjectBadge: 'ARCHITECTURAL BOXY FIT',
+  heroObjectSpec1Eyebrow: '01 / WEIGHT & STABILITY',
+  heroObjectSpec1Title: '280 GSM SUPIMA® COTTON',
+  heroObjectSpec1Desc: 'Long-staple fibers combed to perfection. Substantial architectural drape that holds its form all day without feeling stiff.',
+  heroObjectSpec2Eyebrow: '02 / STRUCTURAL INTEGRITY',
+  heroObjectSpec2Title: 'ZERO-SAG 1-INCH COLLAR',
+  heroObjectSpec2Desc: 'Twin-needle reinforced collar band with internal cotton herringbone tape. Retains razor-sharp neck tension through 100+ washes.',
+  heroObjectSpec3Eyebrow: '03 / ATELIER FINISH',
+  heroObjectSpec3Title: 'BLIND-STITCHED HEMS',
+  heroObjectSpec3Desc: 'Seamless Japanese blind-hem technique for an uninterrupted silhouette. No curling, no puckering, zero exterior stitch noise.',
 };
 
 export const DEFAULT_SOCIAL_CONFIG: SocialConfig = {
