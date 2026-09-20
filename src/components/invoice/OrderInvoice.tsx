@@ -66,6 +66,7 @@ export default function OrderInvoice({ order, className = '' }: OrderInvoiceProp
   const customerPhone =
     order.customer?.phone || order.shippingAddress?.phone || '';
 
+  // Actual configured business information with graceful fallbacks
   const sellerLegalName =
     storeSettings.legalBusinessName || BRAND.legalName || 'SuperSnake Apparel India Pvt Ltd';
   const sellerLocation =
@@ -83,11 +84,11 @@ export default function OrderInvoice({ order, className = '' }: OrderInvoiceProp
         boxSizing: 'border-box',
       }}
     >
-      <div className="p-8 sm:p-12 print:p-0 space-y-6 sm:space-y-8 print:space-y-4">
-        {/* HEADER */}
-        <header className="flex flex-row items-start justify-between border-b border-neutral-900/15 pb-6 gap-6">
-          {/* Brand Left */}
-          <div className="space-y-2">
+      <div className="p-8 sm:p-12 print:p-0 space-y-6 sm:space-y-8 print:space-y-5">
+        {/* TWO-COLUMN HEADER: Brand & Seller Left, INVOICE + Meta Right */}
+        <header className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start border-b border-neutral-900/15 pb-6">
+          {/* Left Column: SuperSnake Branding & Seller Information */}
+          <div className="space-y-3 font-sans">
             <div className="flex items-center gap-3">
               <div className="relative w-9 h-9 shrink-0">
                 <Image
@@ -100,21 +101,30 @@ export default function OrderInvoice({ order, className = '' }: OrderInvoiceProp
               </div>
               <div>
                 <span className="font-display font-bold text-xl tracking-wider text-black block leading-none">
-                  SUPERSNAKE
+                  {BRAND.name}
                 </span>
                 <span className="text-[9px] font-mono tracking-[0.25em] text-neutral-500 uppercase block mt-0.5">
-                  WEAR YOUR INSTINCT.
+                  {BRAND.tagline}
                 </span>
               </div>
             </div>
+
+            <div className="text-xs text-neutral-700 font-sans space-y-0.5 pt-1">
+              <p className="font-semibold text-black">{sellerLegalName}</p>
+              <p className="whitespace-pre-line text-neutral-600">{sellerLocation}</p>
+              <p className="text-neutral-500 pt-0.5">
+                {sellerEmail} · supersnake.in
+              </p>
+            </div>
           </div>
 
-          {/* Invoice Meta Right */}
-          <div className="text-right space-y-1.5">
+          {/* Right Column: Elegant INVOICE Title & Compact Metadata Block */}
+          <div className="text-left sm:text-right space-y-2">
             <h1 className="text-2xl sm:text-3xl font-display font-medium tracking-tight text-black leading-none uppercase">
               INVOICE
             </h1>
-            <div className="pt-1 font-mono text-[11px] text-neutral-600 space-y-0.5">
+
+            <div className="pt-1 font-mono text-[11px] text-neutral-600 space-y-1 inline-block text-left sm:text-right">
               <p>
                 <span className="text-neutral-400 uppercase">Invoice No.</span>{' '}
                 <span className="text-black font-semibold">{invoiceNumber}</span>
@@ -128,31 +138,17 @@ export default function OrderInvoice({ order, className = '' }: OrderInvoiceProp
                 <span className="text-black font-medium">{order.orderNumber}</span>
               </p>
               <p>
-                <span className="text-neutral-400 uppercase">Payment:</span>{' '}
+                <span className="text-neutral-400 uppercase">Payment Status:</span>{' '}
                 <span className="text-black font-semibold uppercase tracking-wider">
-                  {order.payment?.status === 'paid' || !order.payment?.status ? 'PAID' : order.payment.status}
+                  {order.payment?.status === 'paid' || !order.payment?.status ? 'Paid' : order.payment.status}
                 </span>
               </p>
             </div>
           </div>
         </header>
 
-        {/* SELLER & CUSTOMER SECTION */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 gap-8 pt-2">
-          {/* Seller Information */}
-          <div className="space-y-1.5 font-sans">
-            <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-400 block">
-              SELLER
-            </span>
-            <p className="font-semibold text-black text-sm">{BRAND.name}</p>
-            <p className="text-neutral-700 text-xs">{sellerLegalName}</p>
-            <p className="text-neutral-700 text-xs whitespace-pre-line">{sellerLocation}</p>
-            <p className="text-neutral-600 text-xs pt-0.5">
-              {sellerEmail} · supersnake.in
-            </p>
-          </div>
-
-          {/* Customer & Delivery Address */}
+        {/* CUSTOMER & DELIVERY ADDRESS SECTION */}
+        <section className="pt-1">
           <div className="space-y-1.5 font-sans">
             <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-400 block">
               BILLING &amp; DELIVERY ADDRESS
@@ -176,8 +172,8 @@ export default function OrderInvoice({ order, className = '' }: OrderInvoiceProp
               </p>
             )}
             {(customerEmail || customerPhone) && (
-              <p className="text-neutral-600 text-xs pt-0.5">
-                {[customerEmail, customerPhone].filter(Boolean).join(' · ')}
+              <p className="text-neutral-500 text-xs pt-0.5">
+                {[customerPhone, customerEmail].filter(Boolean).join(' · ')}
               </p>
             )}
           </div>
@@ -252,7 +248,7 @@ export default function OrderInvoice({ order, className = '' }: OrderInvoiceProp
             )}
           </div>
 
-          {/* Pricing Ledger Right */}
+          {/* Pricing Ledger Right — strictly NO tax lines */}
           <div className="space-y-2 font-mono text-xs">
             <div className="flex justify-between py-1 text-neutral-700">
               <span>{(order.items || []).length > 1 ? 'Product Total' : 'Product Price'}</span>
@@ -284,8 +280,8 @@ export default function OrderInvoice({ order, className = '' }: OrderInvoiceProp
           </div>
         </section>
 
-        {/* FOOTER */}
-        <footer className="pt-8 mt-8 border-t border-neutral-200 text-center space-y-1.5 font-sans">
+        {/* REBALANCED ELEGANT FOOTER */}
+        <footer className="pt-10 sm:pt-16 mt-8 sm:mt-12 border-t border-neutral-200 text-center space-y-1.5 font-sans">
           <p className="font-mono text-[11px] uppercase tracking-widest text-black font-semibold">
             SUPERSNAKE — WEAR YOUR INSTINCT.
           </p>
