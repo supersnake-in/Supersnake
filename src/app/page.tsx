@@ -337,7 +337,7 @@ export default function HomePage() {
               <span className="font-mono text-lg sm:text-xl md:text-2xl text-white font-semibold">
                 {formatPrice(signatureProduct.price)}
               </span>
-              <p className="text-xs sm:text-sm font-mono text-neutral-300 max-w-md leading-relaxed">
+              <p className="pt-8 sm:pt-0 text-xs sm:text-sm font-mono text-neutral-300 max-w-md leading-relaxed">
                 {signatureProduct.description}
               </p>
             </div>
