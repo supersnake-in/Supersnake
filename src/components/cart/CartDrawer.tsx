@@ -9,10 +9,10 @@ import { useStore } from '@/lib/store';
 import { formatPrice, BRAND } from '@/lib/design-tokens';
 
 export function CartDrawer() {
-  const { cart, isCartOpen, closeCart, removeFromCart, updateQuantity, cartTotal, products } = useStore();
+  const { cart, isCartOpen, closeCart, removeFromCart, updateQuantity, cartTotal, products, freeShippingThreshold = BRAND.freeShippingThreshold } = useStore();
 
-  const freeShippingLeft = Math.max(0, BRAND.freeShippingThreshold - cartTotal);
-  const progressPercent = Math.min(100, (cartTotal / BRAND.freeShippingThreshold) * 100);
+  const freeShippingLeft = Math.max(0, freeShippingThreshold - cartTotal);
+  const progressPercent = Math.min(100, (cartTotal / freeShippingThreshold) * 100);
 
   return (
     <AnimatePresence>
@@ -61,7 +61,7 @@ export function CartDrawer() {
                   {freeShippingLeft === 0 ? (
                     <span className="text-snake-green font-semibold">✓ FREE SHIPPING UNLOCKED</span>
                   ) : (
-                    <>Add <span className="text-white font-bold">{formatPrice(freeShippingLeft)}</span> for free shipping</>
+                    <>Shop for <span className="text-white font-bold">{formatPrice(freeShippingLeft)}</span> more to get free shipping</>
                   )}
                 </span>
                 <span className="text-neutral-500">{Math.round(progressPercent)}%</span>

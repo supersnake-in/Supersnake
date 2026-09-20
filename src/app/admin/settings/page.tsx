@@ -1,14 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Store, Truck, ShieldCheck, Check, Clock, Sparkles } from 'lucide-react';
 import { BRAND } from '@/lib/design-tokens';
+import { useStore } from '@/lib/store';
 
 export default function AdminSettingsPage() {
+  const { freeShippingThreshold: storeThreshold, updateFreeShippingThreshold } = useStore();
   const [saved, setSaved] = useState(false);
   const [storeName, setStoreName] = useState(BRAND.name);
   const [supportEmail, setSupportEmail] = useState('support@supersnake.in');
-  const [freeShippingThreshold, setFreeShippingThreshold] = useState(1999);
+  const [freeShippingThreshold, setFreeShippingThreshold] = useState<number>(storeThreshold || 1999);
   const [deliveryDays, setDeliveryDays] = useState('2-4 Business Days');
   const [courierPartner, setCourierPartner] = useState('Authorised Courier Partners');
   const [studioLocation, setStudioLocation] = useState('Bengaluru, Karnataka, India');
@@ -19,8 +21,49 @@ export default function AdminSettingsPage() {
   const [jurisdiction, setJurisdiction] = useState('');
   const [adminPin, setAdminPin] = useState('••••');
 
+  useEffect(() => {
+    try {
+      const savedSettings = localStorage.getItem('supersnake_settings');
+      if (savedSettings) {
+        const parsed = JSON.parse(savedSettings);
+        if (parsed.storeName) setStoreName(parsed.storeName);
+        if (parsed.supportEmail) setSupportEmail(parsed.supportEmail);
+        if (parsed.freeShippingThreshold) setFreeShippingThreshold(Number(parsed.freeShippingThreshold));
+        if (parsed.deliveryDays) setDeliveryDays(parsed.deliveryDays);
+        if (parsed.courierPartner) setCourierPartner(parsed.courierPartner);
+        if (parsed.studioLocation) setStudioLocation(parsed.studioLocation);
+        if (parsed.legalBusinessName) setLegalBusinessName(parsed.legalBusinessName);
+        if (parsed.gstin) setGstin(parsed.gstin);
+        if (parsed.grievanceOfficer) setGrievanceOfficer(parsed.grievanceOfficer);
+        if (parsed.grievanceEmail) setGrievanceEmail(parsed.grievanceEmail);
+        if (parsed.jurisdiction) setJurisdiction(parsed.jurisdiction);
+      } else if (storeThreshold) {
+        setFreeShippingThreshold(storeThreshold);
+      }
+    } catch (e) {}
+  }, [storeThreshold]);
+
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
+    updateFreeShippingThreshold(freeShippingThreshold);
+    try {
+      localStorage.setItem(
+        'supersnake_settings',
+        JSON.stringify({
+          storeName,
+          supportEmail,
+          freeShippingThreshold,
+          deliveryDays,
+          courierPartner,
+          studioLocation,
+          legalBusinessName,
+          gstin,
+          grievanceOfficer,
+          grievanceEmail,
+          jurisdiction,
+        })
+      );
+    } catch (err) {}
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };

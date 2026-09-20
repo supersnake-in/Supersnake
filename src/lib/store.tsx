@@ -24,6 +24,7 @@ import {
   loadCartFromStorageAsync,
   sanitizeCartItem,
 } from './storage-helper';
+import { BRAND } from './design-tokens';
 export interface HomepageConfig {
   heroImages: string[];
   heroIntervalSeconds: number;
@@ -242,6 +243,10 @@ interface StoreContextType {
   subscribers: NewsletterSubscriber[];
   addSubscriber: (email: string) => Promise<boolean>;
   deleteSubscriber: (id: string) => Promise<boolean>;
+
+  // Store Settings & Logistics
+  freeShippingThreshold: number;
+  updateFreeShippingThreshold: (threshold: number) => void;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -257,7 +262,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [homepageConfig, setHomepageConfig] = useState<HomepageConfig>(DEFAULT_HOMEPAGE_CONFIG);
   const [socialConfig, setSocialConfig] = useState<SocialConfig>(DEFAULT_SOCIAL_CONFIG);
   const [subscribers, setSubscribers] = useState<NewsletterSubscriber[]>([]);
+  const [freeShippingThreshold, setFreeShippingThresholdState] = useState<number>(BRAND.freeShippingThreshold);
   const [isLoaded, setIsLoaded] = useState(false);
+
+  const updateFreeShippingThreshold = (threshold: number) => {
+    const valid = Number(threshold) > 0 ? Number(threshold) : BRAND.freeShippingThreshold;
+    setFreeShippingThresholdState(valid);
+    try {
+      localStorage.setItem('supersnake_free_shipping_threshold', String(valid));
+      window.dispatchEvent(new Event('supersnake_threshold_change'));
+    } catch (e) {}
+  };
 
   // Sync from localStorage & Supabase
   useEffect(() => {
@@ -487,6 +502,37 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         }
       })
       .catch(() => {});
+
+    // Free shipping threshold sync from localStorage
+    try {
+      const savedThreshold = localStorage.getItem('supersnake_free_shipping_threshold');
+      if (savedThreshold && !isNaN(Number(savedThreshold)) && Number(savedThreshold) > 0) {
+        setFreeShippingThresholdState(Number(savedThreshold));
+      }
+    } catch (e) {}
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'supersnake_free_shipping_threshold' && e.newValue) {
+        const val = Number(e.newValue);
+        if (!isNaN(val) && val > 0) {
+          setFreeShippingThresholdState(val);
+        }
+      }
+    };
+    const handleCustomChange = () => {
+      try {
+        const saved = localStorage.getItem('supersnake_free_shipping_threshold');
+        if (saved && !isNaN(Number(saved)) && Number(saved) > 0) {
+          setFreeShippingThresholdState(Number(saved));
+        }
+      } catch (e) {}
+    };
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('supersnake_threshold_change', handleCustomChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('supersnake_threshold_change', handleCustomChange);
+    };
   }, []);
 
   // Save to localStorage
@@ -1029,6 +1075,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         createOrder,
         getOrderById,
         updateOrder,
+        freeShippingThreshold,
+        updateFreeShippingThreshold,
       }}
     >
       {children}

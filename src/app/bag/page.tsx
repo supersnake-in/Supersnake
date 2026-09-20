@@ -8,7 +8,7 @@ import { useStore } from '@/lib/store';
 import { formatPrice, BRAND } from '@/lib/design-tokens';
 
 export default function BagPage() {
-  const { cart, removeFromCart, updateQuantity, cartTotal, isLoaded, products } = useStore();
+  const { cart, cartTotal, removeFromCart, updateQuantity, isLoaded, products, freeShippingThreshold = BRAND.freeShippingThreshold } = useStore();
   const [couponCode, setCouponCode] = useState('');
   const [couponDiscount, setCouponDiscount] = useState(0);
   const [couponMessage, setCouponMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
@@ -31,7 +31,7 @@ export default function BagPage() {
   };
 
   const finalTotal = Math.max(0, cartTotal - couponDiscount);
-  const freeShippingLeft = Math.max(0, BRAND.freeShippingThreshold - cartTotal);
+  const freeShippingLeft = Math.max(0, freeShippingThreshold - cartTotal);
 
   return (
     <div className="bg-black text-white min-h-screen pt-32 pb-24 px-6 md:px-12">
@@ -82,7 +82,7 @@ export default function BagPage() {
                   {freeShippingLeft === 0 ? (
                     <span className="text-snake-green font-semibold">✓ FREE SHIPPING UNLOCKED</span>
                   ) : (
-                    <>Add <span className="text-white font-bold">{formatPrice(freeShippingLeft)}</span> more for free shipping.</>
+                    <>Shop for <span className="text-white font-bold">{formatPrice(freeShippingLeft)}</span> more to get free shipping.</>
                   )}
                 </span>
                 <span className="text-neutral-500 hidden sm:inline">STANDARD: 2–4 DAYS</span>
