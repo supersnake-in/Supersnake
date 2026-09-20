@@ -87,7 +87,7 @@ export const DEFAULT_HOMEPAGE_CONFIG: HomepageConfig = {
   brandStatement: 'NOT MADE TO BLEND IN.',
   menCollectionImage: '/men-collection.png',
   womenCollectionImage: '/women-collection.png',
-  supersnakeTeeImage: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=1800&auto=format&fit=crop',
+  supersnakeTeeImage: '/hero-object-supersnake-tee.png',
   signatureTeeImage: '/signature-tee-spotlight.png',
   pillar1Image: 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?q=80&w=800&auto=format&fit=crop',
   pillar2Image: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?q=80&w=800&auto=format&fit=crop',
@@ -314,6 +314,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             if (parsed.signatureTeeImage) {
               parsed.signatureTeeImage = cleanCollectionImage(parsed.signatureTeeImage, '/signature-tee-spotlight.png');
             }
+            if (parsed.supersnakeTeeImage) {
+              parsed.supersnakeTeeImage = cleanCollectionImage(parsed.supersnakeTeeImage, '/hero-object-supersnake-tee.png');
+            }
             setHomepageConfig((prev) => ({ ...prev, ...parsed }));
           }
         } catch (e) {}
@@ -388,6 +391,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             menCollectionImage: cleanCollectionImage(supabaseHomepage.menCollectionImage, '/men-collection.png'),
             womenCollectionImage: cleanCollectionImage(supabaseHomepage.womenCollectionImage, '/women-collection.png'),
             signatureTeeImage: cleanCollectionImage(supabaseHomepage.signatureTeeImage, '/signature-tee-spotlight.png'),
+            supersnakeTeeImage: cleanCollectionImage(supabaseHomepage.supersnakeTeeImage, '/hero-object-supersnake-tee.png'),
           };
           setHomepageConfig(cleaned);
           try {
@@ -818,6 +822,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         : {}),
       ...(config.signatureTeeImage !== undefined
         ? { signatureTeeImage: cleanCollectionImage(config.signatureTeeImage, '/signature-tee-spotlight.png') }
+        : {}),
+      ...(config.supersnakeTeeImage !== undefined
+        ? { supersnakeTeeImage: cleanCollectionImage(config.supersnakeTeeImage, '/hero-object-supersnake-tee.png') }
         : {}),
     };
 

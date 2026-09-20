@@ -115,7 +115,7 @@ export default function AdminHomepageConfigPage() {
 
   // New section image states
   const [supersnakeTeeImage, setSupersnakeTeeImage] = useState<string>(
-    homepageConfig?.supersnakeTeeImage || DEFAULT_HOMEPAGE_CONFIG.supersnakeTeeImage || ''
+    cleanCollectionImage(homepageConfig?.supersnakeTeeImage, DEFAULT_HOMEPAGE_CONFIG.supersnakeTeeImage || '/hero-object-supersnake-tee.png')
   );
   const [signatureTeeImage, setSignatureTeeImage] = useState<string>(
     cleanCollectionImage(homepageConfig?.signatureTeeImage, DEFAULT_HOMEPAGE_CONFIG.signatureTeeImage || '/signature-tee-spotlight.png')
@@ -225,7 +225,7 @@ export default function AdminHomepageConfigPage() {
         setWomenCollectionImage(cleanCollectionImage(homepageConfig.womenCollectionImage, '/women-collection.png'));
       }
       if (homepageConfig.supersnakeTeeImage) {
-        setSupersnakeTeeImage(homepageConfig.supersnakeTeeImage);
+        setSupersnakeTeeImage(cleanCollectionImage(homepageConfig.supersnakeTeeImage, '/hero-object-supersnake-tee.png'));
       }
       if (homepageConfig.signatureTeeImage) {
         setSignatureTeeImage(cleanCollectionImage(homepageConfig.signatureTeeImage, '/signature-tee-spotlight.png'));
@@ -1023,7 +1023,7 @@ export default function AdminHomepageConfigPage() {
                   type="button"
                   onClick={() => {
                     isDirty.current = true;
-                    setSupersnakeTeeImage(DEFAULT_HOMEPAGE_CONFIG.supersnakeTeeImage || '');
+                    setSupersnakeTeeImage(DEFAULT_HOMEPAGE_CONFIG.supersnakeTeeImage || '/hero-object-supersnake-tee.png');
                   }}
                   className="text-[10px] text-neutral-400 hover:text-white uppercase transition-colors"
                 >
@@ -1033,7 +1033,7 @@ export default function AdminHomepageConfigPage() {
 
               <div className="relative aspect-[16/11] sm:aspect-[16/10] w-full bg-neutral-900 rounded-md overflow-hidden border border-neutral-800 group">
                 <Image
-                  src={supersnakeTeeImage || DEFAULT_HOMEPAGE_CONFIG.supersnakeTeeImage || ''}
+                  src={cleanCollectionImage(supersnakeTeeImage, DEFAULT_HOMEPAGE_CONFIG.supersnakeTeeImage || '/hero-object-supersnake-tee.png')}
                   alt="The SuperSnake Tee Hero Object"
                   fill
                   unoptimized={supersnakeTeeImage?.startsWith('data:') || (supersnakeTeeImage ? !supersnakeTeeImage.includes('unsplash.com') : false)}

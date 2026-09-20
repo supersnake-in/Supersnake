@@ -549,9 +549,7 @@ export default function HomePage() {
               <div className="relative aspect-[4/5] sm:aspect-[16/11] w-full rounded overflow-hidden bg-neutral-950 border border-white/10 group">
                 <Image
                   src={
-                    homepageConfig?.supersnakeTeeImage ||
-                    DEFAULT_HOMEPAGE_CONFIG.supersnakeTeeImage ||
-                    "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=1800&auto=format&fit=crop"
+                    cleanCollectionImage(homepageConfig?.supersnakeTeeImage, '/hero-object-supersnake-tee.png')
                   }
                   alt="The SuperSnake Tee - Sculpture"
                   fill
