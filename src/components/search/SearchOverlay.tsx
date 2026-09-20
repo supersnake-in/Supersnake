@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search as SearchIcon, X, ArrowRight, ArrowDown } from 'lucide-react';
+import { Search as SearchIcon, X, ArrowRight } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { formatPrice } from '@/lib/design-tokens';
 import { Product } from '@/lib/types';
@@ -16,13 +16,6 @@ export function SearchOverlay() {
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const railRef = useRef<HTMLDivElement>(null);
-  const [scrollProgress, setScrollProgress] = useState(0);
-  const [thumbHeight, setThumbHeight] = useState(25);
-  const [isScrollable, setIsScrollable] = useState(false);
-  const isDraggingRef = useRef(false);
-  const dragStartYRef = useRef(0);
-  const dragStartScrollTopRef = useRef(0);
 
   const curatedSuggestions = [
     'BLACK T-SHIRTS',
@@ -69,24 +62,6 @@ export function SearchOverlay() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isSearchOpen, closeSearch, openSearch]);
 
-  const updateScrollMetrics = useCallback(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const { scrollTop, scrollHeight, clientHeight } = el;
-    const canScroll = scrollHeight > clientHeight + 15;
-    setIsScrollable(canScroll);
-    if (canScroll) {
-      const ratio = clientHeight / scrollHeight;
-      const heightPercent = Math.max(15, Math.min(80, ratio * 100));
-      setThumbHeight(heightPercent);
-      const maxScroll = scrollHeight - clientHeight;
-      const progress = maxScroll > 0 ? (scrollTop / maxScroll) * 100 : 0;
-      setScrollProgress(progress);
-    } else {
-      setScrollProgress(0);
-    }
-  }, []);
-
   // Focus input when opened, lock body scroll, and prevent Lenis interception
   useEffect(() => {
     if (isSearchOpen) {
@@ -94,7 +69,6 @@ export function SearchOverlay() {
       document.body.style.overflow = 'hidden';
       const timer = setTimeout(() => {
         inputRef.current?.focus();
-        updateScrollMetrics();
       }, 100);
 
       // Stop wheel and touch events from bubbling up to Lenis on window
@@ -122,16 +96,13 @@ export function SearchOverlay() {
     } else {
       setQuery('');
       setResults([]);
-      setScrollProgress(0);
-      setIsScrollable(false);
     }
-  }, [isSearchOpen, updateScrollMetrics]);
+  }, [isSearchOpen]);
 
   // Live search filtering
   useEffect(() => {
     if (!query.trim()) {
       setResults([]);
-      setIsScrollable(false);
       return;
     }
 
@@ -148,59 +119,11 @@ export function SearchOverlay() {
     });
 
     setResults(filtered);
-
-    // Measure scroll dimensions after results render
-    const timer = setTimeout(updateScrollMetrics, 120);
-    return () => clearTimeout(timer);
-  }, [query, products, updateScrollMetrics]);
+  }, [query, products]);
 
   const handleSelectTerm = (term: string) => {
     setQuery(term);
     saveRecentSearch(term);
-  };
-
-  // Custom scrollbar drag handlers
-  const handleThumbMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    isDraggingRef.current = true;
-    dragStartYRef.current = e.clientY;
-    if (containerRef.current) {
-      dragStartScrollTopRef.current = containerRef.current.scrollTop;
-    }
-
-    const onMouseMove = (moveEvent: MouseEvent) => {
-      if (!isDraggingRef.current || !containerRef.current || !railRef.current) return;
-      const deltaY = moveEvent.clientY - dragStartYRef.current;
-      const el = containerRef.current;
-      const railRect = railRef.current.getBoundingClientRect();
-      const maxScroll = el.scrollHeight - el.clientHeight;
-      const usableRailHeight = railRect.height * (1 - thumbHeight / 100);
-      if (usableRailHeight > 0) {
-        const scrollDelta = (deltaY / usableRailHeight) * maxScroll;
-        el.scrollTop = dragStartScrollTopRef.current + scrollDelta;
-      }
-    };
-
-    const onMouseUp = () => {
-      isDraggingRef.current = false;
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup', onMouseUp);
-    };
-
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', onMouseUp);
-  };
-
-  const handleRailClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target !== railRef.current) return;
-    const el = containerRef.current;
-    if (!el || !railRef.current) return;
-    const railRect = railRef.current.getBoundingClientRect();
-    const clickY = e.clientY - railRect.top;
-    const clickRatio = Math.max(0, Math.min(1, clickY / railRect.height));
-    const maxScroll = el.scrollHeight - el.clientHeight;
-    el.scrollTo({ top: clickRatio * maxScroll, behavior: 'smooth' });
   };
 
   return (
@@ -208,7 +131,6 @@ export function SearchOverlay() {
       {isSearchOpen && (
         <motion.div
           ref={containerRef}
-          onScroll={updateScrollMetrics}
           data-lenis-prevent="true"
           data-lenis-prevent-wheel="true"
           data-lenis-prevent-touch="true"
@@ -218,36 +140,6 @@ export function SearchOverlay() {
           transition={{ duration: 0.3 }}
           className="fixed inset-0 z-50 bg-black/95 backdrop-blur-2xl overflow-y-scroll modal-scroller text-neutral-100"
         >
-          {/* Custom On-Screen Vertical Scroller Rail */}
-          {isScrollable && (
-            <div
-              className="fixed right-2 sm:right-4 top-28 bottom-12 w-3 z-50 flex items-center justify-center pointer-events-auto"
-              aria-hidden="true"
-            >
-              <div
-                ref={railRef}
-                onClick={handleRailClick}
-                className="relative h-full w-1.5 bg-neutral-800/90 hover:bg-neutral-700/90 border border-white/10 rounded-full cursor-pointer transition-colors"
-              >
-                <div
-                  onMouseDown={handleThumbMouseDown}
-                  style={{
-                    height: `${thumbHeight}%`,
-                    top: `${(scrollProgress / 100) * (100 - thumbHeight)}%`,
-                  }}
-                  className="absolute left-0 right-0 bg-snake-green rounded-full shadow-[0_0_10px_rgba(4,252,33,0.7)] hover:bg-white cursor-grab active:cursor-grabbing transition-colors"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Scroll indicator prompt (visible when user hasn't scrolled yet) */}
-          {isScrollable && scrollProgress < 8 && (
-            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 pointer-events-none flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/85 backdrop-blur-md border border-white/15 text-[10px] font-mono tracking-widest text-snake-green animate-bounce">
-              <span>SCROLL TO VIEW ALL RESULTS</span>
-              <ArrowDown size={12} />
-            </div>
-          )}
 
           <div
             data-lenis-prevent="true"
