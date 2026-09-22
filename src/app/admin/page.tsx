@@ -72,23 +72,55 @@ export default function AdminDashboardPage() {
   const last14Days = Array.from({ length: 14 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (13 - i));
-    return d.toISOString().slice(0, 10);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   });
 
   const dailyRevenueMap: Record<string, number> = {};
+  const dailyOrdersCountMap: Record<string, number> = {};
   last14Days.forEach((day) => {
     dailyRevenueMap[day] = 0;
+    dailyOrdersCountMap[day] = 0;
   });
 
   orders.forEach((o) => {
-    const orderDay = (o.createdAt || '').slice(0, 10);
-    if (dailyRevenueMap[orderDay] !== undefined) {
-      dailyRevenueMap[orderDay] += Number(o.total) || 0;
+    const orderTotal = Number(o.total) || 0;
+    const rawStr = String(o.createdAt || '');
+
+    let matchedDay: string | undefined;
+
+    try {
+      const d = new Date(rawStr);
+      if (!isNaN(d.getTime())) {
+        const localKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const utcKey = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+
+        if (dailyRevenueMap[localKey] !== undefined) {
+          matchedDay = localKey;
+        } else if (dailyRevenueMap[utcKey] !== undefined) {
+          matchedDay = utcKey;
+        }
+      }
+    } catch {}
+
+    if (!matchedDay) {
+      const directKey = rawStr.slice(0, 10);
+      if (dailyRevenueMap[directKey] !== undefined) {
+        matchedDay = directKey;
+      }
+    }
+
+    if (matchedDay) {
+      dailyRevenueMap[matchedDay] += orderTotal;
+      dailyOrdersCountMap[matchedDay] += 1;
     }
   });
 
+  const fourteenDayRevenue = Object.values(dailyRevenueMap).reduce((sum, v) => sum + v, 0);
   const maxDailyRevenue = Math.max(...Object.values(dailyRevenueMap), 1);
-  const avgDailyRevenue = totalRevenue > 0 ? Math.round(totalRevenue / 14) : 0;
+  const avgDailyRevenue = Math.round(fourteenDayRevenue / 14);
 
   // Dynamic Demographic Split from catalog
   const menCount = products.filter((p) => p.gender === 'men' || p.gender === 'unisex').length;
@@ -191,45 +223,88 @@ export default function AdminDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left: Revenue Velocity */}
         <div className="lg:col-span-8 p-6 bg-[#0d0d0d] border border-neutral-800/80 rounded-lg space-y-6">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <h3 className="text-sm font-bold text-white uppercase tracking-wider">
                 REVENUE VELOCITY (LAST 14 DAYS)
               </h3>
               <p className="text-[11px] text-neutral-500">Gross sales performance in INR (₹)</p>
             </div>
-            <span className="text-xs text-snake-green font-bold">
-              AVG {formatPrice(avgDailyRevenue)} / DAY
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-neutral-400">
+                14-Day: <span className="text-white font-bold">{formatPrice(fourteenDayRevenue)}</span>
+              </span>
+              <span className="text-xs text-snake-green font-bold bg-snake-green/10 border border-snake-green/20 px-2 py-0.5 rounded">
+                AVG {formatPrice(avgDailyRevenue)} / DAY
+              </span>
+            </div>
           </div>
 
-          {/* Bar Chart */}
-          <div className="h-48 flex items-end gap-2 sm:gap-3 pt-6 pb-2 border-b border-neutral-800">
-            {last14Days.map((day, i) => {
-              const rev = dailyRevenueMap[day] || 0;
-              const heightPct = totalRevenue > 0 ? Math.max(Math.round((rev / maxDailyRevenue) * 100), 4) : 4;
-              return (
-                <div key={day} className="flex-1 flex flex-col items-center gap-2 group">
-                  <div
-                    className={`w-full rounded-t transition-all relative ${
-                      rev > 0 ? 'bg-snake-green' : 'bg-neutral-800 group-hover:bg-neutral-700'
-                    }`}
-                    style={{ height: `${heightPct}%` }}
-                  >
-                    <span className="absolute -top-7 left-1/2 -translate-x-1/2 bg-black text-[9px] px-1.5 py-0.5 border border-white/20 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 text-white">
-                      {formatPrice(rev)}
+          {/* Bar Chart Container */}
+          <div className="h-48 flex flex-col justify-end pt-2 pb-2 border-b border-neutral-800">
+            {/* Bars Area (dedicated explicit height so percentage heights calculate accurately) */}
+            <div className="h-36 w-full flex items-end gap-1 sm:gap-2">
+              {last14Days.map((day) => {
+                const rev = dailyRevenueMap[day] || 0;
+                const orderCount = dailyOrdersCountMap[day] || 0;
+                const heightPct = maxDailyRevenue > 0 && rev > 0 ? Math.max(Math.round((rev / maxDailyRevenue) * 100), 10) : 0;
+                const dateObj = new Date(day);
+                const dayLabel = dateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+                const weekday = dateObj.toLocaleDateString('en-IN', { weekday: 'short' });
+
+                return (
+                  <div key={day} className="flex-1 h-full flex flex-col items-center justify-end group relative cursor-pointer">
+                    {/* Hover Floating Tooltip */}
+                    <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-black border border-neutral-700/80 px-2.5 py-1.5 rounded shadow-2xl opacity-0 group-hover:opacity-100 transition-all pointer-events-none whitespace-nowrap z-30 flex flex-col items-center text-center">
+                      <span className="text-[10px] font-bold text-snake-green">{formatPrice(rev)}</span>
+                      <span className="text-[9px] text-neutral-300">
+                        {weekday}, {dayLabel} • {orderCount} {orderCount === 1 ? 'order' : 'orders'}
+                      </span>
+                    </div>
+
+                    {/* Bar Track & Fill */}
+                    <div className="w-full flex-1 flex items-end justify-center">
+                      <div
+                        className={`w-full max-w-[26px] rounded-t transition-all duration-300 ${
+                          rev > 0
+                            ? 'bg-snake-green hover:bg-emerald-400 shadow-[0_0_12px_rgba(34,197,94,0.35)]'
+                            : 'bg-neutral-800/80 group-hover:bg-neutral-700 h-[3px]'
+                        }`}
+                        style={rev > 0 ? { height: `${heightPct}%` } : undefined}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* X-Axis Labels */}
+            <div className="w-full flex items-center gap-1 sm:gap-2 pt-2.5">
+              {last14Days.map((day) => {
+                const d = new Date(day);
+                const dayNum = d.getDate();
+                const hasRev = (dailyRevenueMap[day] || 0) > 0;
+                return (
+                  <div key={day} className="flex-1 text-center">
+                    <span
+                      className={`text-[9px] block transition-colors ${
+                        hasRev ? 'text-snake-green font-bold' : 'text-neutral-500'
+                      }`}
+                    >
+                      {dayNum}
                     </span>
                   </div>
-                  <span className="text-[9px] text-neutral-600">D{i + 1}</span>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
 
-          <div className="flex justify-between items-center text-[11px] text-neutral-400 pt-1">
-            <span>START: {last14Days[0]}</span>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] text-neutral-400 pt-1">
+            <span>
+              WINDOW: {last14Days[0]} → {last14Days[13]}
+            </span>
             <span className="text-white font-semibold">
-              TODAY: {last14Days[13]} (TOTAL: {formatPrice(totalRevenue)})
+              LIFETIME SALES: {formatPrice(totalRevenue)} ({totalOrders} orders)
             </span>
           </div>
         </div>
