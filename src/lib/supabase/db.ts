@@ -525,6 +525,42 @@ export async function fetchOrdersFromSupabase(): Promise<Order[] | null> {
 }
 
 /**
+ * UPDATE ORDER IN SUPABASE (Status, Tracking, Workflow)
+ */
+export async function updateOrderInSupabase(
+  orderIdOrNumber: string,
+  updates: Partial<Order>
+): Promise<boolean> {
+  try {
+    const payload: any = {
+      updated_at: new Date().toISOString(),
+    };
+    if (updates.status) payload.status = updates.status;
+    if (updates.tracking) payload.tracking_info = updates.tracking;
+    if (updates.payment?.status) payload.payment_status = updates.payment.status;
+
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderIdOrNumber);
+
+    let query = supabase.from('orders').update(payload);
+    if (isUuid) {
+      query = query.eq('id', orderIdOrNumber);
+    } else {
+      query = query.eq('order_number', orderIdOrNumber);
+    }
+
+    const { error } = await query;
+    if (error) {
+      console.warn('Supabase order update warning:', error.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('Exception updating order in Supabase:', err);
+    return false;
+  }
+}
+
+/**
  * SUBSCRIBE NEWSLETTER IN SUPABASE
  */
 export async function subscribeNewsletterInSupabase(email: string): Promise<boolean> {

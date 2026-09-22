@@ -167,8 +167,8 @@ export interface Order {
   tracking?: {
     carrier: string;
     trackingNumber: string;
-    estimatedDelivery: string;
-    updates: { status: string; timestamp: string; location: string }[];
+    estimatedDelivery?: string;
+    updates?: { status: string; timestamp: string; location: string }[];
   };
 }
 

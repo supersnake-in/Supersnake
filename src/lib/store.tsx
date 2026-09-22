@@ -20,6 +20,7 @@ import {
   createDefectReportInSupabase,
   fetchDefectReportsFromSupabase,
   updateDefectReportInSupabase,
+  updateOrderInSupabase,
 } from './supabase/db';
 import {
   saveCartToStorage,
@@ -245,7 +246,7 @@ interface StoreContextType {
   orders: Order[];
   createOrder: (order: Omit<Order, 'id' | 'orderNumber' | 'createdAt'>) => Order;
   getOrderById: (orderId: string) => Order | undefined;
-  updateOrder: (orderId: string, updates: Partial<Order>) => void;
+  updateOrder: (orderId: string, updates: Partial<Order>) => Promise<boolean>;
 
   // Products Catalog (Admin & Storefront synchronized)
   products: Product[];
@@ -930,22 +931,39 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     [orders]
   );
 
-  const updateOrder = useCallback((orderId: string, updates: Partial<Order>) => {
-    setOrders((prev) => {
-      const numOnly = orderId.replace(/[^0-9]/g, '');
-      const next = prev.map((o) => {
-        const matches =
-          o.id === orderId ||
-          o.orderNumber === orderId ||
-          (numOnly && (o.id.includes(numOnly) || o.orderNumber.includes(numOnly)));
-        return matches ? { ...o, ...updates } : o;
+  const updateOrder = useCallback(
+    async (orderId: string, updates: Partial<Order>): Promise<boolean> => {
+      let targetKey = orderId;
+
+      setOrders((prev) => {
+        const numOnly = orderId.replace(/[^0-9]/g, '');
+        const next = prev.map((o) => {
+          const matches =
+            o.id === orderId ||
+            o.orderNumber === orderId ||
+            (numOnly && (o.id.includes(numOnly) || o.orderNumber.includes(numOnly)));
+          if (matches) {
+            targetKey = o.id || o.orderNumber;
+            return { ...o, ...updates };
+          }
+          return o;
+        });
+        try {
+          localStorage.setItem('supersnake_orders', JSON.stringify(next));
+        } catch (e) {}
+        return next;
       });
+
       try {
-        localStorage.setItem('supersnake_orders', JSON.stringify(next));
-      } catch (e) {}
-      return next;
-    });
-  }, []);
+        const success = await updateOrderInSupabase(targetKey, updates);
+        return success;
+      } catch (err) {
+        console.warn('Failed to sync order update to Supabase:', err);
+        return false;
+      }
+    },
+    []
+  );
 
   // Product actions
   const saveProductsToLocalStorage = (productList: Product[]) => {

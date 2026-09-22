@@ -115,8 +115,9 @@ CREATE TABLE IF NOT EXISTS public.orders (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   order_number TEXT UNIQUE NOT NULL,
   user_id UUID REFERENCES auth.users ON DELETE SET NULL,
-  status TEXT DEFAULT 'Pending' CHECK (status IN (
-    'Pending', 'Confirmed', 'Processing', 'Packed', 'Shipped', 
+  status TEXT DEFAULT 'Confirmed' CHECK (status IN (
+    'Payment Pending', 'Payment Failed', 'Paid', 'Verification Pending', 'Pending',
+    'Confirmed', 'Processing', 'Packed', 'Shipped', 
     'Out for Delivery', 'Delivered', 'Cancelled', 'Returned', 'Refunded'
   )),
   subtotal NUMERIC(10, 2) NOT NULL,

@@ -30,7 +30,7 @@ export default function AdminOrderDetailPage() {
   const params = useParams();
   const router = useRouter();
   const orderId = params?.id as string;
-  const { orders } = useStore();
+  const { orders, updateOrder } = useStore();
 
   const order = orders.find((o) => o.id === orderId || o.orderNumber === orderId);
 
@@ -43,6 +43,7 @@ export default function AdminOrderDetailPage() {
   );
   const [verificationNotes, setVerificationNotes] = useState<string>(order?.verificationNotes || '');
   const [saved, setSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   if (!order) {
     return (
@@ -59,32 +60,52 @@ export default function AdminOrderDetailPage() {
     );
   }
 
-  const handleUpdate = (e: React.FormEvent) => {
+  const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (order.tracking) {
-      order.tracking.carrier = carrier;
-      order.tracking.trackingNumber = waybill;
+    setIsSaving(true);
+    const tracking = {
+      ...(order.tracking || {}),
+      carrier,
+      trackingNumber: waybill,
+      estimatedDelivery: order.tracking?.estimatedDelivery || '4-7 business days',
+    };
+    try {
+      await updateOrder(order.id || order.orderNumber, {
+        status,
+        tracking,
+        verificationNotes,
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (err) {
+      console.error('Failed to update order:', err);
+    } finally {
+      setIsSaving(false);
     }
-    order.status = status;
-    order.verificationNotes = verificationNotes;
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
   };
 
-  const handleVerifyPhone = (newVerifStatus: 'Verified' | 'Unverified' | 'Unreachable') => {
+  const handleVerifyPhone = async (newVerifStatus: 'Verified' | 'Unverified' | 'Unreachable') => {
     setPhoneVerified(newVerifStatus === 'Verified');
     setVerificationStatus(newVerifStatus);
-    order.phoneVerified = newVerifStatus === 'Verified';
-    order.verificationStatus = newVerifStatus;
-    order.verifiedAt = new Date().toISOString();
-    order.verifiedBy = 'Admin Staff';
-    order.verificationNotes = verificationNotes;
-    if (newVerifStatus === 'Verified' && order.status === 'Verification Pending') {
-      order.status = 'Confirmed';
-      setStatus('Confirmed');
+    const newStatus = (newVerifStatus === 'Verified' && order.status === 'Verification Pending') ? 'Confirmed' : status;
+    if (newStatus !== status) {
+      setStatus(newStatus);
     }
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    const updates = {
+      phoneVerified: newVerifStatus === 'Verified',
+      verificationStatus: newVerifStatus,
+      verifiedAt: new Date().toISOString(),
+      verifiedBy: 'Admin Staff',
+      verificationNotes,
+      status: newStatus,
+    };
+    try {
+      await updateOrder(order.id || order.orderNumber, updates);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (err) {
+      console.error('Failed to verify phone:', err);
+    }
   };
 
   const handlePrint = () => {
@@ -306,9 +327,11 @@ export default function AdminOrderDetailPage() {
         <div className="flex justify-end">
           <button
             type="submit"
-            className="px-6 py-2.5 bg-white hover:bg-snake-green text-black font-mono text-xs uppercase tracking-widest font-semibold transition-colors"
+            disabled={isSaving}
+            className="px-6 py-2.5 bg-white hover:bg-snake-green text-black font-mono text-xs uppercase tracking-widest font-semibold transition-colors disabled:opacity-50 flex items-center gap-2"
           >
-            UPDATE DISPATCH
+            {isSaving && <Clock size={13} className="animate-spin" />}
+            <span>{isSaving ? 'SAVING...' : 'UPDATE DISPATCH'}</span>
           </button>
         </div>
       </form>

@@ -7,11 +7,12 @@ import { formatPrice } from '@/lib/design-tokens';
 import { Search, Filter, CheckCircle2, Truck, Package, Clock, XCircle } from 'lucide-react';
 
 export default function AdminOrdersPage() {
-  const { orders } = useStore();
+  const { orders, updateOrder } = useStore();
   const [ordersList, setOrdersList] = useState<Order[]>(orders);
   const [search, setSearch] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
 
   React.useEffect(() => {
     setOrdersList(orders);
@@ -33,44 +34,45 @@ export default function AdminOrdersPage() {
     'Refunded',
   ];
 
-  const handleUpdateStatus = (orderId: string, newStatus: OrderStatus) => {
+  const handleUpdateStatus = async (orderId: string, newStatus: OrderStatus) => {
+    setUpdatingOrderId(orderId);
     setOrdersList((prev) =>
-      prev.map((ord) => (ord.id === orderId ? { ...ord, status: newStatus } : ord))
+      prev.map((ord) => (ord.id === orderId || ord.orderNumber === orderId ? { ...ord, status: newStatus } : ord))
     );
-    if (selectedOrder && selectedOrder.id === orderId) {
+    if (selectedOrder && (selectedOrder.id === orderId || selectedOrder.orderNumber === orderId)) {
       setSelectedOrder((prev) => (prev ? { ...prev, status: newStatus } : null));
+    }
+
+    try {
+      await updateOrder(orderId, { status: newStatus });
+    } catch (err) {
+      console.error('Failed to persist order status:', err);
+    } finally {
+      setTimeout(() => setUpdatingOrderId(null), 1200);
     }
   };
 
-  const handleVerifyPhone = (orderId: string) => {
+  const handleVerifyPhone = async (orderId: string) => {
+    const updates: Partial<Order> = {
+      phoneVerified: true,
+      verificationStatus: 'Verified',
+      verifiedAt: new Date().toISOString(),
+      verifiedBy: 'Admin Staff',
+      status: 'Confirmed' as OrderStatus,
+    };
     setOrdersList((prev) =>
       prev.map((ord) =>
-        ord.id === orderId
-          ? {
-              ...ord,
-              phoneVerified: true,
-              verificationStatus: 'Verified',
-              verifiedAt: new Date().toISOString(),
-              verifiedBy: 'Admin Staff',
-              status: ord.status === 'Verification Pending' ? 'Confirmed' : ord.status,
-            }
+        ord.id === orderId || ord.orderNumber === orderId
+          ? { ...ord, ...updates }
           : ord
       )
     );
-    if (selectedOrder && selectedOrder.id === orderId) {
+    if (selectedOrder && (selectedOrder.id === orderId || selectedOrder.orderNumber === orderId)) {
       setSelectedOrder((prev) =>
-        prev
-          ? {
-              ...prev,
-              phoneVerified: true,
-              verificationStatus: 'Verified',
-              verifiedAt: new Date().toISOString(),
-              verifiedBy: 'Admin Staff',
-              status: prev.status === 'Verification Pending' ? 'Confirmed' : prev.status,
-            }
-          : null
+        prev ? { ...prev, ...updates } : null
       );
     }
+    await updateOrder(orderId, updates);
   };
 
   const filtered = ordersList.filter((ord) => {
@@ -182,17 +184,24 @@ export default function AdminOrdersPage() {
                     </span>
                   </td>
                   <td className="py-3 px-4">
-                    <select
-                      value={ord.status}
-                      onChange={(e) => handleUpdateStatus(ord.id, e.target.value as OrderStatus)}
-                      className="bg-black border border-neutral-700 text-xs px-2.5 py-1 rounded text-white focus:border-snake-green cursor-pointer uppercase font-semibold"
-                    >
-                      {statuses.map((st) => (
-                        <option key={st} value={st}>
-                          {st}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={ord.status}
+                        onChange={(e) => handleUpdateStatus(ord.id, e.target.value as OrderStatus)}
+                        className="bg-black border border-neutral-700 text-xs px-2.5 py-1 rounded text-white focus:border-snake-green cursor-pointer uppercase font-semibold"
+                      >
+                        {statuses.map((st) => (
+                          <option key={st} value={st}>
+                            {st}
+                          </option>
+                        ))}
+                      </select>
+                      {updatingOrderId === ord.id && (
+                        <span className="text-[10px] text-snake-green font-mono flex items-center gap-1">
+                          <CheckCircle2 size={12} className="animate-spin" />
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="py-3 px-4 text-right">
                     <button
@@ -281,6 +290,12 @@ export default function AdminOrdersPage() {
                     </option>
                   ))}
                 </select>
+                {updatingOrderId === selectedOrder.id && (
+                  <span className="text-xs text-snake-green font-mono flex items-center gap-1 animate-fade-in">
+                    <CheckCircle2 size={13} />
+                    <span>Saved</span>
+                  </span>
+                )}
               </div>
 
               <button
