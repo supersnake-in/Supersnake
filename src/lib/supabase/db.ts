@@ -1,5 +1,5 @@
 import { supabase } from './client';
-import { Product, Order, ProductVariant, ProductImage, HomepageConfig, SocialConfig, NewsletterSubscriber } from '../types';
+import { Product, Order, ProductVariant, ProductImage, HomepageConfig, SocialConfig, NewsletterSubscriber, DefectReport } from '../types';
 
 /**
  * FETCH PRODUCTS DYNAMICALLY FROM SUPABASE
@@ -737,5 +737,115 @@ export async function saveSocialConfigToSupabase(config: SocialConfig): Promise<
     return false;
   }
 }
+
+/**
+ * CREATE DEFECT REPORT IN SUPABASE
+ */
+export async function createDefectReportInSupabase(report: DefectReport): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('defect_reports')
+      .insert({
+        id: report.id,
+        report_number: report.reportNumber,
+        order_id: report.orderId,
+        order_number: report.orderNumber,
+        customer_name: report.customerName,
+        customer_email: report.customerEmail,
+        customer_phone: report.customerPhone,
+        product_id: report.productId || null,
+        product_name: report.productName,
+        product_color: report.productColor || null,
+        product_size: report.productSize || null,
+        product_image: report.productImage || null,
+        defect_type: report.defectType,
+        description: report.description,
+        images: report.images || [],
+        video_url: report.videoUrl || null,
+        status: report.status || 'Pending Review',
+        admin_notes: report.adminNotes || null,
+        created_at: report.createdAt || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+
+    if (error) {
+      console.warn('Defect report insert error in Supabase:', error.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('Error creating defect report in Supabase:', err);
+    return false;
+  }
+}
+
+/**
+ * FETCH DEFECT REPORTS FROM SUPABASE
+ */
+export async function fetchDefectReportsFromSupabase(): Promise<DefectReport[] | null> {
+  try {
+    const { data, error } = await supabase
+      .from('defect_reports')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error || !data) {
+      return null;
+    }
+
+    return data.map((row: any): DefectReport => ({
+      id: row.id,
+      reportNumber: row.report_number,
+      orderId: row.order_id,
+      orderNumber: row.order_number,
+      customerName: row.customer_name,
+      customerEmail: row.customer_email,
+      customerPhone: row.customer_phone,
+      productId: row.product_id,
+      productName: row.product_name,
+      productColor: row.product_color,
+      productSize: row.product_size,
+      productImage: row.product_image,
+      defectType: row.defect_type,
+      description: row.description,
+      images: Array.isArray(row.images) ? row.images : [],
+      videoUrl: row.video_url,
+      status: row.status,
+      adminNotes: row.admin_notes,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    }));
+  } catch (err) {
+    console.warn('Error fetching defect reports from Supabase:', err);
+    return null;
+  }
+}
+
+/**
+ * UPDATE DEFECT REPORT IN SUPABASE
+ */
+export async function updateDefectReportInSupabase(
+  id: string,
+  updates: Partial<DefectReport>
+): Promise<boolean> {
+  try {
+    const payload: any = {
+      updated_at: new Date().toISOString(),
+    };
+    if (updates.status) payload.status = updates.status;
+    if (updates.adminNotes !== undefined) payload.admin_notes = updates.adminNotes;
+
+    const { error } = await supabase
+      .from('defect_reports')
+      .update(payload)
+      .eq('id', id);
+
+    return !error;
+  } catch (err) {
+    console.warn('Error updating defect report in Supabase:', err);
+    return false;
+  }
+}
+
 
 

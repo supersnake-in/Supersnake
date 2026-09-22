@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { PolicyLayout } from '@/components/legal/PolicyLayout';
 import { LEGAL_CONFIG, getLegalValue } from '@/lib/legal-config';
 import { Mail, AlertCircle, ShieldAlert, CheckCircle2, ArrowRight } from 'lucide-react';
@@ -102,17 +103,17 @@ export default function ReturnsAndDefectsPage() {
               REPORT A DAMAGED OR DEFECTIVE PRODUCT
             </h3>
             <p className="text-xs text-neutral-400">
-              Click below to launch your email client with pre-formatted complaint fields.
+              Submit your defect claim with order verification, item selection, and photographic/video evidence.
             </p>
           </div>
 
-          <a
-            href={`mailto:${supportEmail}?subject=${mailtoSubject}&body=${mailtoBody}`}
+          <Link
+            href="/returns/report"
             className="inline-flex items-center gap-2 px-6 py-3.5 bg-snake-green text-black font-mono text-xs uppercase tracking-widest font-bold hover:bg-white transition-colors"
           >
-            <Mail size={15} />
+            <ShieldAlert size={15} />
             <span>REPORT DAMAGED OR DEFECTIVE PRODUCT</span>
-          </a>
+          </Link>
 
           <p className="text-[11px] text-neutral-500">
             Alternatively, email us directly at <strong className="text-neutral-300 font-normal">{getLegalValue(LEGAL_CONFIG.supportEmail, 'SUPPORT_EMAIL')}</strong> with your order number in the subject line.

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { Product, CartItem, WishlistItem, Size, Order, SocialConfig, NewsletterSubscriber } from './types';
+import { Product, CartItem, WishlistItem, Size, Order, SocialConfig, NewsletterSubscriber, DefectReport, DefectStatus } from './types';
 import {
   fetchProductsFromSupabase,
   createProductInSupabase,
@@ -17,6 +17,9 @@ import {
   subscribeNewsletterInSupabase,
   fetchSocialConfigFromSupabase,
   saveSocialConfigToSupabase,
+  createDefectReportInSupabase,
+  fetchDefectReportsFromSupabase,
+  updateDefectReportInSupabase,
 } from './supabase/db';
 import {
   saveCartToStorage,
@@ -247,6 +250,11 @@ interface StoreContextType {
   // Store Settings & Logistics
   freeShippingThreshold: number;
   updateFreeShippingThreshold: (threshold: number) => void;
+
+  // Defect Reports
+  defectReports: DefectReport[];
+  submitDefectReport: (report: Omit<DefectReport, 'id' | 'reportNumber' | 'createdAt' | 'updatedAt' | 'status'>) => Promise<DefectReport>;
+  updateDefectReportStatus: (id: string, status: DefectStatus, notes?: string) => Promise<boolean>;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -262,6 +270,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [homepageConfig, setHomepageConfig] = useState<HomepageConfig>(DEFAULT_HOMEPAGE_CONFIG);
   const [socialConfig, setSocialConfig] = useState<SocialConfig>(DEFAULT_SOCIAL_CONFIG);
   const [subscribers, setSubscribers] = useState<NewsletterSubscriber[]>([]);
+  const [defectReports, setDefectReports] = useState<DefectReport[]>([]);
   const [freeShippingThreshold, setFreeShippingThresholdState] = useState<number>(BRAND.freeShippingThreshold);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -344,6 +353,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           setOrders(realOrders);
           localStorage.setItem('supersnake_orders', JSON.stringify(realOrders));
         }
+      }
+
+      // Defect reports from browser storage
+      const savedDefects = localStorage.getItem('supersnake_defect_reports');
+      if (savedDefects) {
+        try {
+          const parsedDefects = JSON.parse(savedDefects);
+          if (Array.isArray(parsedDefects)) {
+            setDefectReports(parsedDefects);
+          }
+        } catch (e) {}
       }
 
       // Homepage configuration
@@ -516,6 +536,28 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           try {
             localStorage.setItem('supersnake_newsletter_subscribers', JSON.stringify(supabaseSubscribers));
           } catch (e) {}
+        }
+      })
+      .catch(() => {});
+
+    // Fetch dynamic defect reports from Supabase
+    fetchDefectReportsFromSupabase()
+      .then((supabaseDefects) => {
+        if (supabaseDefects && supabaseDefects.length > 0) {
+          setDefectReports((prev) => {
+            const map = new Map<string, DefectReport>();
+            supabaseDefects.forEach((d) => map.set(d.id, d));
+            prev.forEach((d) => {
+              if (!map.has(d.id)) {
+                map.set(d.id, d);
+              }
+            });
+            const merged = Array.from(map.values());
+            try {
+              localStorage.setItem('supersnake_defect_reports', JSON.stringify(merged));
+            } catch (e) {}
+            return merged;
+          });
         }
       })
       .catch(() => {});
@@ -1085,6 +1127,65 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return true;
   };
 
+  const submitDefectReport = async (
+    reportData: Omit<DefectReport, 'id' | 'reportNumber' | 'createdAt' | 'updatedAt' | 'status'>
+  ): Promise<DefectReport> => {
+    const timestamp = Date.now().toString().slice(-4);
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    const newReport: DefectReport = {
+      ...reportData,
+      id: `def-${Date.now()}-${randomSuffix}`,
+      reportNumber: `SS-DEF-${new Date().getFullYear()}-${timestamp}`,
+      status: 'Pending Review',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    setDefectReports((prev) => {
+      const next = [newReport, ...prev];
+      try {
+        localStorage.setItem('supersnake_defect_reports', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+
+    createDefectReportInSupabase(newReport).catch((err) => {
+      console.warn('Could not sync defect report to Supabase:', err);
+    });
+
+    return newReport;
+  };
+
+  const updateDefectReportStatus = async (
+    id: string,
+    status: DefectStatus,
+    notes?: string
+  ): Promise<boolean> => {
+    setDefectReports((prev) => {
+      const next = prev.map((r) =>
+        r.id === id
+          ? {
+              ...r,
+              status,
+              ...(notes !== undefined ? { adminNotes: notes } : {}),
+              updatedAt: new Date().toISOString(),
+            }
+          : r
+      );
+      try {
+        localStorage.setItem('supersnake_defect_reports', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+
+    try {
+      await updateDefectReportInSupabase(id, { status, adminNotes: notes });
+      return true;
+    } catch (e) {
+      return false;
+    }
+  };
+
   return (
     <StoreContext.Provider
       value={{
@@ -1130,6 +1231,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         updateOrder,
         freeShippingThreshold,
         updateFreeShippingThreshold,
+        defectReports,
+        submitDefectReport,
+        updateDefectReportStatus,
       }}
     >
       {children}

@@ -562,3 +562,58 @@ VALUES (
   'NOT MADE TO BLEND IN.'
 )
 ON CONFLICT (id) DO NOTHING;
+
+-- ============================================================
+-- 11. Defect Reports Table
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public.defect_reports (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  report_number TEXT UNIQUE NOT NULL,
+  order_id TEXT,
+  order_number TEXT NOT NULL,
+  customer_name TEXT NOT NULL,
+  customer_email TEXT NOT NULL,
+  customer_phone TEXT NOT NULL,
+  product_id TEXT,
+  product_name TEXT NOT NULL,
+  product_color TEXT,
+  product_size TEXT,
+  product_image TEXT,
+  defect_type TEXT NOT NULL,
+  description TEXT NOT NULL,
+  images TEXT[] DEFAULT '{}',
+  video_url TEXT,
+  status TEXT DEFAULT 'Pending Review' CHECK (status IN (
+    'Pending Review', 'Under Investigation', 'Approved', 'Rejected', 'Resolved'
+  )),
+  admin_notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_defect_reports_order ON public.defect_reports(order_number);
+CREATE INDEX IF NOT EXISTS idx_defect_reports_status ON public.defect_reports(status);
+CREATE INDEX IF NOT EXISTS idx_defect_reports_created ON public.defect_reports(created_at DESC);
+
+ALTER TABLE public.defect_reports ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow public insert defect_reports"
+  ON public.defect_reports
+  FOR INSERT
+  TO public
+  WITH CHECK (true);
+
+CREATE POLICY "Allow authenticated staff select defect_reports"
+  ON public.defect_reports
+  FOR SELECT
+  TO public
+  USING (true);
+
+CREATE POLICY "Allow authenticated staff update defect_reports"
+  ON public.defect_reports
+  FOR UPDATE
+  TO public
+  USING (true)
+  WITH CHECK (true);
+

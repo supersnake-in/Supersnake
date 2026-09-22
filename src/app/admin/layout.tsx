@@ -19,19 +19,32 @@ import {
   Search,
   Share2,
   Mail,
+  ShieldAlert,
 } from 'lucide-react';
 import { SuperSnakeLogo } from '@/components/brand/SuperSnakeLogo';
 import { useAuth } from '@/lib/auth-context';
+import { useStore } from '@/lib/store';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, profile, isLoading, isAdmin } = useAuth();
+  const { defectReports } = useStore();
+
+  const pendingDefectsCount = defectReports.filter(
+    (d) => d.status === 'Pending Review'
+  ).length;
 
   const navItems = [
     { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
     { label: 'Products', href: '/admin/products', icon: Shirt },
     { label: 'Inventory', href: '/admin/inventory', icon: Boxes },
     { label: 'Orders', href: '/admin/orders', icon: ShoppingBag },
+    {
+      label: 'Defects Reported',
+      href: '/admin/defects',
+      icon: ShieldAlert,
+      badge: pendingDefectsCount,
+    },
     { label: 'Customers', href: '/admin/customers', icon: Users },
     { label: 'Coupons', href: '/admin/coupons', icon: Tag },
     { label: 'Reviews', href: '/admin/reviews', icon: Star },
@@ -117,6 +130,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 >
                   <Icon size={16} className={isActive ? 'text-snake-green' : 'text-neutral-500'} />
                   <span>{item.label}</span>
+                  {Boolean(item.badge && item.badge > 0) && (
+                    <span className="ml-auto px-1.5 py-0.5 text-[9px] font-mono font-bold bg-snake-green text-black rounded-full leading-none">
+                      {item.badge}
+                    </span>
+                  )}
                 </Link>
               );
             })}

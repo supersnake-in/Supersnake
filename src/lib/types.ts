@@ -207,3 +207,34 @@ export interface NewsletterSubscriber {
   createdAt: string;
   source?: string;
 }
+
+export type DefectStatus =
+  | 'Pending Review'
+  | 'Under Investigation'
+  | 'Approved'
+  | 'Rejected'
+  | 'Resolved';
+
+export interface DefectReport {
+  id: string;
+  reportNumber: string;
+  orderId: string;
+  orderNumber: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  productId?: string;
+  productName: string;
+  productColor?: string;
+  productSize?: string;
+  productImage?: string;
+  defectType: string;
+  description: string;
+  images: string[];
+  videoUrl?: string;
+  status: DefectStatus;
+  adminNotes?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
