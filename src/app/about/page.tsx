@@ -1,10 +1,29 @@
-'use client';
-
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Metadata } from 'next';
 import { ArrowRight, ShieldCheck, Sparkles, Feather, Flame } from 'lucide-react';
 import { SuperSnakeLogo } from '@/components/brand/SuperSnakeLogo';
+
+export const metadata: Metadata = {
+  title: 'Our Story & Atelier Manifesto',
+  description: 'SuperSnake was founded on a singular obsession: the perfection of the T-shirt. Cut from 280–300 GSM Supima® cotton in Bengaluru, India.',
+  alternates: {
+    canonical: 'https://supersnake.in/about',
+  },
+  openGraph: {
+    title: 'Our Story & Atelier Manifesto | SUPERSNAKE',
+    description: 'SuperSnake was founded on a singular obsession: the perfection of the T-shirt.',
+    url: 'https://supersnake.in/about',
+    siteName: 'SUPERSNAKE',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Our Story & Atelier Manifesto | SUPERSNAKE',
+    description: 'SuperSnake was founded on a singular obsession: the perfection of the T-shirt.',
+  },
+};
 
 export default function AboutPage() {
   return (

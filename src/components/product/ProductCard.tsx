@@ -76,7 +76,7 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
           {primarySrc ? (
             <Image
               src={primarySrc}
-              alt={product.name}
+              alt={`${product.name} — ${product.colors[0]?.name || ''} Luxury Heavyweight T-Shirt`}
               fill
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               priority={priority}
@@ -95,7 +95,7 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
           {altSrc && altSrc !== primarySrc && (
             <Image
               src={altSrc}
-              alt={`${product.name} alternate`}
+              alt={`${product.name} — Alternate View Luxury Heavyweight T-Shirt`}
               fill
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               unoptimized={Boolean(altSrc.startsWith('data:') || altSrc.startsWith('blob:'))}

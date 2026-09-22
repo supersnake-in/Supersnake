@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ChevronDown, ArrowRight, HelpCircle } from 'lucide-react';
 import { LEGAL_CONFIG, getLegalValue } from '@/lib/legal-config';
 import { formatPrice } from '@/lib/design-tokens';
+import { JsonLd } from '@/components/seo/JsonLd';
 
 interface FAQItem {
   q: string;
@@ -161,8 +162,24 @@ export default function FAQPage() {
     setOpenItems((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: FAQS.flatMap((cat) =>
+      cat.items.map((item) => ({
+        '@type': 'Question',
+        name: item.q,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: item.a,
+        },
+      }))
+    ),
+  };
+
   return (
     <div className="bg-black text-white min-h-screen pt-28 sm:pt-32 pb-24 px-4 sm:px-6 md:px-12 font-sans selection:bg-snake-green selection:text-black">
+      <JsonLd data={faqSchema} />
       <div className="max-w-4xl mx-auto space-y-16">
         {/* Header */}
         <div className="border-b border-white/10 pb-8 space-y-3">

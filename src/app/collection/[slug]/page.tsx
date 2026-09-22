@@ -1,11 +1,17 @@
-'use client';
-
-import React from 'react';
-import { useParams } from 'next/navigation';
+import { Metadata } from 'next';
 import { ShopCatalog } from '@/components/shop/ShopCatalog';
 import { FitType, Gender } from '@/lib/types';
 
-const COLLECTION_MAP: Record<string, { title: string; subtitle: string; fit?: FitType; isNew?: boolean; isBestseller?: boolean; gender?: Gender }> = {
+interface CollectionConfig {
+  title: string;
+  subtitle: string;
+  fit?: FitType;
+  isNew?: boolean;
+  isBestseller?: boolean;
+  gender?: Gender;
+}
+
+const COLLECTION_MAP: Record<string, CollectionConfig> = {
   unisex: {
     title: 'UNISEX COLLECTION',
     subtitle: 'Architectural silhouettes and versatile heavyweight draping designed for every form.',
@@ -47,11 +53,56 @@ const COLLECTION_MAP: Record<string, { title: string; subtitle: string; fit?: Fi
   },
 };
 
-export default function CollectionPage() {
-  const params = useParams();
-  const slug = (params?.slug as string) || 'heavyweight';
+export async function generateStaticParams() {
+  return Object.keys(COLLECTION_MAP).map((slug) => ({
+    slug,
+  }));
+}
+
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const slug = params?.slug || 'heavyweight';
   const config = COLLECTION_MAP[slug] || {
-    title: `${slug.toUpperCase().replace('-', ' ')} COLLECTION`,
+    title: `${slug.toUpperCase().replace(/-/g, ' ')} COLLECTION`,
+    subtitle: 'Curated limited releases from the SuperSnake atelier.',
+  };
+
+  const title = `${config.title} | Luxury Heavyweight T-Shirts`;
+  const description = `${config.subtitle} Engineered from 240–300 GSM combed Supima® cotton. Cut for monolithic drape.`;
+  const canonicalUrl = `https://supersnake.in/collection/${slug}`;
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    openGraph: {
+      title: `${config.title} | SUPERSNAKE`,
+      description,
+      url: canonicalUrl,
+      siteName: 'SUPERSNAKE',
+      images: [
+        {
+          url: '/logo.png',
+          width: 800,
+          height: 1200,
+          alt: `${config.title} by SUPERSNAKE`,
+        },
+      ],
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${config.title} | SUPERSNAKE`,
+      description,
+    },
+  };
+}
+
+export default function CollectionPage({ params }: { params: { slug: string } }) {
+  const slug = params?.slug || 'heavyweight';
+  const config = COLLECTION_MAP[slug] || {
+    title: `${slug.toUpperCase().replace(/-/g, ' ')} COLLECTION`,
     subtitle: 'Curated limited releases from the SuperSnake atelier.',
   };
 
