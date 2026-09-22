@@ -23,6 +23,7 @@ import {
   X,
   ChevronRight,
   Sparkles,
+  MessageSquare,
 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { DefectReport, DefectStatus } from '@/lib/types';
@@ -80,6 +81,44 @@ export default function AdminDefectsPage() {
     navigator.clipboard.writeText(text);
     setCopiedField(fieldName);
     setTimeout(() => setCopiedField(null), 2000);
+  };
+
+  const getClientEmailSubject = (report: DefectReport) => {
+    return `SuperSnake Claim ${report.reportNumber} - Order #${report.orderNumber}`;
+  };
+
+  const getClientEmailBody = (report: DefectReport, status: DefectStatus, notes: string) => {
+    let statusText = `Your defect report is currently under review by our senior inspection atelier.`;
+    if (status === 'Approved') {
+      statusText = `We are pleased to inform you that your claim has been APPROVED by our Quality Atelier. We are processing your requested resolution.`;
+    } else if (status === 'Under Investigation') {
+      statusText = `Our senior inspection atelier has placed your claim under active investigation. We are reviewing the submitted evidence with our production team.`;
+    } else if (status === 'Rejected') {
+      statusText = `Following inspection by our atelier team, we regret to inform you that your claim could not be approved under our return/defect policy.`;
+    } else if (status === 'Resolved') {
+      statusText = `Your claim has been fully resolved and closed in our atelier system.`;
+    }
+
+    return `Dear ${report.customerName},
+
+Regarding your reported defect claim ${report.reportNumber} for Order #${report.orderNumber} (${report.productName}):
+
+${statusText}
+
+${notes ? `QC Atelier Notes: ${notes}\n\n` : ''}If you have any further questions, please reply directly to this email or contact support@supersnake.in.
+
+Warm regards,
+SuperSnake Atelier Quality Assurance
+Bengaluru, India
+support@supersnake.in`;
+  };
+
+  const handleCopyEmailTemplate = () => {
+    if (!selectedReport) return;
+    const body = getClientEmailBody(selectedReport, currentStatus, adminNotes);
+    navigator.clipboard.writeText(body);
+    setCopiedField('template');
+    setTimeout(() => setCopiedField(null), 2500);
   };
 
   const handleSaveStatus = async () => {
@@ -558,14 +597,82 @@ export default function AdminDefectsPage() {
                     </div>
                   </div>
 
-                  <div className="pt-2 border-t border-neutral-800/60 flex items-center gap-2">
-                    <a
-                      href={`mailto:${selectedReport.customerEmail}?subject=SuperSnake Claim ${selectedReport.reportNumber} - Order %23${selectedReport.orderNumber}&body=Dear ${encodeURIComponent(selectedReport.customerName)},%0D%0A%0D%0ARegarding your reported claim ${selectedReport.reportNumber} for Order %23${selectedReport.orderNumber}:%0D%0A%0D%0A`}
-                      className="inline-flex items-center gap-1 text-[11px] text-snake-green hover:underline"
-                    >
-                      <Mail size={12} /> Contact Client
-                    </a>
-                  </div>
+                  {(() => {
+                    const subject = getClientEmailSubject(selectedReport);
+                    const body = getClientEmailBody(selectedReport, currentStatus, adminNotes);
+                    const cleanPhone = (selectedReport.customerPhone || '').replace(/[^0-9]/g, '');
+
+                    return (
+                      <div className="pt-3 border-t border-neutral-800/80 space-y-2">
+                        <span className="text-[10px] uppercase text-neutral-400 font-bold tracking-wider block">
+                          CONTACT CLIENT
+                        </span>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {/* Gmail Web Compose */}
+                          <a
+                            href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+                              selectedReport.customerEmail
+                            )}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-red-600/15 hover:bg-red-600 text-red-300 hover:text-white border border-red-500/30 rounded text-[11px] font-bold transition-colors"
+                            title="Open pre-filled compose window in Gmail Web"
+                          >
+                            <Mail size={12} />
+                            <span>Gmail Web</span>
+                          </a>
+
+                          {/* Default Mail App */}
+                          <a
+                            href={`mailto:${selectedReport.customerEmail}?subject=${encodeURIComponent(
+                              subject
+                            )}&body=${encodeURIComponent(body)}`}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-neutral-900 hover:bg-white text-neutral-300 hover:text-black border border-neutral-700 rounded text-[11px] font-bold transition-colors"
+                            title="Open default system mail client"
+                          >
+                            <ExternalLink size={12} />
+                            <span>Mail App</span>
+                          </a>
+
+                          {/* WhatsApp (if phone available) */}
+                          {cleanPhone && (
+                            <a
+                              href={`https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(
+                                `Hello ${selectedReport.customerName}, regarding your SuperSnake Claim ${selectedReport.reportNumber} for Order #${selectedReport.orderNumber}:`
+                              )}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600/15 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 rounded text-[11px] font-bold transition-colors"
+                              title="Open WhatsApp chat with client"
+                            >
+                              <MessageSquare size={12} />
+                              <span>WhatsApp</span>
+                            </a>
+                          )}
+
+                          {/* Copy Email Template */}
+                          <button
+                            type="button"
+                            onClick={handleCopyEmailTemplate}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-800 rounded text-[11px] font-mono transition-colors"
+                            title="Copy email template to clipboard"
+                          >
+                            {copiedField === 'template' ? (
+                              <>
+                                <Check size={11} className="text-snake-green" />
+                                <span className="text-snake-green font-bold">Copied!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy size={11} />
+                                <span>Copy Text</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Order Information */}
