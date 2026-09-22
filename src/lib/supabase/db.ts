@@ -1,5 +1,17 @@
 import { supabase } from './client';
-import { Product, Order, ProductVariant, ProductImage, HomepageConfig, SocialConfig, NewsletterSubscriber, DefectReport } from '../types';
+import {
+  Product,
+  Order,
+  ProductVariant,
+  ProductImage,
+  HomepageConfig,
+  SocialConfig,
+  NewsletterSubscriber,
+  DefectReport,
+  AbandonedCart,
+  AbandonedCartItem,
+  AbandonedCartStatus,
+} from '../types';
 
 /**
  * FETCH PRODUCTS DYNAMICALLY FROM SUPABASE
@@ -908,6 +920,167 @@ export async function updateDefectReportInSupabase(
     return !error;
   } catch (err) {
     console.warn('Error updating defect report in Supabase:', err);
+    return false;
+  }
+}
+
+/**
+ * FETCH ABANDONED & ACTIVE CARTS FROM SUPABASE
+ */
+export async function fetchAbandonedCartsFromSupabase(): Promise<AbandonedCart[] | null> {
+  try {
+    const { data, error } = await supabase
+      .from('abandoned_carts')
+      .select('*')
+      .order('last_active_at', { ascending: false });
+
+    if (error || !data) {
+      return null;
+    }
+
+    return data.map((row: any): AbandonedCart => ({
+      id: row.id,
+      userId: row.user_id,
+      customerName: row.customer_name || 'Anonymous Patron',
+      customerEmail: row.customer_email,
+      customerPhone: row.customer_phone || undefined,
+      items: Array.isArray(row.items) ? row.items : [],
+      subtotal: Number(row.subtotal) || 0,
+      itemCount: Number(row.item_count) || 0,
+      status: row.status as AbandonedCartStatus,
+      notes: row.notes || undefined,
+      discountOffered: row.discount_offered || undefined,
+      lastActiveAt: row.last_active_at || row.updated_at || row.created_at,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    }));
+  } catch (err) {
+    console.warn('Error fetching abandoned carts from Supabase:', err);
+    return null;
+  }
+}
+
+/**
+ * SYNC / UPSERT CUSTOMER CART TO SUPABASE
+ */
+export async function syncAbandonedCartToSupabase(
+  cartData: Omit<AbandonedCart, 'id' | 'createdAt' | 'updatedAt'>
+): Promise<string | null> {
+  if (!cartData.customerEmail) return null;
+
+  try {
+    const now = new Date().toISOString();
+    const cleanEmail = cartData.customerEmail.trim().toLowerCase();
+
+    // Check if an active/abandoned/contacted cart exists for this email
+    const { data: existing } = await supabase
+      .from('abandoned_carts')
+      .select('id, status')
+      .eq('customer_email', cleanEmail)
+      .neq('status', 'Recovered')
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existing?.id) {
+      // Update existing cart
+      const { data, error } = await supabase
+        .from('abandoned_carts')
+        .update({
+          user_id: cartData.userId || null,
+          customer_name: cartData.customerName || undefined,
+          customer_phone: cartData.customerPhone || undefined,
+          items: cartData.items,
+          subtotal: cartData.subtotal,
+          item_count: cartData.itemCount,
+          status: existing.status === 'Contacted' ? 'Contacted' : cartData.status || 'Active',
+          last_active_at: now,
+          updated_at: now,
+        })
+        .eq('id', existing.id)
+        .select('id')
+        .single();
+
+      if (!error && data?.id) return data.id;
+    } else {
+      // Insert new cart record
+      const { data, error } = await supabase
+        .from('abandoned_carts')
+        .insert({
+          user_id: cartData.userId || null,
+          customer_name: cartData.customerName || 'Anonymous Patron',
+          customer_email: cleanEmail,
+          customer_phone: cartData.customerPhone || null,
+          items: cartData.items,
+          subtotal: cartData.subtotal,
+          item_count: cartData.itemCount,
+          status: cartData.status || 'Active',
+          notes: cartData.notes || null,
+          discount_offered: cartData.discountOffered || null,
+          last_active_at: now,
+          created_at: now,
+          updated_at: now,
+        })
+        .select('id')
+        .single();
+
+      if (!error && data?.id) return data.id;
+    }
+    return null;
+  } catch (err) {
+    console.warn('Error syncing abandoned cart to Supabase:', err);
+    return null;
+  }
+}
+
+/**
+ * UPDATE ABANDONED CART STATUS IN SUPABASE (Contacted, Recovered, Notes)
+ */
+export async function updateAbandonedCartStatusInSupabase(
+  cartId: string,
+  status: AbandonedCartStatus,
+  notes?: string,
+  discountOffered?: string
+): Promise<boolean> {
+  try {
+    const payload: any = {
+      status,
+      updated_at: new Date().toISOString(),
+    };
+    if (notes !== undefined) payload.notes = notes;
+    if (discountOffered !== undefined) payload.discount_offered = discountOffered;
+
+    const { error } = await supabase
+      .from('abandoned_carts')
+      .update(payload)
+      .eq('id', cartId);
+
+    return !error;
+  } catch (err) {
+    console.warn('Error updating abandoned cart status in Supabase:', err);
+    return false;
+  }
+}
+
+/**
+ * MARK CART AS RECOVERED IN SUPABASE (When Customer Checks Out)
+ */
+export async function markCartAsRecoveredInSupabase(customerEmail: string): Promise<boolean> {
+  if (!customerEmail) return false;
+  try {
+    const cleanEmail = customerEmail.trim().toLowerCase();
+    const { error } = await supabase
+      .from('abandoned_carts')
+      .update({
+        status: 'Recovered',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('customer_email', cleanEmail)
+      .neq('status', 'Recovered');
+
+    return !error;
+  } catch (err) {
+    console.warn('Error marking cart as recovered in Supabase:', err);
     return false;
   }
 }

@@ -238,3 +238,35 @@ export interface DefectReport {
   updatedAt?: string;
 }
 
+export type AbandonedCartStatus = 'Active' | 'Abandoned' | 'Contacted' | 'Recovered';
+
+export interface AbandonedCartItem {
+  id: string;
+  productId: string;
+  productName: string;
+  productSlug: string;
+  colorName: string;
+  colorHex?: string;
+  size: string;
+  quantity: number;
+  price: number;
+  imageUrl?: string;
+}
+
+export interface AbandonedCart {
+  id: string;
+  userId?: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone?: string;
+  items: AbandonedCartItem[];
+  subtotal: number;
+  itemCount: number;
+  status: AbandonedCartStatus;
+  notes?: string;
+  discountOffered?: string;
+  lastActiveAt: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+

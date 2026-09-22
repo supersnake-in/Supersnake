@@ -31,7 +31,7 @@ const loadRazorpayScript = (): Promise<boolean> => {
 function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { cart, cartTotal, createOrder, updateOrder, clearCart, isLoaded, products, setCart, setCartItem, freeShippingThreshold = BRAND.freeShippingThreshold } = useStore();
+  const { cart, cartTotal, createOrder, updateOrder, clearCart, isLoaded, products, setCart, setCartItem, freeShippingThreshold = BRAND.freeShippingThreshold, syncAbandonedCart } = useStore();
   const amountNeededForFreeShipping = Math.max(0, freeShippingThreshold - cartTotal);
   const { user, profile, checkEmailExists, sendEmailOtp, verifyEmailOtp, authenticateWithOtp, signIn, signInWithOtp, signInWithGoogle, signUp } = useAuth();
 
@@ -222,6 +222,13 @@ function CheckoutContent() {
       return;
     }
 
+    // Auto-capture customer cart for recovery
+    syncAbandonedCart({
+      email: cleanEmail,
+      phone: formData.phone,
+      name: formData.fullName,
+    }).catch(() => {});
+
     setIsAuthProcessing(true);
     try {
       const checkRes = await checkEmailExists(cleanEmail);
@@ -320,6 +327,12 @@ function CheckoutContent() {
         setPincodeMessage('Please select your post office from the dropdown before continuing.');
         return;
       }
+      // Ensure latest contact and delivery info is synced to cart recovery
+      syncAbandonedCart({
+        email: formData.email,
+        name: formData.fullName,
+        phone: cleanPhone,
+      }).catch(() => {});
       handleCompletePayment();
     }
   };

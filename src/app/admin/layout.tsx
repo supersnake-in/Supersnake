@@ -20,6 +20,7 @@ import {
   Share2,
   Mail,
   ShieldAlert,
+  ShoppingCart,
 } from 'lucide-react';
 import { SuperSnakeLogo } from '@/components/brand/SuperSnakeLogo';
 import { useAuth } from '@/lib/auth-context';
@@ -28,10 +29,14 @@ import { useStore } from '@/lib/store';
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, profile, isLoading, isAdmin } = useAuth();
-  const { defectReports } = useStore();
+  const { defectReports, abandonedCarts } = useStore();
 
   const pendingDefectsCount = defectReports.filter(
     (d) => d.status === 'Pending Review'
+  ).length;
+
+  const openCartsCount = abandonedCarts.filter(
+    (c) => c.status === 'Active' || c.status === 'Abandoned'
   ).length;
 
   const navItems = [
@@ -44,6 +49,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       href: '/admin/defects',
       icon: ShieldAlert,
       badge: pendingDefectsCount,
+    },
+    {
+      label: 'Abandoned Carts',
+      href: '/admin/carts',
+      icon: ShoppingCart,
+      badge: openCartsCount,
     },
     { label: 'Customers', href: '/admin/customers', icon: Users },
     { label: 'Coupons', href: '/admin/coupons', icon: Tag },

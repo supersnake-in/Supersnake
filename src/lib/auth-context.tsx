@@ -132,6 +132,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setProfile(loadedProfile);
     try {
       localStorage.setItem('supersnake_user_profile', JSON.stringify(loadedProfile));
+      localStorage.setItem(
+        'supersnake_customer_contact',
+        JSON.stringify({
+          email: loadedProfile.email,
+          name: loadedProfile.fullName,
+          phone: loadedProfile.phone,
+          userId: loadedProfile.id,
+        })
+      );
+      window.dispatchEvent(new Event('supersnake_customer_identified'));
     } catch (e) {}
 
     // Asynchronously verify against public.profiles if available

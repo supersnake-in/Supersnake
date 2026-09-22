@@ -1,7 +1,20 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { Product, CartItem, WishlistItem, Size, Order, SocialConfig, NewsletterSubscriber, DefectReport, DefectStatus } from './types';
+import {
+  Product,
+  CartItem,
+  WishlistItem,
+  Size,
+  Order,
+  SocialConfig,
+  NewsletterSubscriber,
+  DefectReport,
+  DefectStatus,
+  AbandonedCart,
+  AbandonedCartItem,
+  AbandonedCartStatus,
+} from './types';
 import {
   fetchProductsFromSupabase,
   createProductInSupabase,
@@ -21,6 +34,10 @@ import {
   fetchDefectReportsFromSupabase,
   updateDefectReportInSupabase,
   updateOrderInSupabase,
+  syncAbandonedCartToSupabase,
+  fetchAbandonedCartsFromSupabase,
+  updateAbandonedCartStatusInSupabase,
+  markCartAsRecoveredInSupabase,
 } from './supabase/db';
 import {
   saveCartToStorage,
@@ -209,6 +226,15 @@ export function saveDefectReportsToStorage(reports: DefectReport[]) {
   }
 }
 
+export function saveAbandonedCartsToStorage(carts: AbandonedCart[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem('supersnake_abandoned_carts', JSON.stringify(carts));
+  } catch (e) {
+    console.warn('Could not persist abandoned carts to localStorage:', e);
+  }
+}
+
 interface StoreContextType {
   isLoaded: boolean;
 
@@ -278,6 +304,12 @@ interface StoreContextType {
   submitDefectReport: (report: Omit<DefectReport, 'id' | 'reportNumber' | 'createdAt' | 'updatedAt' | 'status'>) => Promise<DefectReport>;
   updateDefectReportStatus: (id: string, status: DefectStatus, notes?: string) => Promise<boolean>;
   refreshDefectReports: () => Promise<DefectReport[]>;
+
+  // Abandoned & Active Carts
+  abandonedCarts: AbandonedCart[];
+  syncAbandonedCart: (customerInfo?: { email: string; name?: string; phone?: string; userId?: string }) => Promise<void>;
+  updateAbandonedCartStatus: (cartId: string, status: AbandonedCartStatus, notes?: string, discountOffered?: string) => Promise<boolean>;
+  refreshAbandonedCarts: () => Promise<AbandonedCart[]>;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -294,6 +326,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [socialConfig, setSocialConfig] = useState<SocialConfig>(DEFAULT_SOCIAL_CONFIG);
   const [subscribers, setSubscribers] = useState<NewsletterSubscriber[]>([]);
   const [defectReports, setDefectReports] = useState<DefectReport[]>([]);
+  const [abandonedCarts, setAbandonedCarts] = useState<AbandonedCart[]>([]);
   const [freeShippingThreshold, setFreeShippingThresholdState] = useState<number>(BRAND.freeShippingThreshold);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -385,6 +418,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           const parsedDefects = JSON.parse(savedDefects);
           if (Array.isArray(parsedDefects)) {
             setDefectReports(parsedDefects);
+          }
+        } catch (e) {}
+      }
+
+      // Abandoned carts from browser storage
+      const savedAbandoned = localStorage.getItem('supersnake_abandoned_carts');
+      if (savedAbandoned) {
+        try {
+          const parsedAbandoned = JSON.parse(savedAbandoned);
+          if (Array.isArray(parsedAbandoned)) {
+            setAbandonedCarts(parsedAbandoned);
           }
         } catch (e) {}
       }
@@ -583,6 +627,26 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       })
       .catch(() => {});
 
+    // Fetch dynamic abandoned carts from Supabase
+    fetchAbandonedCartsFromSupabase()
+      .then((supabaseCarts) => {
+        if (supabaseCarts && supabaseCarts.length > 0) {
+          setAbandonedCarts((prev) => {
+            const map = new Map<string, AbandonedCart>();
+            supabaseCarts.forEach((c) => map.set(c.id, c));
+            prev.forEach((c) => {
+              if (!map.has(c.id)) {
+                map.set(c.id, c);
+              }
+            });
+            const merged = Array.from(map.values());
+            saveAbandonedCartsToStorage(merged);
+            return merged;
+          });
+        }
+      })
+      .catch(() => {});
+
     // Free shipping threshold sync from localStorage
     try {
       const savedThreshold = localStorage.getItem('supersnake_free_shipping_threshold');
@@ -603,6 +667,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           const parsed = JSON.parse(e.newValue);
           if (Array.isArray(parsed)) {
             setDefectReports(parsed);
+          }
+        } catch (err) {}
+      }
+      if (e.key === 'supersnake_abandoned_carts' && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed)) {
+            setAbandonedCarts(parsed);
           }
         } catch (err) {}
       }
@@ -629,13 +701,27 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       } catch (e) {}
     };
 
+    const handleAbandonedChange = () => {
+      try {
+        const saved = localStorage.getItem('supersnake_abandoned_carts');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            setAbandonedCarts(parsed);
+          }
+        }
+      } catch (e) {}
+    };
+
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('supersnake_threshold_change', handleCustomChange);
     window.addEventListener('supersnake_defects_change', handleDefectsChange);
+    window.addEventListener('supersnake_abandoned_change', handleAbandonedChange);
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('supersnake_threshold_change', handleCustomChange);
       window.removeEventListener('supersnake_defects_change', handleDefectsChange);
+      window.removeEventListener('supersnake_abandoned_change', handleAbandonedChange);
     };
   }, []);
 
@@ -906,6 +992,22 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     createOrderInSupabase(newOrder).catch((err) => {
       console.warn('Could not sync order to Supabase:', err);
     });
+
+    // Mark abandoned cart as recovered
+    if (newOrder.customer?.email) {
+      const cleanEmail = newOrder.customer.email.trim().toLowerCase();
+      markCartAsRecoveredInSupabase(cleanEmail).catch(() => {});
+      setAbandonedCarts((prev) => {
+        const next = prev.map((c) =>
+          c.customerEmail.toLowerCase() === cleanEmail && c.status !== 'Recovered'
+            ? { ...c, status: 'Recovered' as AbandonedCartStatus, updatedAt: new Date().toISOString() }
+            : c
+        );
+        saveAbandonedCartsToStorage(next);
+        return next;
+      });
+    }
+
     return newOrder;
   };
 
@@ -1283,6 +1385,172 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Abandoned Carts
+  const syncAbandonedCart = useCallback(
+    async (customerInfo?: { email: string; name?: string; phone?: string; userId?: string }) => {
+      try {
+        let email = customerInfo?.email;
+        let name = customerInfo?.name;
+        let phone = customerInfo?.phone;
+        let userId = customerInfo?.userId;
+
+        if (!email && typeof window !== 'undefined') {
+          const savedContact = localStorage.getItem('supersnake_customer_contact');
+          if (savedContact) {
+            try {
+              const parsed = JSON.parse(savedContact);
+              email = parsed.email;
+              name = name || parsed.name;
+              phone = phone || parsed.phone;
+              userId = userId || parsed.userId;
+            } catch (e) {}
+          }
+        }
+
+        if (!email && typeof window !== 'undefined') {
+          const savedProfile = localStorage.getItem('supersnake_user_profile');
+          if (savedProfile) {
+            try {
+              const parsed = JSON.parse(savedProfile);
+              email = parsed.email;
+              name = name || parsed.fullName;
+              phone = phone || parsed.phone;
+              userId = userId || parsed.id;
+            } catch (e) {}
+          }
+        }
+
+        if (!email) return;
+
+        const cleanEmail = email.trim().toLowerCase();
+        try {
+          localStorage.setItem(
+            'supersnake_customer_contact',
+            JSON.stringify({ email: cleanEmail, name, phone, userId })
+          );
+        } catch (e) {}
+
+        const currentCart = cart.length > 0 ? cart : loadCartFromStorageSync();
+        if (currentCart.length === 0) return;
+
+        const items: AbandonedCartItem[] = currentCart.map((item) => ({
+          id: item.id,
+          productId: item.product.id,
+          productName: item.product.name,
+          productSlug: item.product.slug,
+          colorName: item.selectedColor.name,
+          colorHex: item.selectedColor.hex,
+          size: item.selectedSize,
+          quantity: item.quantity,
+          price: item.price,
+          imageUrl: item.product.images?.[0]?.url || '',
+        }));
+
+        const subtotal = currentCart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        const itemCount = currentCart.reduce((sum, item) => sum + item.quantity, 0);
+        const now = new Date().toISOString();
+
+        // Optimistically update local state
+        setAbandonedCarts((prev) => {
+          const existingIdx = prev.findIndex(
+            (c) => c.customerEmail.toLowerCase() === cleanEmail && c.status !== 'Recovered'
+          );
+          let next: AbandonedCart[];
+          if (existingIdx > -1) {
+            next = [...prev];
+            next[existingIdx] = {
+              ...next[existingIdx],
+              customerName: name || next[existingIdx].customerName,
+              customerPhone: phone || next[existingIdx].customerPhone,
+              items,
+              subtotal,
+              itemCount,
+              lastActiveAt: now,
+              updatedAt: now,
+            };
+          } else {
+            const newCart: AbandonedCart = {
+              id: `cart-${Date.now()}`,
+              userId,
+              customerName: name || 'Anonymous Patron',
+              customerEmail: cleanEmail,
+              customerPhone: phone,
+              items,
+              subtotal,
+              itemCount,
+              status: 'Active',
+              lastActiveAt: now,
+              createdAt: now,
+              updatedAt: now,
+            };
+            next = [newCart, ...prev];
+          }
+          saveAbandonedCartsToStorage(next);
+          return next;
+        });
+
+        // Sync to Supabase
+        await syncAbandonedCartToSupabase({
+          userId,
+          customerName: name || 'Anonymous Patron',
+          customerEmail: cleanEmail,
+          customerPhone: phone,
+          items,
+          subtotal,
+          itemCount,
+          status: 'Active',
+          lastActiveAt: now,
+        });
+      } catch (err) {
+        console.warn('Could not sync customer cart:', err);
+      }
+    },
+    [cart]
+  );
+
+  const updateAbandonedCartStatus = async (
+    cartId: string,
+    status: AbandonedCartStatus,
+    notes?: string,
+    discountOffered?: string
+  ): Promise<boolean> => {
+    setAbandonedCarts((prev) => {
+      const next = prev.map((c) => {
+        if (c.id === cartId) {
+          return {
+            ...c,
+            status,
+            ...(notes !== undefined ? { notes } : {}),
+            ...(discountOffered !== undefined ? { discountOffered } : {}),
+            updatedAt: new Date().toISOString(),
+          };
+        }
+        return c;
+      });
+      saveAbandonedCartsToStorage(next);
+      return next;
+    });
+
+    try {
+      await updateAbandonedCartStatusInSupabase(cartId, status, notes, discountOffered);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const refreshAbandonedCarts = async (): Promise<AbandonedCart[]> => {
+    try {
+      const data = await fetchAbandonedCartsFromSupabase();
+      if (data && data.length > 0) {
+        setAbandonedCarts(data);
+        saveAbandonedCartsToStorage(data);
+        return data;
+      }
+    } catch (e) {}
+    return abandonedCarts;
+  };
+
   return (
     <StoreContext.Provider
       value={{
@@ -1332,6 +1600,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         submitDefectReport,
         updateDefectReportStatus,
         refreshDefectReports,
+        abandonedCarts,
+        syncAbandonedCart,
+        updateAbandonedCartStatus,
+        refreshAbandonedCarts,
       }}
     >
       {children}
