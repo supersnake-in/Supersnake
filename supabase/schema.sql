@@ -568,7 +568,7 @@ ON CONFLICT (id) DO NOTHING;
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS public.defect_reports (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
   report_number TEXT UNIQUE NOT NULL,
   order_id TEXT,
   order_number TEXT NOT NULL,
@@ -592,28 +592,47 @@ CREATE TABLE IF NOT EXISTS public.defect_reports (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Graceful migration if already created with UUID type
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'defect_reports' AND column_name = 'id' AND data_type = 'uuid'
+  ) THEN
+    ALTER TABLE public.defect_reports ALTER COLUMN id TYPE TEXT USING id::text;
+    ALTER TABLE public.defect_reports ALTER COLUMN id SET DEFAULT gen_random_uuid()::text;
+  END IF;
+END $$;
+
 CREATE INDEX IF NOT EXISTS idx_defect_reports_order ON public.defect_reports(order_number);
 CREATE INDEX IF NOT EXISTS idx_defect_reports_status ON public.defect_reports(status);
 CREATE INDEX IF NOT EXISTS idx_defect_reports_created ON public.defect_reports(created_at DESC);
 
 ALTER TABLE public.defect_reports ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Allow public insert defect_reports" ON public.defect_reports;
 CREATE POLICY "Allow public insert defect_reports"
   ON public.defect_reports
   FOR INSERT
   TO public
   WITH CHECK (true);
 
-CREATE POLICY "Allow authenticated staff select defect_reports"
+DROP POLICY IF EXISTS "Allow authenticated staff select defect_reports" ON public.defect_reports;
+DROP POLICY IF EXISTS "Allow public select defect_reports" ON public.defect_reports;
+CREATE POLICY "Allow public select defect_reports"
   ON public.defect_reports
   FOR SELECT
   TO public
   USING (true);
 
-CREATE POLICY "Allow authenticated staff update defect_reports"
+DROP POLICY IF EXISTS "Allow authenticated staff update defect_reports" ON public.defect_reports;
+DROP POLICY IF EXISTS "Allow public update defect_reports" ON public.defect_reports;
+CREATE POLICY "Allow public update defect_reports"
   ON public.defect_reports
   FOR UPDATE
   TO public
   USING (true)
   WITH CHECK (true);
+
+GRANT ALL ON TABLE public.defect_reports TO anon, authenticated, service_role;
 

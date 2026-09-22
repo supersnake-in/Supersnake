@@ -36,12 +36,24 @@ const STATUS_OPTIONS: DefectStatus[] = [
 ];
 
 export default function AdminDefectsPage() {
-  const { defectReports, updateDefectReportStatus } = useStore();
+  const { defectReports, updateDefectReportStatus, refreshDefectReports } = useStore();
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedReport, setSelectedReport] = useState<DefectReport | null>(null);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Sync latest defect reports from Supabase on mount
+  React.useEffect(() => {
+    refreshDefectReports();
+  }, [refreshDefectReports]);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await refreshDefectReports();
+    setIsRefreshing(false);
+  };
 
   // Form states inside modal
   const [currentStatus, setCurrentStatus] = useState<DefectStatus>('Pending Review');
@@ -195,6 +207,16 @@ export default function AdminDefectsPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="flex items-center gap-1.5 px-3 py-2 bg-neutral-900 border border-neutral-800 hover:border-neutral-700 rounded text-xs text-neutral-300 hover:text-white transition-colors disabled:opacity-50"
+          >
+            <RefreshCw size={13} className={isRefreshing ? 'animate-spin text-snake-green' : ''} />
+            <span>{isRefreshing ? 'Syncing...' : 'Sync Claims'}</span>
+          </button>
+
           <Link
             href="/returns/report"
             target="_blank"
@@ -324,11 +346,20 @@ export default function AdminDefectsPage() {
                 <td colSpan={8} className="py-16 text-center text-neutral-500">
                   <ShieldAlert size={28} className="mx-auto mb-3 text-neutral-600" />
                   <p className="text-xs uppercase font-bold text-neutral-400">NO DEFECT REPORTS FOUND</p>
-                  <p className="text-[11px] text-neutral-600 mt-1">
+                  <p className="text-[11px] text-neutral-600 mt-1 max-w-md mx-auto">
                     {search || statusFilter !== 'all'
                       ? 'No claims match your search or filter parameters.'
-                      : 'Customer damage and manufacturing defect submissions will appear here.'}
+                      : 'If a claim was submitted recently, click "Sync Claims Now" to pull the latest records from the cloud.'}
                   </p>
+                  <button
+                    type="button"
+                    onClick={handleRefresh}
+                    disabled={isRefreshing}
+                    className="mt-4 px-3.5 py-1.5 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 rounded text-xs text-neutral-300 hover:text-white font-mono inline-flex items-center gap-1.5 transition-colors"
+                  >
+                    <RefreshCw size={12} className={isRefreshing ? 'animate-spin text-snake-green' : ''} />
+                    <span>{isRefreshing ? 'Syncing...' : 'Sync Claims Now'}</span>
+                  </button>
                 </td>
               </tr>
             ) : (

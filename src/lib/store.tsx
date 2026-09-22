@@ -187,6 +187,27 @@ function normalizeSignatureProduct(prods: Product[]): Product[] {
   }));
 }
 
+export function saveDefectReportsToStorage(reports: DefectReport[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem('supersnake_defect_reports', JSON.stringify(reports));
+  } catch (quotaError) {
+    // Quota exceeded: sanitize heavy media strings so tickets and report dossiers are never lost
+    try {
+      const sanitized = reports.map((r) => ({
+        ...r,
+        videoUrl: r.videoUrl && r.videoUrl.length > 200000 ? '[VIDEO_ATTACHED]' : r.videoUrl,
+        images: Array.isArray(r.images)
+          ? r.images.map((img) => (img && img.length > 200000 ? img.slice(0, 50000) + '...' : img))
+          : [],
+      }));
+      localStorage.setItem('supersnake_defect_reports', JSON.stringify(sanitized));
+    } catch (e) {
+      console.warn('Could not persist defect reports to localStorage:', e);
+    }
+  }
+}
+
 interface StoreContextType {
   isLoaded: boolean;
 
@@ -255,6 +276,7 @@ interface StoreContextType {
   defectReports: DefectReport[];
   submitDefectReport: (report: Omit<DefectReport, 'id' | 'reportNumber' | 'createdAt' | 'updatedAt' | 'status'>) => Promise<DefectReport>;
   updateDefectReportStatus: (id: string, status: DefectStatus, notes?: string) => Promise<boolean>;
+  refreshDefectReports: () => Promise<DefectReport[]>;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -548,14 +570,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             const map = new Map<string, DefectReport>();
             supabaseDefects.forEach((d) => map.set(d.id, d));
             prev.forEach((d) => {
-              if (!map.has(d.id)) {
+              if (!map.has(d.id) && !map.has(d.reportNumber)) {
                 map.set(d.id, d);
               }
             });
             const merged = Array.from(map.values());
-            try {
-              localStorage.setItem('supersnake_defect_reports', JSON.stringify(merged));
-            } catch (e) {}
+            saveDefectReportsToStorage(merged);
             return merged;
           });
         }
@@ -577,7 +597,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           setFreeShippingThresholdState(val);
         }
       }
+      if (e.key === 'supersnake_defect_reports' && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed)) {
+            setDefectReports(parsed);
+          }
+        } catch (err) {}
+      }
     };
+
     const handleCustomChange = () => {
       try {
         const saved = localStorage.getItem('supersnake_free_shipping_threshold');
@@ -586,11 +615,26 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (e) {}
     };
+
+    const handleDefectsChange = () => {
+      try {
+        const saved = localStorage.getItem('supersnake_defect_reports');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            setDefectReports(parsed);
+          }
+        }
+      } catch (e) {}
+    };
+
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('supersnake_threshold_change', handleCustomChange);
+    window.addEventListener('supersnake_defects_change', handleDefectsChange);
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('supersnake_threshold_change', handleCustomChange);
+      window.removeEventListener('supersnake_defects_change', handleDefectsChange);
     };
   }, []);
 
@@ -1127,6 +1171,30 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return true;
   };
 
+  const refreshDefectReports = async (): Promise<DefectReport[]> => {
+    try {
+      const supabaseDefects = await fetchDefectReportsFromSupabase();
+      if (supabaseDefects) {
+        setDefectReports((prev) => {
+          const map = new Map<string, DefectReport>();
+          supabaseDefects.forEach((d) => map.set(d.id, d));
+          prev.forEach((d) => {
+            if (!map.has(d.id) && !map.has(d.reportNumber)) {
+              map.set(d.id, d);
+            }
+          });
+          const merged = Array.from(map.values());
+          saveDefectReportsToStorage(merged);
+          return merged;
+        });
+        return supabaseDefects;
+      }
+    } catch (e) {
+      console.warn('Error refreshing defect reports from Supabase:', e);
+    }
+    return defectReports;
+  };
+
   const submitDefectReport = async (
     reportData: Omit<DefectReport, 'id' | 'reportNumber' | 'createdAt' | 'updatedAt' | 'status'>
   ): Promise<DefectReport> => {
@@ -1142,12 +1210,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     };
 
     setDefectReports((prev) => {
-      const next = [newReport, ...prev];
-      try {
-        localStorage.setItem('supersnake_defect_reports', JSON.stringify(next));
-      } catch (e) {}
+      const next = [newReport, ...prev.filter((r) => r.id !== newReport.id && r.reportNumber !== newReport.reportNumber)];
+      saveDefectReportsToStorage(next);
       return next;
     });
+
+    try {
+      window.dispatchEvent(new Event('supersnake_defects_change'));
+    } catch (e) {}
 
     createDefectReportInSupabase(newReport).catch((err) => {
       console.warn('Could not sync defect report to Supabase:', err);
@@ -1161,25 +1231,34 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     status: DefectStatus,
     notes?: string
   ): Promise<boolean> => {
+    let targetReportNumber = '';
     setDefectReports((prev) => {
-      const next = prev.map((r) =>
-        r.id === id
-          ? {
-              ...r,
-              status,
-              ...(notes !== undefined ? { adminNotes: notes } : {}),
-              updatedAt: new Date().toISOString(),
-            }
-          : r
-      );
-      try {
-        localStorage.setItem('supersnake_defect_reports', JSON.stringify(next));
-      } catch (e) {}
+      const next = prev.map((r) => {
+        if (r.id === id) {
+          targetReportNumber = r.reportNumber;
+          return {
+            ...r,
+            status,
+            ...(notes !== undefined ? { adminNotes: notes } : {}),
+            updatedAt: new Date().toISOString(),
+          };
+        }
+        return r;
+      });
+      saveDefectReportsToStorage(next);
       return next;
     });
 
     try {
-      await updateDefectReportInSupabase(id, { status, adminNotes: notes });
+      window.dispatchEvent(new Event('supersnake_defects_change'));
+    } catch (e) {}
+
+    try {
+      await updateDefectReportInSupabase(id, {
+        status,
+        adminNotes: notes,
+        reportNumber: targetReportNumber,
+      });
       return true;
     } catch (e) {
       return false;
@@ -1234,6 +1313,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         defectReports,
         submitDefectReport,
         updateDefectReportStatus,
+        refreshDefectReports,
       }}
     >
       {children}

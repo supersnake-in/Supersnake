@@ -23,6 +23,7 @@ import {
 import { useStore } from '@/lib/store';
 import { Order, OrderItem, Size } from '@/lib/types';
 import { LEGAL_CONFIG, getLegalValue } from '@/lib/legal-config';
+import { compressImage } from '@/lib/image-compression';
 
 const MAX_IMAGE_COUNT = 5;
 const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
@@ -75,6 +76,7 @@ function DefectReportForm() {
   const [video, setVideo] = useState<{ dataUrl: string; name: string; size: number } | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const [videoError, setVideoError] = useState<string | null>(null);
+  const [isOptimizingImages, setIsOptimizingImages] = useState(false);
 
   // Submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -110,8 +112,8 @@ function DefectReportForm() {
     }
   }, [orderNumber, getOrderById]);
 
-  // Handle Photo upload with limit checks
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle Photo upload with limit checks and automatic client-side compression
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setImageError(null);
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -121,30 +123,44 @@ function DefectReportForm() {
       return;
     }
 
-    Array.from(files).forEach((file) => {
-      if (file.size > MAX_IMAGE_SIZE_BYTES) {
-        setImageError(`"${file.name}" exceeds the 10MB size limit. Please upload a smaller image.`);
-        return;
+    setIsOptimizingImages(true);
+    try {
+      for (const file of Array.from(files)) {
+        if (file.size > MAX_IMAGE_SIZE_BYTES) {
+          setImageError(`"${file.name}" exceeds the 10MB size limit. Please upload a smaller image.`);
+          continue;
+        }
+
+        if (!file.type.startsWith('image/')) {
+          setImageError(`"${file.name}" is not a supported image file.`);
+          continue;
+        }
+
+        try {
+          // Compress high-res image to lightweight high-quality WebP
+          const compressed = await compressImage(file, 1600, 1600, 0.82);
+          setImages((prev) => {
+            if (prev.length >= MAX_IMAGE_COUNT) return prev;
+            return [...prev, { dataUrl: compressed, name: file.name, size: file.size }];
+          });
+        } catch (cErr) {
+          // Fallback to FileReader
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const dataUrl = event.target?.result as string;
+            setImages((prev) => {
+              if (prev.length >= MAX_IMAGE_COUNT) return prev;
+              return [...prev, { dataUrl, name: file.name, size: file.size }];
+            });
+          };
+          reader.readAsDataURL(file);
+        }
       }
-
-      if (!file.type.startsWith('image/')) {
-        setImageError(`"${file.name}" is not a supported image file.`);
-        return;
+    } finally {
+      setIsOptimizingImages(false);
+      if (imageInputRef.current) {
+        imageInputRef.current.value = '';
       }
-
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const dataUrl = event.target?.result as string;
-        setImages((prev) => {
-          if (prev.length >= MAX_IMAGE_COUNT) return prev;
-          return [...prev, { dataUrl, name: file.name, size: file.size }];
-        });
-      };
-      reader.readAsDataURL(file);
-    });
-
-    if (imageInputRef.current) {
-      imageInputRef.current.value = '';
     }
   };
 
@@ -731,6 +747,13 @@ function DefectReportForm() {
               <div className="p-3 bg-red-950/40 border border-red-500/40 text-red-300 text-xs font-mono rounded-sm flex items-center gap-2">
                 <AlertCircle size={14} className="shrink-0 text-red-400" />
                 <span>{imageError}</span>
+              </div>
+            )}
+
+            {isOptimizingImages && (
+              <div className="p-2.5 bg-snake-green/10 border border-snake-green/30 text-snake-green text-xs font-mono rounded-sm flex items-center gap-2 animate-pulse">
+                <Clock size={14} className="animate-spin" />
+                <span>Optimizing high-resolution photography...</span>
               </div>
             )}
 

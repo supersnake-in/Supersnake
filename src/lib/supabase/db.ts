@@ -743,36 +743,55 @@ export async function saveSocialConfigToSupabase(config: SocialConfig): Promise<
  */
 export async function createDefectReportInSupabase(report: DefectReport): Promise<boolean> {
   try {
+    const payload: any = {
+      report_number: report.reportNumber,
+      order_id: report.orderId,
+      order_number: report.orderNumber,
+      customer_name: report.customerName,
+      customer_email: report.customerEmail,
+      customer_phone: report.customerPhone,
+      product_id: report.productId || null,
+      product_name: report.productName,
+      product_color: report.productColor || null,
+      product_size: report.productSize || null,
+      product_image: report.productImage || null,
+      defect_type: report.defectType,
+      description: report.description,
+      images: Array.isArray(report.images) ? report.images : [],
+      video_url: report.videoUrl || null,
+      status: report.status || 'Pending Review',
+      admin_notes: report.adminNotes || null,
+      created_at: report.createdAt || new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    // Attempt insert with the client-generated ID
     const { error } = await supabase
       .from('defect_reports')
       .insert({
         id: report.id,
-        report_number: report.reportNumber,
-        order_id: report.orderId,
-        order_number: report.orderNumber,
-        customer_name: report.customerName,
-        customer_email: report.customerEmail,
-        customer_phone: report.customerPhone,
-        product_id: report.productId || null,
-        product_name: report.productName,
-        product_color: report.productColor || null,
-        product_size: report.productSize || null,
-        product_image: report.productImage || null,
-        defect_type: report.defectType,
-        description: report.description,
-        images: report.images || [],
-        video_url: report.videoUrl || null,
-        status: report.status || 'Pending Review',
-        admin_notes: report.adminNotes || null,
-        created_at: report.createdAt || new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        ...payload,
       });
 
-    if (error) {
-      console.warn('Defect report insert error in Supabase:', error.message);
+    if (!error) {
+      return true;
+    }
+
+    // If it failed because the id column is UUID type in PostgreSQL, retry without explicit id so Postgres generates default UUID
+    if (error.message && (error.message.includes('uuid') || error.message.includes('type'))) {
+      const { error: retryError } = await supabase
+        .from('defect_reports')
+        .insert(payload);
+
+      if (!retryError) {
+        return true;
+      }
+      console.warn('Defect report retry insert error in Supabase:', retryError.message);
       return false;
     }
-    return true;
+
+    console.warn('Defect report insert error in Supabase:', error.message);
+    return false;
   } catch (err) {
     console.warn('Error creating defect report in Supabase:', err);
     return false;
@@ -835,10 +854,20 @@ export async function updateDefectReportInSupabase(
     if (updates.status) payload.status = updates.status;
     if (updates.adminNotes !== undefined) payload.admin_notes = updates.adminNotes;
 
-    const { error } = await supabase
+    // Try updating by ID first
+    let { error } = await supabase
       .from('defect_reports')
       .update(payload)
       .eq('id', id);
+
+    // If ID is not UUID and query failed, or if matching by report number is possible
+    if (error && updates.reportNumber) {
+      const { error: retryError } = await supabase
+        .from('defect_reports')
+        .update(payload)
+        .eq('report_number', updates.reportNumber);
+      if (!retryError) return true;
+    }
 
     return !error;
   } catch (err) {
