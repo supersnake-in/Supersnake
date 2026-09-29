@@ -14,6 +14,7 @@ import {
   AbandonedCart,
   AbandonedCartItem,
   AbandonedCartStatus,
+  MaintenanceConfig,
 } from './types';
 import {
   fetchProductsFromSupabase,
@@ -38,6 +39,8 @@ import {
   fetchAbandonedCartsFromSupabase,
   updateAbandonedCartStatusInSupabase,
   markCartAsRecoveredInSupabase,
+  fetchMaintenanceConfigFromSupabase,
+  updateMaintenanceConfigInSupabase,
 } from './supabase/db';
 import {
   saveCartToStorage,
@@ -172,6 +175,15 @@ export const DEFAULT_SOCIAL_CONFIG: SocialConfig = {
   threads: 'https://threads.net/@supersnake.in',
   linkedin: 'https://linkedin.com/company/supersnake-in',
   contactPhone: '+91 98765 43210',
+};
+
+export const DEFAULT_MAINTENANCE_CONFIG: MaintenanceConfig = {
+  maintenanceMode: false,
+  maintenanceMessage:
+    'We are calibrating the atelier for our next heavyweight drop. The portal will resume normal operations shortly.',
+  estimatedRestoreTime: null,
+  updatedAt: new Date().toISOString(),
+  updatedBy: 'system',
 };
 
 /**
@@ -310,6 +322,11 @@ interface StoreContextType {
   syncAbandonedCart: (customerInfo?: { email: string; name?: string; phone?: string; userId?: string }) => Promise<void>;
   updateAbandonedCartStatus: (cartId: string, status: AbandonedCartStatus, notes?: string, discountOffered?: string) => Promise<boolean>;
   refreshAbandonedCarts: () => Promise<AbandonedCart[]>;
+
+  // Global Maintenance Mode
+  maintenanceConfig: MaintenanceConfig;
+  updateMaintenanceConfig: (updates: Partial<MaintenanceConfig>, adminEmail?: string) => Promise<{ success: boolean; error?: string }>;
+  refreshMaintenanceConfig: () => Promise<MaintenanceConfig>;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -327,6 +344,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [subscribers, setSubscribers] = useState<NewsletterSubscriber[]>([]);
   const [defectReports, setDefectReports] = useState<DefectReport[]>([]);
   const [abandonedCarts, setAbandonedCarts] = useState<AbandonedCart[]>([]);
+  const [maintenanceConfig, setMaintenanceConfig] = useState<MaintenanceConfig>(DEFAULT_MAINTENANCE_CONFIG);
   const [freeShippingThreshold, setFreeShippingThresholdState] = useState<number>(BRAND.freeShippingThreshold);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -490,6 +508,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           if (Array.isArray(parsed)) setSubscribers(parsed);
         } catch (e) {}
       }
+
+      // Maintenance configuration from browser storage
+      const savedMaintenance = localStorage.getItem('supersnake_maintenance_config');
+      if (savedMaintenance) {
+        try {
+          const parsedMaintenance = JSON.parse(savedMaintenance);
+          if (parsedMaintenance && typeof parsedMaintenance.maintenanceMode === 'boolean') {
+            setMaintenanceConfig(parsedMaintenance);
+          }
+        } catch (e) {}
+      }
     } catch (e) {
       console.warn('Failed to load storage:', e);
       setIsLoaded(true);
@@ -646,6 +675,35 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         }
       })
       .catch(() => {});
+
+    // Fetch dynamic maintenance config from API (or fallback to Supabase)
+    fetch('/api/admin/maintenance')
+      .then(async (res) => {
+        if (res.ok) {
+          const data = await res.json();
+          const cfg = data.config || data;
+          if (cfg && typeof cfg.maintenanceMode === 'boolean') {
+            setMaintenanceConfig(cfg);
+            try {
+              localStorage.setItem('supersnake_maintenance_config', JSON.stringify(cfg));
+            } catch (e) {}
+            return;
+          }
+        }
+        throw new Error('API maintenance fallback');
+      })
+      .catch(() => {
+        fetchMaintenanceConfigFromSupabase()
+          .then((dbConfig) => {
+            if (dbConfig) {
+              setMaintenanceConfig(dbConfig);
+              try {
+                localStorage.setItem('supersnake_maintenance_config', JSON.stringify(dbConfig));
+              } catch (e) {}
+            }
+          })
+          .catch(() => {});
+      });
 
     // Free shipping threshold sync from localStorage
     try {
@@ -1551,6 +1609,93 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return abandonedCarts;
   };
 
+  const refreshMaintenanceConfig = async (): Promise<MaintenanceConfig> => {
+    try {
+      const res = await fetch('/api/admin/maintenance');
+      if (res.ok) {
+        const data = await res.json();
+        const cfg = data.config || data;
+        if (cfg && typeof cfg.maintenanceMode === 'boolean') {
+          setMaintenanceConfig(cfg);
+          try {
+            localStorage.setItem('supersnake_maintenance_config', JSON.stringify(cfg));
+          } catch (e) {}
+          return cfg;
+        }
+      }
+    } catch (e) {}
+
+    try {
+      const dbConfig = await fetchMaintenanceConfigFromSupabase();
+      if (dbConfig) {
+        setMaintenanceConfig(dbConfig);
+        try {
+          localStorage.setItem('supersnake_maintenance_config', JSON.stringify(dbConfig));
+        } catch (e) {}
+        return dbConfig;
+      }
+    } catch (e) {}
+
+    return maintenanceConfig;
+  };
+
+  const updateMaintenanceConfig = async (
+    updates: Partial<MaintenanceConfig>,
+    adminEmail?: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    const userEmail = adminEmail || 'supersnake.in@gmail.com';
+    const updated: MaintenanceConfig = {
+      ...maintenanceConfig,
+      ...updates,
+      updatedAt: new Date().toISOString(),
+      updatedBy: userEmail,
+    };
+
+    // Optimistic local update
+    setMaintenanceConfig(updated);
+    try {
+      localStorage.setItem('supersnake_maintenance_config', JSON.stringify(updated));
+      window.dispatchEvent(new Event('supersnake_maintenance_change'));
+    } catch (e) {}
+
+    try {
+      const res = await fetch('/api/admin/maintenance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...updates,
+          adminEmail: userEmail,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success && data.config) {
+        setMaintenanceConfig(data.config);
+        try {
+          localStorage.setItem('supersnake_maintenance_config', JSON.stringify(data.config));
+        } catch (e) {}
+        return { success: true };
+      }
+
+      if (!res.ok) {
+        // Fallback to direct Supabase update
+        const directSuccess = await updateMaintenanceConfigInSupabase(updated, userEmail);
+        if (directSuccess) return { success: true };
+        return { success: false, error: data.message || 'Failed to update maintenance configuration' };
+      }
+    } catch (err: any) {
+      console.warn('API maintenance call failed, attempting direct Supabase write:', err);
+      try {
+        const directSuccess = await updateMaintenanceConfigInSupabase(updated, userEmail);
+        if (directSuccess) return { success: true };
+      } catch (dbErr: any) {
+        return { success: false, error: dbErr?.message || 'Database connection error' };
+      }
+    }
+
+    return { success: true };
+  };
+
   return (
     <StoreContext.Provider
       value={{
@@ -1604,6 +1749,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         syncAbandonedCart,
         updateAbandonedCartStatus,
         refreshAbandonedCarts,
+        maintenanceConfig,
+        updateMaintenanceConfig,
+        refreshMaintenanceConfig,
       }}
     >
       {children}

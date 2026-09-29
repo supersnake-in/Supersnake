@@ -270,3 +270,12 @@ export interface AbandonedCart {
   updatedAt?: string;
 }
 
+export interface MaintenanceConfig {
+  maintenanceMode: boolean;
+  maintenanceMessage: string;
+  estimatedRestoreTime: string | null;
+  updatedAt: string;
+  updatedBy: string;
+}
+
+

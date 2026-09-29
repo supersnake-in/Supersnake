@@ -21,6 +21,7 @@ import {
   Mail,
   ShieldAlert,
   ShoppingCart,
+  AlertTriangle,
 } from 'lucide-react';
 import { SuperSnakeLogo } from '@/components/brand/SuperSnakeLogo';
 import { useAuth } from '@/lib/auth-context';
@@ -29,7 +30,7 @@ import { useStore } from '@/lib/store';
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, profile, isLoading, isAdmin } = useAuth();
-  const { defectReports, abandonedCarts } = useStore();
+  const { defectReports, abandonedCarts, maintenanceConfig } = useStore();
 
   const pendingDefectsCount = defectReports.filter(
     (d) => d.status === 'Pending Review'
@@ -156,11 +157,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="pt-4 border-t border-neutral-800/80 space-y-2 text-xs font-mono">
           <Link
             href="/"
+            target="_blank"
             className="flex items-center justify-between px-3 py-2 text-neutral-400 hover:text-white bg-neutral-900/60 hover:bg-neutral-900 rounded transition-colors"
           >
             <span className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-snake-green" />
-              Storefront Live
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  maintenanceConfig?.maintenanceMode ? 'bg-amber-400 animate-pulse' : 'bg-snake-green'
+                }`}
+              />
+              <span className={maintenanceConfig?.maintenanceMode ? 'text-amber-400 font-semibold' : ''}>
+                {maintenanceConfig?.maintenanceMode ? 'Storefront Offline' : 'Storefront Live'}
+              </span>
             </span>
             <ArrowUpRight size={14} />
           </Link>
@@ -173,6 +181,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
+        {/* Global Maintenance Active Alert Banner */}
+        {maintenanceConfig?.maintenanceMode && (
+          <div className="bg-amber-500/15 border-b border-amber-500/30 text-amber-300 px-6 py-2.5 text-xs font-mono flex items-center justify-between z-30">
+            <div className="flex items-center gap-2.5">
+              <AlertTriangle size={15} className="text-amber-400 animate-pulse flex-shrink-0" />
+              <span>
+                <strong>GLOBAL MAINTENANCE ACTIVE:</strong> Public storefront is locked. All customer routes redirect to the private curation page.
+              </span>
+            </div>
+            <Link
+              href="/admin/settings"
+              className="underline hover:text-white font-bold ml-4 whitespace-nowrap text-amber-400 text-[11px]"
+            >
+              Manage Settings →
+            </Link>
+          </div>
+        )}
+
         {/* Top Header */}
         <header className="h-16 bg-[#0d0d0d] border-b border-neutral-800/80 px-6 flex items-center justify-between">
           <div className="flex items-center gap-4">

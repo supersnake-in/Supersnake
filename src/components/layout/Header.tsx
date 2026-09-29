@@ -18,7 +18,7 @@ export function Header() {
   const { cartCount, wishlist, openCart, openSearch } = useStore();
   const { user, profile, signOut, isAdmin } = useAuth();
 
-  const isStorefront = !pathname.startsWith('/admin');
+  const isStorefront = !pathname.startsWith('/admin') && !pathname.startsWith('/maintenance');
 
   useEffect(() => {
     const handleScroll = () => {

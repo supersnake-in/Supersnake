@@ -11,6 +11,7 @@ import {
   AbandonedCart,
   AbandonedCartItem,
   AbandonedCartStatus,
+  MaintenanceConfig,
 } from '../types';
 
 /**
@@ -1081,6 +1082,85 @@ export async function markCartAsRecoveredInSupabase(customerEmail: string): Prom
     return !error;
   } catch (err) {
     console.warn('Error marking cart as recovered in Supabase:', err);
+    return false;
+  }
+}
+
+/**
+ * FETCH MAINTENANCE CONFIG FROM SUPABASE
+ */
+export async function fetchMaintenanceConfigFromSupabase(): Promise<MaintenanceConfig | null> {
+  try {
+    const { data, error } = await supabase
+      .from('maintenance_config')
+      .select('*')
+      .eq('id', 'default')
+      .maybeSingle();
+
+    if (error || !data) {
+      return null;
+    }
+
+    return {
+      maintenanceMode: Boolean(data.maintenance_mode),
+      maintenanceMessage:
+        data.maintenance_message ||
+        'We are calibrating the atelier for our next heavyweight drop. The portal will resume normal operations shortly.',
+      estimatedRestoreTime: data.estimated_restore_time || null,
+      updatedAt: data.updated_at || new Date().toISOString(),
+      updatedBy: data.updated_by || 'system',
+    };
+  } catch (err) {
+    console.warn('Error fetching maintenance config from Supabase:', err);
+    return null;
+  }
+}
+
+/**
+ * UPDATE MAINTENANCE CONFIG IN SUPABASE
+ */
+export async function updateMaintenanceConfigInSupabase(
+  config: Partial<MaintenanceConfig>,
+  adminEmail: string = 'system'
+): Promise<boolean> {
+  try {
+    const now = new Date().toISOString();
+    const payload: any = {
+      updated_at: now,
+      updated_by: adminEmail,
+    };
+
+    if (config.maintenanceMode !== undefined) {
+      payload.maintenance_mode = Boolean(config.maintenanceMode);
+    }
+    if (config.maintenanceMessage !== undefined) {
+      payload.maintenance_message = config.maintenanceMessage;
+    }
+    if (config.estimatedRestoreTime !== undefined) {
+      payload.estimated_restore_time = config.estimatedRestoreTime || null;
+    }
+
+    // Try updating existing row
+    const { data, error } = await supabase
+      .from('maintenance_config')
+      .upsert(
+        {
+          id: 'default',
+          ...payload,
+        },
+        { onConflict: 'id' }
+      )
+      .select('id')
+      .single();
+
+    if (error) {
+      console.warn('Error updating maintenance config in Supabase:', error.message);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    console.warn('Exception updating maintenance config in Supabase:', err);
     return false;
   }
 }

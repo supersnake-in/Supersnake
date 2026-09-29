@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { ArrowRight, Check, Plus, Minus, ShieldCheck, Truck, RotateCcw, Sparkles } from 'lucide-react';
 import { SuperSnakeLogo } from '../brand/SuperSnakeLogo';
 import { BRAND } from '@/lib/design-tokens';
@@ -15,11 +16,16 @@ interface NavColumn {
 }
 
 export function Footer() {
+  const pathname = usePathname();
   const { socialConfig, addSubscriber } = useStore();
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [mobileAccordion, setMobileAccordion] = useState<string | null>(null);
+
+  if (pathname.startsWith('/admin') || pathname.startsWith('/maintenance')) {
+    return null;
+  }
 
   const navColumns: NavColumn[] = [
     {
