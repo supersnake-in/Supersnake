@@ -6,7 +6,6 @@ import Link from 'next/link';
 import {
   X,
   Check,
-  ShieldCheck,
   Sparkles,
   ArrowRight,
   Clock,
@@ -16,11 +15,9 @@ import {
   Phone,
   Calendar,
   Package,
-  CreditCard,
   Minus,
   Plus,
   Copy,
-  Lock,
 } from 'lucide-react';
 import { Product, Size, PreBooking } from '@/lib/types';
 import { formatPrice } from '@/lib/design-tokens';
@@ -566,41 +563,11 @@ export function PreBookingModal({
               </div>
             </div>
 
-            {/* Exclusive Razorpay Online Payment Discipline */}
-            <div className="p-3.5 bg-neutral-950 border border-snake-green/40 rounded-md space-y-1.5 font-mono">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded bg-snake-green/10 border border-snake-green/30 flex items-center justify-center text-snake-green">
-                    <CreditCard size={13} />
-                  </div>
-                  <span className="text-[11px] font-bold text-white uppercase tracking-wider">
-                    PAYMENT GATEWAY // RAZORPAY SECURE
-                  </span>
-                </div>
-                <span className="text-[9px] px-2 py-0.5 rounded bg-snake-green/20 text-snake-green border border-snake-green/40 font-bold uppercase flex items-center gap-1">
-                  <Lock size={10} />
-                  <span>ONLINE ONLY</span>
-                </span>
-              </div>
-              <p className="text-[10px] text-neutral-400 leading-relaxed">
-                Full advance payment required to lock your First Drop piece. Supports UPI (Google Pay, PhonePe, Paytm), Credit & Debit Cards, NetBanking, and Wallets. Cash on Delivery is disabled for pre-launch drops.
-              </p>
-            </div>
-
             {errorMsg && (
               <div className="p-3 bg-red-950/40 border border-red-500/40 rounded text-red-300 text-xs font-mono">
                 {errorMsg}
               </div>
             )}
-
-            {/* Guarantees */}
-            <div className="p-3 bg-black/60 border border-white/[0.06] rounded flex items-center justify-between text-[10px] text-neutral-400 font-mono">
-              <span className="flex items-center gap-1.5">
-                <ShieldCheck size={14} className="text-snake-green" />
-                <span>Guaranteed Inaugural Drop Serial</span>
-              </span>
-              <span>Express Air Dispatch Included</span>
-            </div>
 
             {/* Action CTA */}
             <div>
