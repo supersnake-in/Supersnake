@@ -237,11 +237,16 @@ export async function middleware(request: NextRequest) {
     // - /product/* (so customers can view and pre-book eligible products)
     // - /account and /account/* (for viewing pre-bookings)
     // - /login, /signup, /verify-email, /forgot-password, /reset-password
+    // - Pre-booking APIs: /api/create-order, /api/verify-payment, /api/pincode, /api/newsletter
     // - Informational / Brand pages: /contact, /about, /privacy, /terms, /size-guide, /care-guide, /cookies
     if (
       pathname.startsWith('/pre-launch') ||
       pathname.startsWith('/product/') ||
       pathname.startsWith('/account') ||
+      pathname.startsWith('/api/pincode') ||
+      pathname === '/api/create-order' ||
+      pathname === '/api/verify-payment' ||
+      pathname === '/api/newsletter' ||
       pathname === '/login' ||
       pathname === '/signup' ||
       pathname === '/verify-email' ||
@@ -261,7 +266,7 @@ export async function middleware(request: NextRequest) {
     }
 
     // Customer shopping APIs blocked during Pre-Launch:
-    if (pathname === '/api/checkout' || pathname === '/api/create-order') {
+    if (pathname === '/api/checkout') {
       return new NextResponse(
         JSON.stringify({
           error: 'Pre-Launch Active',

@@ -4,7 +4,7 @@ import Razorpay from 'razorpay';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { amount: clientAmount, currency = 'INR', customer, shippingAddress, items, orderId, couponCode } = body;
+    const { amount: clientAmount, currency = 'INR', customer, shippingAddress, items, orderId, couponCode, isPreBooking } = body;
 
     // 1. Validate Customer Information
     if (!customer?.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email.trim())) {
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
         return sum + (itemPrice * itemQty);
       }, 0);
 
-      const shipping = subtotal >= 2999 ? 0 : 150;
+      const shipping = isPreBooking ? 0 : (subtotal >= 2999 ? 0 : 150);
       const totalInRupees = subtotal + shipping;
       calculatedAmount = Math.round(totalInRupees * 100);
     }

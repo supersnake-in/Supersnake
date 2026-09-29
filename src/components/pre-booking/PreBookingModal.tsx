@@ -315,6 +315,7 @@ export function PreBookingModal({
         body: JSON.stringify({
           amount: amountInPaise,
           currency: 'INR',
+          isPreBooking: true,
           customer: {
             name: cleanName,
             email: cleanEmail,
