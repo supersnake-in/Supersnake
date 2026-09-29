@@ -114,10 +114,6 @@ export default function MaintenancePage() {
             SUPERSNAKE // ATELIER
           </span>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1 bg-neutral-900/80 border border-white/10 rounded text-[10px] font-mono tracking-widest text-amber-400">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-          <span>CURATION IN PROGRESS</span>
-        </div>
       </div>
 
       {/* Center Main Stage */}
