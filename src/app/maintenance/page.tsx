@@ -1,9 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Clock, RefreshCw, Shield, ArrowRight, Lock } from 'lucide-react';
+import { Clock, RefreshCw, Shield } from 'lucide-react';
 import { SuperSnakeLogo } from '@/components/brand/SuperSnakeLogo';
 import { useStore } from '@/lib/store';
 import { MaintenanceConfig } from '@/lib/types';
@@ -206,21 +205,11 @@ export default function MaintenancePage() {
       </div>
 
       {/* Bottom Footer Row */}
-      <div className="relative z-10 w-full max-w-5xl flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-white/[0.06] pt-6 text-[10px] font-mono text-neutral-500 tracking-wider">
+      <div className="relative z-10 w-full max-w-5xl flex items-center justify-center border-t border-white/[0.06] pt-6 text-[10px] font-mono text-neutral-500 tracking-wider">
         <div className="flex items-center gap-2">
           <Shield size={12} className="text-snake-green" />
           <span>© 2026 SUPERSNAKE APPARELS // PRIVATE CURATION</span>
         </div>
-
-        {/* Understated Admin Access Link */}
-        <Link
-          href="/login?admin=1"
-          className="inline-flex items-center gap-1.5 text-neutral-500 hover:text-white transition-colors uppercase tracking-widest"
-        >
-          <Lock size={11} className="text-neutral-600" />
-          <span>PERSONNEL LOGIN</span>
-          <ArrowRight size={10} />
-        </Link>
       </div>
     </div>
   );
