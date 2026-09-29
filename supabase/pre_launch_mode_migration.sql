@@ -107,13 +107,49 @@ CREATE TABLE IF NOT EXISTS public.pre_bookings (
   quantity INT NOT NULL DEFAULT 1,
   unit_price NUMERIC NOT NULL,
   total_amount NUMERIC NOT NULL,
-  payment_status TEXT NOT NULL DEFAULT 'Reservation', -- 'Paid' | 'Pending' | 'Reservation'
+  payment_status TEXT NOT NULL DEFAULT 'Reservation', -- 'Paid' | 'Pending' | 'Reservation' | 'Pending (COD)'
+  payment_method TEXT DEFAULT 'razorpay',             -- 'razorpay' | 'cod'
+  razorpay_payment_id TEXT,
+  razorpay_order_id TEXT,
+  paid_at TIMESTAMPTZ,
   booking_status TEXT NOT NULL DEFAULT 'Confirmed',   -- 'Confirmed' | 'Payment Pending' | 'Cancelled' | 'Converted to Order' | 'Fulfilled'
   shipping_address JSONB,
   admin_notes TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Ensure payment columns exist on pre_bookings table
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'pre_bookings' AND column_name = 'payment_method'
+  ) THEN
+    ALTER TABLE public.pre_bookings ADD COLUMN payment_method TEXT DEFAULT 'razorpay';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'pre_bookings' AND column_name = 'razorpay_payment_id'
+  ) THEN
+    ALTER TABLE public.pre_bookings ADD COLUMN razorpay_payment_id TEXT;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'pre_bookings' AND column_name = 'razorpay_order_id'
+  ) THEN
+    ALTER TABLE public.pre_bookings ADD COLUMN razorpay_order_id TEXT;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'pre_bookings' AND column_name = 'paid_at'
+  ) THEN
+    ALTER TABLE public.pre_bookings ADD COLUMN paid_at TIMESTAMPTZ;
+  END IF;
+END $$;
 
 -- Indexes for lightning fast lookups
 CREATE INDEX IF NOT EXISTS idx_pre_bookings_email ON public.pre_bookings(customer_email);

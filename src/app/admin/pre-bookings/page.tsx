@@ -90,9 +90,13 @@ export default function AdminPreBookingsPage() {
     const confirmed = preBookings.filter((b) => b.status === 'CONFIRMED').length;
     const contacted = preBookings.filter((b) => b.status === 'CONTACTED').length;
     const converted = preBookings.filter((b) => b.status === 'CONVERTED_TO_ORDER').length;
+    const paidCount = preBookings.filter((b) => b.paymentStatus === 'Paid').length;
     const totalValue = preBookings.reduce((sum, b) => sum + (b.totalPrice || b.productPrice * b.quantity), 0);
+    const paidValue = preBookings
+      .filter((b) => b.paymentStatus === 'Paid')
+      .reduce((sum, b) => sum + (b.totalPrice || b.productPrice * b.quantity), 0);
 
-    return { total, confirmed, contacted, converted, totalValue };
+    return { total, confirmed, contacted, converted, paidCount, totalValue, paidValue };
   }, [preBookings]);
 
   const handleCopy = (text: string, id: string) => {
@@ -178,7 +182,7 @@ export default function AdminPreBookingsPage() {
       )}
 
       {/* Executive Metrics Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
         <div className="p-4 bg-[#0d0d0d] border border-neutral-800 rounded-lg space-y-1">
           <span className="text-[10px] text-neutral-500 uppercase block font-semibold">TOTAL RESERVED</span>
           <span className="text-xl font-display font-bold text-white block">
@@ -187,9 +191,17 @@ export default function AdminPreBookingsPage() {
           <span className="text-[10px] text-neutral-500 block">All customer bookings</span>
         </div>
 
-        <div className="p-4 bg-[#0d0d0d] border border-neutral-800 rounded-lg space-y-1">
-          <span className="text-[10px] text-snake-green uppercase block font-semibold">CONFIRMED</span>
+        <div className="p-4 bg-[#0d0d0d] border border-snake-green/30 rounded-lg space-y-1">
+          <span className="text-[10px] text-snake-green uppercase block font-semibold">PAID ONLINE</span>
           <span className="text-xl font-display font-bold text-snake-green block">
+            {metrics.paidCount}
+          </span>
+          <span className="text-[10px] text-snake-green/80 block">{formatPrice(metrics.paidValue)} captured</span>
+        </div>
+
+        <div className="p-4 bg-[#0d0d0d] border border-neutral-800 rounded-lg space-y-1">
+          <span className="text-[10px] text-white uppercase block font-semibold">CONFIRMED</span>
+          <span className="text-xl font-display font-bold text-white block">
             {metrics.confirmed}
           </span>
           <span className="text-[10px] text-neutral-500 block">Awaiting launch allocation</span>
@@ -208,15 +220,15 @@ export default function AdminPreBookingsPage() {
           <span className="text-xl font-display font-bold text-purple-300 block">
             {metrics.converted}
           </span>
-          <span className="text-[10px] text-neutral-500 block">Transitioned to official sales</span>
+          <span className="text-[10px] text-neutral-500 block">Transitioned to sales</span>
         </div>
 
         <div className="p-4 bg-[#0d0d0d] border border-neutral-800 rounded-lg space-y-1 col-span-2 md:col-span-1">
-          <span className="text-[10px] text-amber-400 uppercase block font-semibold">EST. RESERVED GMV</span>
+          <span className="text-[10px] text-amber-400 uppercase block font-semibold">TOTAL PIPELINE GMV</span>
           <span className="text-xl font-display font-bold text-white block">
             {formatPrice(metrics.totalValue)}
           </span>
-          <span className="text-[10px] text-neutral-500 block">Pipeline merchandise value</span>
+          <span className="text-[10px] text-neutral-500 block">Gross reserved value</span>
         </div>
       </div>
 
@@ -260,6 +272,7 @@ export default function AdminPreBookingsPage() {
               <th className="py-3 px-4">REFERENCE</th>
               <th className="py-3 px-4">GARMENT &amp; VARIANT</th>
               <th className="py-3 px-4">PATRON CONTACT</th>
+              <th className="py-3 px-4">PAYMENT</th>
               <th className="py-3 px-4">DESTINATION</th>
               <th className="py-3 px-4">TIMESTAMP</th>
               <th className="py-3 px-4 text-center">STATUS</th>
@@ -269,7 +282,7 @@ export default function AdminPreBookingsPage() {
           <tbody className="divide-y divide-neutral-800/60 font-mono">
             {filteredBookings.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-12 text-center text-neutral-500">
+                <td colSpan={8} className="py-12 text-center text-neutral-500">
                   <div className="max-w-sm mx-auto space-y-2">
                     <Calendar size={28} className="mx-auto text-neutral-600 mb-2" />
                     <p className="text-xs uppercase font-bold text-neutral-400">NO PRE-BOOKINGS FOUND</p>
@@ -356,6 +369,24 @@ export default function AdminPreBookingsPage() {
                         <Phone size={10} />
                         <span>{b.customerPhone}</span>
                       </a>
+                    </td>
+
+                    {/* Payment Status */}
+                    <td className="py-3 px-4 whitespace-nowrap">
+                      <span
+                        className={`inline-block px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
+                          b.paymentStatus === 'Paid'
+                            ? 'bg-snake-green/20 text-snake-green border border-snake-green/40'
+                            : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                        }`}
+                      >
+                        {b.paymentStatus === 'Paid' ? '● PAID ONLINE' : '● PAY ON DELIVERY'}
+                      </span>
+                      {b.razorpayPaymentId && (
+                        <span className="text-[9px] text-neutral-500 block font-mono mt-0.5 truncate max-w-[120px]">
+                          {b.razorpayPaymentId}
+                        </span>
+                      )}
                     </td>
 
                     {/* Destination */}
@@ -461,9 +492,25 @@ export default function AdminPreBookingsPage() {
                   <span>•</span>
                   <span>QTY: {activeModalBooking.quantity}</span>
                 </div>
-                <div className="text-xs font-mono font-bold text-white pt-1">
-                  RESERVED PRICE: {formatPrice(activeModalBooking.totalPrice || activeModalBooking.productPrice * activeModalBooking.quantity)}
+                <div className="flex items-center gap-2 pt-1 flex-wrap">
+                  <span className="text-xs font-mono font-bold text-white">
+                    AMOUNT: {formatPrice(activeModalBooking.totalPrice || activeModalBooking.productPrice * activeModalBooking.quantity)}
+                  </span>
+                  <span
+                    className={`text-[9px] px-2 py-0.5 rounded font-bold uppercase ${
+                      activeModalBooking.paymentStatus === 'Paid'
+                        ? 'bg-snake-green/20 text-snake-green border border-snake-green/40'
+                        : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                    }`}
+                  >
+                    {activeModalBooking.paymentStatus === 'Paid' ? '● PAID ONLINE' : '● CASH ON DELIVERY'}
+                  </span>
                 </div>
+                {activeModalBooking.razorpayPaymentId && (
+                  <div className="text-[10px] text-neutral-400 font-mono">
+                    GATEWAY TXN: <strong className="text-white">{activeModalBooking.razorpayPaymentId}</strong>
+                  </div>
+                )}
               </div>
             </div>
 

@@ -326,10 +326,16 @@ export interface PreBooking {
   productPrice: number;
   totalAmount: number;
   totalPrice: number;
-  paymentStatus: 'Paid' | 'Pending' | 'Reservation';
+  paymentStatus: 'Paid' | 'Pending' | 'Reservation' | 'Pending (COD)';
+  paymentMethod?: string;
+  razorpayPaymentId?: string;
+  razorpayOrderId?: string;
+  paidAt?: string;
   bookingStatus: PreBookingStatus;
   status: PreBookingStatus;
   shippingAddress?: {
+    fullName?: string;
+    phone?: string;
     street?: string;
     city?: string;
     state?: string;

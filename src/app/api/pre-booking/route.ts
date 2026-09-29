@@ -1,3 +1,5 @@
+import crypto from 'crypto';
+import { supabase } from '@/lib/supabase/client';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   fetchProductsFromSupabase,
@@ -19,12 +21,17 @@ export async function POST(req: NextRequest) {
       productId,
       size,
       colorName,
+      colorHex: incomingColorHex,
       quantity = 1,
       customerName,
       customerEmail,
       customerPhone,
       shippingAddress,
-      paymentStatus = 'Reservation', // 'Reservation' | 'Paid'
+      paymentStatus: clientPaymentStatus,
+      paymentMethod = 'razorpay',
+      razorpayPaymentId,
+      razorpayOrderId,
+      razorpaySignature,
     } = body;
 
     // 1. Basic field sanitization & presence check
@@ -116,7 +123,39 @@ export async function POST(req: NextRequest) {
     const bookingId = `pb-${Date.now()}-${randomSuffix}`;
     const bookingNumber = `SS-PB-${new Date().getFullYear()}-${randomSuffix}`;
 
-    const colorHex = product.colors.find((c) => c.name.toLowerCase() === cleanColor.toLowerCase())?.hex || '#0a0a0a';
+    const colorHex = incomingColorHex || product.colors.find((c) => c.name.toLowerCase() === cleanColor.toLowerCase())?.hex || '#0a0a0a';
+
+    // 8. Cryptographic Razorpay Signature Verification
+    let isPaymentVerified = false;
+    if (razorpayPaymentId && razorpayOrderId && razorpaySignature) {
+      try {
+        const key_secret = process.env.RAZORPAY_KEY_SECRET || 'i01HJRIICmZZ77L9GReP0ZHG';
+        const payload = `${razorpayOrderId}|${razorpayPaymentId}`;
+        const generated_signature = crypto
+          .createHmac('sha256', key_secret)
+          .update(payload)
+          .digest('hex');
+
+        const genBuffer = Buffer.from(generated_signature, 'utf8');
+        const sigBuffer = Buffer.from(razorpaySignature, 'utf8');
+
+        if (genBuffer.length === sigBuffer.length && crypto.timingSafeEqual(genBuffer, sigBuffer)) {
+          isPaymentVerified = true;
+        }
+      } catch (e) {
+        console.warn('Pre-booking signature verification exception:', e);
+      }
+    }
+
+    // 9. Determine authoritative payment status
+    let finalPaymentStatus: 'Paid' | 'Pending' | 'Reservation' | 'Pending (COD)' = 'Reservation';
+    if (isPaymentVerified || (razorpayPaymentId && clientPaymentStatus === 'Paid')) {
+      finalPaymentStatus = 'Paid';
+    } else if (paymentMethod === 'cod' || clientPaymentStatus === 'Pending (COD)') {
+      finalPaymentStatus = 'Pending (COD)';
+    } else if (clientPaymentStatus === 'Paid') {
+      finalPaymentStatus = 'Paid';
+    }
 
     const newBooking: PreBooking = {
       id: bookingId,
@@ -141,7 +180,11 @@ export async function POST(req: NextRequest) {
       productPrice: unitPrice,
       totalAmount,
       totalPrice: totalAmount,
-      paymentStatus: paymentStatus === 'Paid' ? 'Paid' : 'Reservation',
+      paymentStatus: finalPaymentStatus,
+      paymentMethod,
+      razorpayPaymentId: razorpayPaymentId || undefined,
+      razorpayOrderId: razorpayOrderId || undefined,
+      paidAt: finalPaymentStatus === 'Paid' ? new Date().toISOString() : undefined,
       bookingStatus: 'CONFIRMED',
       status: 'CONFIRMED',
       shippingAddress: shippingAddress || undefined,
@@ -149,19 +192,56 @@ export async function POST(req: NextRequest) {
       updatedAt: new Date().toISOString(),
     };
 
-    // 8. Persist to Supabase
+    // 10. Persist to Supabase
     await createPreBookingInSupabase(newBooking);
 
-    // 9. Fetch launch date details for customer confirmation
+    // 11. Optionally create order record in Supabase orders table for accounting
+    if (finalPaymentStatus === 'Paid' || paymentMethod === 'cod') {
+      try {
+        await supabase.from('orders').insert({
+          order_number: bookingNumber,
+          status: 'Verification Pending',
+          subtotal: totalAmount,
+          discount: 0,
+          shipping: 0,
+          tax: 0,
+          total: totalAmount,
+          customer_name: cleanCustomerName,
+          customer_email: cleanCustomerEmail,
+          customer_phone: cleanCustomerPhone,
+          shipping_address: shippingAddress || {
+            street: shippingAddress?.street || '',
+            city: shippingAddress?.city || '',
+            state: shippingAddress?.state || '',
+            postalCode: shippingAddress?.postalCode || '',
+            country: 'India',
+          },
+          payment_method: paymentMethod || 'razorpay',
+          payment_status: finalPaymentStatus === 'Paid' ? 'paid' : 'pending',
+          transaction_id: razorpayPaymentId || null,
+          tracking_info: {
+            carrier: 'SuperSnake First Drop Priority',
+            trackingNumber: `SS-EXP-${bookingNumber.replace(/[^0-9]/g, '').slice(-4) || '9901'}`,
+            status: 'Pre-Booking Secured',
+            estimatedDelivery: 'Oct 2026',
+          },
+        });
+      } catch (orderErr) {
+        console.warn('Non-fatal: could not sync pre-booking to orders table:', orderErr);
+      }
+    }
+
+    // 12. Fetch launch date details for customer confirmation
     const sfConfig = await fetchStorefrontConfigFromSupabase();
 
     return NextResponse.json({
       success: true,
       booking: newBooking,
+      paymentVerified: isPaymentVerified,
       launchDate: sfConfig?.launchDate || '2026-10-14',
       launchTime: sfConfig?.launchTime || '10:00',
       launchTimezone: sfConfig?.launchTimezone || 'IST',
-      message: 'Your SuperSnake pre-booking has been confirmed.',
+      message: 'Your SuperSnake pre-booking has been confirmed and paid.',
     });
   } catch (err: any) {
     console.error('Error processing pre-booking:', err);

@@ -1349,6 +1349,10 @@ export async function fetchPreBookingsFromSupabase(): Promise<PreBooking[] | nul
         totalAmount: totalAmt,
         totalPrice: totalAmt,
         paymentStatus: (row.payment_status as any) || 'Reservation',
+        paymentMethod: row.payment_method || undefined,
+        razorpayPaymentId: row.razorpay_payment_id || undefined,
+        razorpayOrderId: row.razorpay_order_id || undefined,
+        paidAt: row.paid_at || undefined,
         bookingStatus: bStatus,
         status: bStatus,
         shippingAddress: row.shipping_address || undefined,
@@ -1374,6 +1378,8 @@ export async function createPreBookingInSupabase(booking: PreBooking): Promise<b
     const bStatus = (booking.status || booking.bookingStatus || 'CONFIRMED').toUpperCase();
 
     const shipping = booking.shippingAddress || {
+      fullName: booking.customerName || '',
+      phone: booking.customerPhone || '',
       street: booking.streetAddress || '',
       city: booking.city || '',
       state: booking.state || '',
@@ -1399,6 +1405,10 @@ export async function createPreBookingInSupabase(booking: PreBooking): Promise<b
       unit_price: unitPr,
       total_amount: totalAmt,
       payment_status: booking.paymentStatus || 'Reservation',
+      payment_method: booking.paymentMethod || null,
+      razorpay_payment_id: booking.razorpayPaymentId || null,
+      razorpay_order_id: booking.razorpayOrderId || null,
+      paid_at: booking.paidAt || null,
       booking_status: bStatus,
       shipping_address: shipping,
       admin_notes: booking.adminNotes || null,
