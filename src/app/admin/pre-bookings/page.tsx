@@ -373,14 +373,8 @@ export default function AdminPreBookingsPage() {
 
                     {/* Payment Status */}
                     <td className="py-3 px-4 whitespace-nowrap">
-                      <span
-                        className={`inline-block px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
-                          b.paymentStatus === 'Paid'
-                            ? 'bg-snake-green/20 text-snake-green border border-snake-green/40'
-                            : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                        }`}
-                      >
-                        {b.paymentStatus === 'Paid' ? '● PAID ONLINE' : '● PAY ON DELIVERY'}
+                      <span className="inline-block px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-snake-green/20 text-snake-green border border-snake-green/40">
+                        ● PAID VIA RAZORPAY
                       </span>
                       {b.razorpayPaymentId && (
                         <span className="text-[9px] text-neutral-500 block font-mono mt-0.5 truncate max-w-[120px]">
@@ -496,14 +490,8 @@ export default function AdminPreBookingsPage() {
                   <span className="text-xs font-mono font-bold text-white">
                     AMOUNT: {formatPrice(activeModalBooking.totalPrice || activeModalBooking.productPrice * activeModalBooking.quantity)}
                   </span>
-                  <span
-                    className={`text-[9px] px-2 py-0.5 rounded font-bold uppercase ${
-                      activeModalBooking.paymentStatus === 'Paid'
-                        ? 'bg-snake-green/20 text-snake-green border border-snake-green/40'
-                        : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                    }`}
-                  >
-                    {activeModalBooking.paymentStatus === 'Paid' ? '● PAID ONLINE' : '● CASH ON DELIVERY'}
+                  <span className="text-[9px] px-2 py-0.5 rounded font-bold uppercase bg-snake-green/20 text-snake-green border border-snake-green/40">
+                    ● PAID VIA RAZORPAY
                   </span>
                 </div>
                 {activeModalBooking.razorpayPaymentId && (

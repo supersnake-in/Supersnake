@@ -17,16 +17,15 @@ import {
   Calendar,
   Package,
   CreditCard,
-  Banknote,
   Minus,
   Plus,
   Copy,
+  Lock,
 } from 'lucide-react';
 import { Product, Size, PreBooking } from '@/lib/types';
 import { formatPrice } from '@/lib/design-tokens';
 import { useStore } from '@/lib/store';
 import { useAuth } from '@/lib/auth-context';
-import { SuperSnakeLogo } from '@/components/brand/SuperSnakeLogo';
 
 interface PreBookingModalProps {
   product: Product;
@@ -82,9 +81,6 @@ export function PreBookingModal({
   const [city, setCity] = useState('');
   const [stateName, setStateName] = useState('');
   const [pincode, setPincode] = useState('');
-
-  // Payment method
-  const [paymentMethod, setPaymentMethod] = useState<'razorpay' | 'cod'>('razorpay');
 
   // Modal flow state
   const [step, setStep] = useState<'form' | 'success'>('form');
@@ -195,51 +191,12 @@ export function PreBookingModal({
     };
 
     // ========================================================
-    // A. CASH ON DELIVERY (PAY ON DELIVERY)
-    // ========================================================
-    if (paymentMethod === 'cod') {
-      try {
-        const res = await fetch('/api/pre-booking', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            productId: product.id,
-            size: currentSize,
-            colorName: currentColor.name,
-            colorHex: currentColor.hex,
-            quantity: currentQty,
-            customerName: cleanName,
-            customerEmail: cleanEmail,
-            customerPhone: cleanPhone,
-            shippingAddress: shippingAddressPayload,
-            paymentStatus: 'Pending (COD)',
-            paymentMethod: 'cod',
-          }),
-        });
-
-        const data = await res.json();
-        if (!res.ok || !data.success) {
-          throw new Error(data.message || 'Failed to submit pre-booking. Please retry.');
-        }
-
-        await createPreBooking(data.booking);
-        setConfirmedBooking(data.booking);
-        setStep('success');
-      } catch (err: any) {
-        setErrorMsg(err.message || 'Transmission interrupted. Please retry.');
-      } finally {
-        setIsSubmitting(false);
-      }
-      return;
-    }
-
-    // ========================================================
-    // B. ONLINE PAYMENT VIA RAZORPAY
+    // EXCLUSIVE ONLINE PAYMENT VIA RAZORPAY (NO COD)
     // ========================================================
     try {
       const isLoaded = await loadRazorpayScript();
       if (!isLoaded) {
-        throw new Error('Payment gateway failed to initialize. Please check your network connection.');
+        throw new Error('Payment gateway failed to initialize. Please check your network connection or disable ad-blockers.');
       }
 
       // 1. Create Razorpay order on server
@@ -283,9 +240,14 @@ export function PreBookingModal({
         throw new Error('Order verification failed. Gateway order ID missing.');
       }
 
-      // 2. Launch Razorpay Standard Checkout
+      // 2. Launch Razorpay Standard Checkout using authoritative live key
+      const razorpayKey =
+        orderData.key ||
+        process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ||
+        'rzp_test_TeKVwwxJXp1r5I';
+
       const options = {
-        key: orderData.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TeKVwwxJXp1r5I',
+        key: razorpayKey,
         amount: orderData.amount,
         currency: orderData.currency || 'INR',
         name: 'SuperSnake Atelier',
@@ -604,61 +566,25 @@ export function PreBookingModal({
               </div>
             </div>
 
-            {/* Payment Method Selector */}
-            <div className="space-y-2 font-mono text-xs">
-              <span className="text-[10px] text-neutral-400 uppercase tracking-widest block font-semibold">
-                PAYMENT DISCIPLINE
-              </span>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Razorpay Online */}
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('razorpay')}
-                  className={`p-3.5 rounded border text-left flex flex-col justify-between transition-all ${
-                    paymentMethod === 'razorpay'
-                      ? 'bg-neutral-900 border-snake-green shadow-[0_0_12px_rgba(4,252,33,0.2)]'
-                      : 'bg-black border-white/10 hover:border-white/30'
-                  }`}
-                >
-                  <div className="flex items-center justify-between w-full mb-1">
-                    <div className="flex items-center gap-2">
-                      <CreditCard size={15} className={paymentMethod === 'razorpay' ? 'text-snake-green' : 'text-neutral-400'} />
-                      <span className="font-bold text-white text-xs">ONLINE PAYMENT</span>
-                    </div>
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-snake-green/20 text-snake-green font-bold">
-                      INSTANT
-                    </span>
+            {/* Exclusive Razorpay Online Payment Discipline */}
+            <div className="p-3.5 bg-neutral-950 border border-snake-green/40 rounded-md space-y-1.5 font-mono">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded bg-snake-green/10 border border-snake-green/30 flex items-center justify-center text-snake-green">
+                    <CreditCard size={13} />
                   </div>
-                  <p className="text-[10px] text-neutral-400 leading-tight">
-                    Pay with UPI (GPay, PhonePe), Cards & NetBanking via Razorpay.
-                  </p>
-                </button>
-
-                {/* Cash on Delivery */}
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('cod')}
-                  className={`p-3.5 rounded border text-left flex flex-col justify-between transition-all ${
-                    paymentMethod === 'cod'
-                      ? 'bg-neutral-900 border-snake-green shadow-[0_0_12px_rgba(4,252,33,0.2)]'
-                      : 'bg-black border-white/10 hover:border-white/30'
-                  }`}
-                >
-                  <div className="flex items-center justify-between w-full mb-1">
-                    <div className="flex items-center gap-2">
-                      <Banknote size={15} className={paymentMethod === 'cod' ? 'text-snake-green' : 'text-neutral-400'} />
-                      <span className="font-bold text-white text-xs">PAY ON DELIVERY</span>
-                    </div>
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/10 text-neutral-300 font-bold">
-                      COD
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-neutral-400 leading-tight">
-                    Book now, pay via cash or UPI when delivered at your doorstep.
-                  </p>
-                </button>
+                  <span className="text-[11px] font-bold text-white uppercase tracking-wider">
+                    PAYMENT GATEWAY // RAZORPAY SECURE
+                  </span>
+                </div>
+                <span className="text-[9px] px-2 py-0.5 rounded bg-snake-green/20 text-snake-green border border-snake-green/40 font-bold uppercase flex items-center gap-1">
+                  <Lock size={10} />
+                  <span>ONLINE ONLY</span>
+                </span>
               </div>
+              <p className="text-[10px] text-neutral-400 leading-relaxed">
+                Full advance payment required to lock your First Drop piece. Supports UPI (Google Pay, PhonePe, Paytm), Credit & Debit Cards, NetBanking, and Wallets. Cash on Delivery is disabled for pre-launch drops.
+              </p>
             </div>
 
             {errorMsg && (
@@ -686,16 +612,11 @@ export function PreBookingModal({
                 {isSubmitting ? (
                   <span className="flex items-center gap-2">
                     <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                    <span>CONNECTING TO SECURE GATEWAY...</span>
+                    <span>CONNECTING TO RAZORPAY SECURE...</span>
                   </span>
-                ) : paymentMethod === 'razorpay' ? (
-                  <>
-                    <span>PAY & CONFIRM PRE-BOOKING • {formatPrice(totalAmount)}</span>
-                    <ArrowRight size={14} />
-                  </>
                 ) : (
                   <>
-                    <span>CONFIRM PRE-BOOKING (PAY {formatPrice(totalAmount)} ON DELIVERY)</span>
+                    <span>PAY & SECURE PRE-BOOKING • {formatPrice(totalAmount)}</span>
                     <ArrowRight size={14} />
                   </>
                 )}
@@ -711,13 +632,13 @@ export function PreBookingModal({
 
             <div className="space-y-2">
               <span className="text-[10px] tracking-widest text-snake-green uppercase block font-semibold">
-                PRE-BOOKING SECURED & ALLOCATED
+                PAYMENT CONFIRMED // PRE-BOOKING SECURED
               </span>
               <h2 className="text-2xl sm:text-3xl font-display font-bold uppercase text-white tracking-tight">
                 ALLOCATION CONFIRMED.
               </h2>
               <p className="text-xs text-neutral-300 max-w-md mx-auto leading-relaxed">
-                Your inaugural drop piece has been locked in our atelier register. Your serial number is reserved.
+                Your payment was received. Your inaugural drop piece has been locked in our atelier register with a reserved serial number.
               </p>
             </div>
 
@@ -748,24 +669,18 @@ export function PreBookingModal({
                   <span className="text-white">{currentSize} // {currentColor.name} (QTY: {currentQty})</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>AMOUNT:</span>
+                  <span>AMOUNT PAID:</span>
                   <span className="text-snake-green font-bold">{formatPrice(totalAmount)}</span>
                 </div>
                 <div className="flex justify-between items-center pt-1 border-t border-white/5">
                   <span>PAYMENT DISCIPLINE:</span>
-                  <span
-                    className={`font-bold px-2 py-0.5 rounded text-[10px] ${
-                      confirmedBooking?.paymentStatus === 'Paid'
-                        ? 'bg-snake-green/20 text-snake-green border border-snake-green/40'
-                        : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                    }`}
-                  >
-                    {confirmedBooking?.paymentStatus === 'Paid' ? '● PAID ONLINE' : '● CASH ON DELIVERY'}
+                  <span className="font-bold px-2 py-0.5 rounded text-[10px] bg-snake-green/20 text-snake-green border border-snake-green/40">
+                    ● PAID ONLINE VIA RAZORPAY
                   </span>
                 </div>
                 {confirmedBooking?.razorpayPaymentId && (
                   <div className="flex justify-between text-[10px]">
-                    <span>TRANSACTION REF:</span>
+                    <span>RAZORPAY PAYMENT ID:</span>
                     <span className="text-neutral-300 font-mono">{confirmedBooking.razorpayPaymentId}</span>
                   </div>
                 )}

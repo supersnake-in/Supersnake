@@ -125,9 +125,31 @@ export async function POST(req: NextRequest) {
 
     const colorHex = incomingColorHex || product.colors.find((c) => c.name.toLowerCase() === cleanColor.toLowerCase())?.hex || '#0a0a0a';
 
+    // Reject any Cash on Delivery request
+    if (paymentMethod === 'cod' || clientPaymentStatus === 'Pending (COD)') {
+      return NextResponse.json(
+        {
+          error: 'Forbidden',
+          message: 'Cash on delivery is not permitted for exclusive Pre-Launch allocations. Advance payment via Razorpay is mandatory.',
+        },
+        { status: 400 }
+      );
+    }
+
+    // Require Razorpay payment transaction
+    if (!razorpayPaymentId) {
+      return NextResponse.json(
+        {
+          error: 'Payment Required',
+          message: 'An authorized Razorpay transaction ID is required to secure a Pre-Booking allocation.',
+        },
+        { status: 402 }
+      );
+    }
+
     // 8. Cryptographic Razorpay Signature Verification
     let isPaymentVerified = false;
-    if (razorpayPaymentId && razorpayOrderId && razorpaySignature) {
+    if (razorpayOrderId && razorpaySignature) {
       try {
         const key_secret = process.env.RAZORPAY_KEY_SECRET || 'i01HJRIICmZZ77L9GReP0ZHG';
         const payload = `${razorpayOrderId}|${razorpayPaymentId}`;
@@ -147,15 +169,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 9. Determine authoritative payment status
-    let finalPaymentStatus: 'Paid' | 'Pending' | 'Reservation' | 'Pending (COD)' = 'Reservation';
-    if (isPaymentVerified || (razorpayPaymentId && clientPaymentStatus === 'Paid')) {
-      finalPaymentStatus = 'Paid';
-    } else if (paymentMethod === 'cod' || clientPaymentStatus === 'Pending (COD)') {
-      finalPaymentStatus = 'Pending (COD)';
-    } else if (clientPaymentStatus === 'Paid') {
-      finalPaymentStatus = 'Paid';
-    }
+    // Authoritative payment status is always Paid
+    const finalPaymentStatus: 'Paid' = 'Paid';
 
     const newBooking: PreBooking = {
       id: bookingId,

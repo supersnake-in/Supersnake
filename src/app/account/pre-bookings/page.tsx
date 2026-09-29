@@ -233,14 +233,8 @@ export default function CustomerPreBookingsPage() {
 
                       <div className="text-xs font-bold text-white pt-1 flex flex-wrap items-center gap-2">
                         <span>AMOUNT: {formatPrice(b.totalPrice || b.productPrice * b.quantity)}</span>
-                        <span
-                          className={`text-[9px] px-2 py-0.5 rounded font-bold uppercase ${
-                            b.paymentStatus === 'Paid'
-                              ? 'bg-snake-green/20 text-snake-green border border-snake-green/40'
-                              : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                          }`}
-                        >
-                          {b.paymentStatus === 'Paid' ? '● PAID ONLINE' : '● PAY ON DELIVERY'}
+                        <span className="text-[9px] px-2 py-0.5 rounded font-bold uppercase bg-snake-green/20 text-snake-green border border-snake-green/40">
+                          ● PAID VIA RAZORPAY
                         </span>
                       </div>
                       {b.razorpayPaymentId && (
