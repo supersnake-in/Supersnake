@@ -101,11 +101,6 @@ export function Header() {
           {/* Desktop Center Brand Logo */}
           <div className="hidden lg:flex items-center justify-center gap-3">
             <SuperSnakeLogo size="md" showText={true} />
-            {isPreLaunch && (
-              <span className="px-2 py-0.5 text-[9px] font-mono tracking-widest uppercase bg-snake-green/10 text-snake-green border border-snake-green/30 rounded font-semibold">
-                PRE-LAUNCH
-              </span>
-            )}
           </div>
 
           {/* Desktop Right Action Icons */}
@@ -308,11 +303,6 @@ export function Header() {
               ============================================================ */}
           <div className="lg:hidden flex items-center gap-2">
             <SuperSnakeLogo size="sm" showText={true} />
-            {isPreLaunch && (
-              <span className="px-1.5 py-0.5 text-[8px] font-mono tracking-widest uppercase bg-snake-green/10 text-snake-green border border-snake-green/30 rounded font-semibold">
-                PRE-LAUNCH
-              </span>
-            )}
           </div>
 
           <div className="lg:hidden flex items-center gap-1 sm:gap-2">
