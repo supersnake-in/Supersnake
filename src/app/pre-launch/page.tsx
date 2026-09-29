@@ -136,7 +136,7 @@ export default function PreLaunchPage() {
               THE FIRST DROP<br />IS ALMOST HERE.
             </h1>
             <p className="text-xs sm:text-sm font-mono text-neutral-400 max-w-xl mx-auto leading-relaxed pt-2">
-              Engineered around 280–300 GSM Supima® cotton. Architecturally boxy. Monolithic presence. Secure your allocation before the public drop.
+              Architecturally sculpted silhouettes engineered with uncompromising precision and commanding presence. Secure your private allocation before the public release.
             </p>
           </div>
 
