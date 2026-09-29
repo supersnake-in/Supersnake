@@ -42,7 +42,7 @@ const LUXURY_COLOR_PRESETS = [
 const ALL_SIZES: Size[] = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL', '6XL'];
 
 export default function AdminProductsPage() {
-  const { products, addProduct, updateProduct, deleteProduct, setSignatureProduct } = useStore();
+  const { products, addProduct, updateProduct, deleteProduct, setSignatureProduct, toggleProductPreLaunch, storefrontConfig } = useStore();
   const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGender, setSelectedGender] = useState('all');
@@ -52,6 +52,8 @@ export default function AdminProductsPage() {
   const [signatureConfirmProduct, setSignatureConfirmProduct] = useState<Product | null>(null);
   const [isSwitchingSignature, setIsSwitchingSignature] = useState(false);
   const [isSignatureChoice, setIsSignatureChoice] = useState(false);
+  const [isPreLaunchEnabled, setIsPreLaunchEnabled] = useState(false);
+  const [maxPreBookings, setMaxPreBookings] = useState<number | undefined>(undefined);
   const modalBodyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -288,6 +290,8 @@ export default function AdminProductsPage() {
     setIsNewProduct(true);
     setIsBestsellerProduct(false);
     setIsSignatureChoice(false);
+    setIsPreLaunchEnabled(false);
+    setMaxPreBookings(undefined);
     setSelectedSizes(['S', 'M', 'L', 'XL']);
     setSelectedColors([{ name: 'Obsidian Black', hex: '#0a0a0a' }]);
     setUploadedImages([]);
@@ -315,6 +319,8 @@ export default function AdminProductsPage() {
     setIsNewProduct(prod.isNew ?? true);
     setIsBestsellerProduct(Boolean(prod.isBestseller));
     setIsSignatureChoice(Boolean(prod.isSignature));
+    setIsPreLaunchEnabled(Boolean(prod.preLaunchEnabled));
+    setMaxPreBookings(prod.maxPreBookings);
     setSelectedSizes(prod.sizes || ['S', 'M', 'L', 'XL']);
     setSelectedColors(prod.colors || [{ name: 'Obsidian Black', hex: '#0a0a0a' }]);
     setUploadedImages(
@@ -379,6 +385,15 @@ export default function AdminProductsPage() {
 
     const existingProd = editingProductId ? products.find((p) => p.id === editingProductId) : null;
 
+    if (isPreLaunchEnabled && !existingProd?.preLaunchEnabled) {
+      const activePreLaunchCount = products.filter((p) => p.preLaunchEnabled && p.id !== editingProductId).length;
+      const limit = storefrontConfig?.preLaunchProductLimit || 6;
+      if (activePreLaunchCount >= limit) {
+        alert(`You can currently feature a maximum of ${limit} products during Pre-Launch. Disable an existing product before adding another.`);
+        return;
+      }
+    }
+
     const productPayload: Product = {
       id: editingProductId || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `prod-${Date.now()}`),
       name: cleanName,
@@ -411,6 +426,8 @@ export default function AdminProductsPage() {
       variants,
       isNew: isNewProduct,
       isBestseller: isBestsellerProduct,
+      preLaunchEnabled: isPreLaunchEnabled,
+      maxPreBookings: maxPreBookings,
       rating: existingProd?.rating ?? 5.0,
       reviewsCount: existingProd?.reviewsCount ?? 0,
       createdAt: existingProd?.createdAt || new Date().toISOString(),
@@ -545,6 +562,12 @@ export default function AdminProductsPage() {
               <th className="py-3 px-3 w-12 text-center" title="Check to feature in Best Sellers section">
                 <span className="text-[9px] font-bold text-snake-green block">BESTSELLER</span>
               </th>
+              <th className="py-3 px-3 w-28 text-center" title="Pre-Launch Drop Status (Pre-Booking)">
+                <span className="text-[9px] font-bold text-snake-green block">PRE-LAUNCH</span>
+                <span className="text-[8px] text-neutral-500 font-mono">
+                  ({products.filter((p) => p.preLaunchEnabled).length}/{storefrontConfig?.preLaunchProductLimit || 6})
+                </span>
+              </th>
               <th className="py-3 px-3 w-28 text-center" title="Active Homepage Spotlight Garment">
                 <span className="text-[9px] font-bold text-amber-400 block">SIGNATURE</span>
               </th>
@@ -595,6 +618,33 @@ export default function AdminProductsPage() {
                     title={prod.isBestseller ? 'Currently a Best Seller (click to uncheck)' : 'Add to Best Sellers section'}
                     className="w-4 h-4 rounded border-neutral-700 bg-neutral-900 text-snake-green focus:ring-snake-green focus:ring-offset-0 accent-snake-green cursor-pointer"
                   />
+                </td>
+                <td className="py-3 px-3 text-center">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const next = !prod.preLaunchEnabled;
+                      const res = await toggleProductPreLaunch(prod.id, next);
+                      if (!res.success) {
+                        alert(res.error || 'Failed to toggle Pre-Launch status.');
+                      } else {
+                        setNotification(
+                          next
+                            ? `PRE-LAUNCH ENABLED: "${prod.name}" (Featured in Pre-Launch Drop)`
+                            : `PRE-LAUNCH DISABLED: "${prod.name}"`
+                        );
+                        setTimeout(() => setNotification(null), 3500);
+                      }
+                    }}
+                    className={`px-2.5 py-1 rounded text-[9px] font-mono font-bold tracking-wider uppercase transition-all ${
+                      prod.preLaunchEnabled
+                        ? 'bg-snake-green text-black shadow-[0_0_10px_rgba(4,252,33,0.35)] hover:bg-white'
+                        : 'bg-neutral-900 text-neutral-400 border border-neutral-700 hover:border-neutral-500 hover:text-white'
+                    }`}
+                    title={prod.preLaunchEnabled ? 'Featured in Pre-Launch Drop (Click to turn OFF)' : 'Disabled in Pre-Launch (Click to turn ON)'}
+                  >
+                    {prod.preLaunchEnabled ? 'ON' : 'OFF'}
+                  </button>
                 </td>
                 <td className="py-3 px-3 text-center">
                   {prod.isSignature ? (
@@ -1368,6 +1418,42 @@ export default function AdminProductsPage() {
                     />
                   </div>
                 )}
+
+                {/* SECTION 12: PRE-LAUNCH DROP & PRE-BOOKING TOGGLE */}
+                <div className="p-4 bg-neutral-950 border border-neutral-800 rounded-lg flex items-center justify-between">
+                  <div>
+                    <label htmlFor="preLaunchToggle" className="text-white font-bold uppercase text-[11px] block cursor-pointer flex items-center gap-1.5">
+                      <Tag size={13} className="text-snake-green" />
+                      FEATURE IN PRE-LAUNCH FIRST DROP (PRE-BOOKING)
+                    </label>
+                    <span className="text-[10px] text-neutral-500 block mt-0.5">
+                      When enabled, customers can discover and pre-book this garment during Pre-Launch Mode.
+                      (Limit: {storefrontConfig?.preLaunchProductLimit || 6} active pieces)
+                    </span>
+                  </div>
+                  <input
+                    id="preLaunchToggle"
+                    type="checkbox"
+                    checked={isPreLaunchEnabled}
+                    onChange={(e) => {
+                      const next = e.target.checked;
+                      if (next) {
+                        const currentCount = products.filter(
+                          (p) => p.preLaunchEnabled && p.id !== editingProductId
+                        ).length;
+                        const limit = storefrontConfig?.preLaunchProductLimit || 6;
+                        if (currentCount >= limit) {
+                          alert(
+                            `You can currently feature a maximum of ${limit} products during Pre-Launch. Disable an existing product before adding another.`
+                          );
+                          return;
+                        }
+                      }
+                      setIsPreLaunchEnabled(next);
+                    }}
+                    className="w-5 h-5 rounded border-neutral-700 bg-neutral-900 text-snake-green focus:ring-snake-green focus:ring-offset-0 accent-snake-green cursor-pointer"
+                  />
+                </div>
               </form>
             </div>
 

@@ -22,6 +22,7 @@ import {
   ShieldAlert,
   ShoppingCart,
   AlertTriangle,
+  Calendar,
 } from 'lucide-react';
 import { SuperSnakeLogo } from '@/components/brand/SuperSnakeLogo';
 import { useAuth } from '@/lib/auth-context';
@@ -30,7 +31,7 @@ import { useStore } from '@/lib/store';
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, profile, isLoading, isAdmin } = useAuth();
-  const { defectReports, abandonedCarts, maintenanceConfig } = useStore();
+  const { defectReports, abandonedCarts, maintenanceConfig, preBookings } = useStore();
 
   const pendingDefectsCount = defectReports.filter(
     (d) => d.status === 'Pending Review'
@@ -40,9 +41,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     (c) => c.status === 'Active' || c.status === 'Abandoned'
   ).length;
 
+  const activePreBookingsCount = preBookings.filter(
+    (b) => b.status === 'CONFIRMED' || b.status === 'CONTACTED'
+  ).length;
+
   const navItems = [
     { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
     { label: 'Products', href: '/admin/products', icon: Shirt },
+    {
+      label: 'Pre-Bookings',
+      href: '/admin/pre-bookings',
+      icon: Calendar,
+      badge: activePreBookingsCount,
+    },
     { label: 'Inventory', href: '/admin/inventory', icon: Boxes },
     { label: 'Orders', href: '/admin/orders', icon: ShoppingBag },
     {

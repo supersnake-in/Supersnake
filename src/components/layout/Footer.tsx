@@ -17,7 +17,8 @@ interface NavColumn {
 
 export function Footer() {
   const pathname = usePathname();
-  const { socialConfig, addSubscriber } = useStore();
+  const { socialConfig, addSubscriber, storefrontConfig } = useStore();
+  const isPreLaunch = storefrontConfig?.storefrontMode === 'PRE_LAUNCH';
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
@@ -31,14 +32,21 @@ export function Footer() {
     {
       id: 'shop',
       number: '01',
-      title: 'SHOP',
-      links: [
-        { label: 'ALL T-SHIRTS', href: '/shop' },
-        { label: 'MEN', href: '/men' },
-        { label: 'WOMEN', href: '/women' },
-        { label: 'NEW DROPS', href: '/new-drops' },
-        { label: 'BESTSELLERS', href: '/bestsellers' },
-      ],
+      title: isPreLaunch ? 'THE FIRST DROP' : 'SHOP',
+      links: isPreLaunch
+        ? [
+            { label: 'PRE-BOOK COLLECTION', href: '/#pre-book-grid' },
+            { label: 'MY PRE-BOOKINGS', href: '/account/pre-bookings' },
+            { label: 'ATELIER CRAFT', href: '/about' },
+            { label: 'OFFICIAL DROP INTEL', href: '/#countdown' },
+          ]
+        : [
+            { label: 'ALL T-SHIRTS', href: '/shop' },
+            { label: 'MEN', href: '/men' },
+            { label: 'WOMEN', href: '/women' },
+            { label: 'NEW DROPS', href: '/new-drops' },
+            { label: 'BESTSELLERS', href: '/bestsellers' },
+          ],
     },
     {
       id: 'customer-care',

@@ -15,10 +15,11 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement>(null);
-  const { cartCount, wishlist, openCart, openSearch } = useStore();
+  const { cartCount, wishlist, openCart, openSearch, storefrontConfig } = useStore();
   const { user, profile, signOut, isAdmin } = useAuth();
 
   const isStorefront = !pathname.startsWith('/admin') && !pathname.startsWith('/maintenance');
+  const isPreLaunch = storefrontConfig?.storefrontMode === 'PRE_LAUNCH';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -47,12 +48,19 @@ export function Header() {
 
   if (!isStorefront) return null;
 
-  const navLinks = [
-    { label: 'SHOP', href: '/shop' },
-    { label: 'MEN', href: '/men' },
-    { label: 'WOMEN', href: '/women' },
-    { label: 'NEW DROPS', href: '/new-drops' },
-  ];
+  const navLinks = isPreLaunch
+    ? [
+        { label: 'HOME', href: '/' },
+        { label: 'THE FIRST DROP', href: '/#pre-book-grid' },
+        { label: 'ATELIER', href: '/about' },
+        { label: 'CONTACT', href: '/contact' },
+      ]
+    : [
+        { label: 'SHOP', href: '/shop' },
+        { label: 'MEN', href: '/men' },
+        { label: 'WOMEN', href: '/women' },
+        { label: 'NEW DROPS', href: '/new-drops' },
+      ];
 
   return (
     <>
@@ -91,8 +99,13 @@ export function Header() {
           </nav>
 
           {/* Desktop Center Brand Logo */}
-          <div className="hidden lg:flex items-center justify-center">
+          <div className="hidden lg:flex items-center justify-center gap-3">
             <SuperSnakeLogo size="md" showText={true} />
+            {isPreLaunch && (
+              <span className="px-2 py-0.5 text-[9px] font-mono tracking-widest uppercase bg-snake-green/10 text-snake-green border border-snake-green/30 rounded font-semibold">
+                PRE-LAUNCH
+              </span>
+            )}
           </div>
 
           {/* Desktop Right Action Icons */}
@@ -159,6 +172,17 @@ export function Header() {
                         >
                           <span>ACCOUNT OVERVIEW</span>
                           <ArrowRight size={12} className="text-neutral-500" />
+                        </Link>
+                        <Link
+                          href="/account/pre-bookings"
+                          onClick={() => setAccountMenuOpen(false)}
+                          className="flex items-center justify-between p-2 rounded hover:bg-white/5 text-snake-green font-medium transition-colors"
+                        >
+                          <span className="flex items-center gap-1.5">
+                            <span>MY PRE-BOOKINGS</span>
+                            <span className="w-1.5 h-1.5 rounded-full bg-snake-green" />
+                          </span>
+                          <ArrowRight size={12} className="text-snake-green" />
                         </Link>
                         <Link
                           href="/account/orders"
@@ -282,8 +306,13 @@ export function Header() {
               LEFT: SuperSnake logo
               RIGHT: Search, Bag, Menu
               ============================================================ */}
-          <div className="lg:hidden flex items-center">
+          <div className="lg:hidden flex items-center gap-2">
             <SuperSnakeLogo size="sm" showText={true} />
+            {isPreLaunch && (
+              <span className="px-1.5 py-0.5 text-[8px] font-mono tracking-widest uppercase bg-snake-green/10 text-snake-green border border-snake-green/30 rounded font-semibold">
+                PRE-LAUNCH
+              </span>
+            )}
           </div>
 
           <div className="lg:hidden flex items-center gap-1 sm:gap-2">
@@ -342,16 +371,25 @@ export function Header() {
 
             {/* Main Navigation Links */}
             <nav className="flex flex-col space-y-4">
-              {[
-                { label: 'SHOP', href: '/shop' },
-                { label: 'MEN', href: '/men' },
-                { label: 'WOMEN', href: '/women' },
-                { label: 'NEW DROPS', href: '/new-drops' },
-                { label: 'BESTSELLERS', href: '/bestsellers' },
-                { label: 'ABOUT', href: '/about' },
-                { label: 'SIZE GUIDE', href: '/size-guide' },
-                { label: 'CONTACT', href: '/contact' },
-              ].map((item, idx) => (
+              {(isPreLaunch
+                ? [
+                    { label: 'HOME', href: '/' },
+                    { label: 'THE FIRST DROP', href: '/#pre-book-grid' },
+                    { label: 'MY PRE-BOOKINGS', href: '/account/pre-bookings' },
+                    { label: 'ATELIER CRAFT', href: '/about' },
+                    { label: 'CONTACT', href: '/contact' },
+                  ]
+                : [
+                    { label: 'SHOP', href: '/shop' },
+                    { label: 'MEN', href: '/men' },
+                    { label: 'WOMEN', href: '/women' },
+                    { label: 'NEW DROPS', href: '/new-drops' },
+                    { label: 'BESTSELLERS', href: '/bestsellers' },
+                    { label: 'ABOUT', href: '/about' },
+                    { label: 'SIZE GUIDE', href: '/size-guide' },
+                    { label: 'CONTACT', href: '/contact' },
+                  ]
+              ).map((item, idx) => (
                 <Link
                   key={item.href}
                   href={item.href}
@@ -448,16 +486,27 @@ export function Header() {
                   <span>SEARCH</span>
                 </button>
 
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    openCart();
-                  }}
-                  className="p-3 bg-white/[0.03] border border-white/10 rounded hover:border-snake-green text-neutral-300 hover:text-white flex items-center gap-2.5 transition-colors active:scale-95 text-left"
-                >
-                  <ShoppingBag size={16} className="text-snake-green" />
-                  <span>BAG ({cartCount})</span>
-                </button>
+                {isPreLaunch ? (
+                  <Link
+                    href="/account/pre-bookings"
+                    className="p-3 bg-snake-green/10 border border-snake-green/40 rounded text-snake-green flex items-center gap-2.5 transition-colors active:scale-95 text-left font-semibold"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-snake-green animate-pulse" />
+                    <span>PRE-BOOKINGS</span>
+                  </Link>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      openCart();
+                    }}
+                    className="p-3 bg-white/[0.03] border border-white/10 rounded hover:border-snake-green text-neutral-300 hover:text-white flex items-center gap-2.5 transition-colors active:scale-95 text-left"
+                  >
+                    <ShoppingBag size={16} className="text-snake-green" />
+                    <span>BAG ({cartCount})</span>
+                  </button>
+                )}
 
                 {isAdmin && (
                   <Link

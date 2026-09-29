@@ -27,6 +27,7 @@ import { formatPrice, BRAND } from '@/lib/design-tokens';
 import { Size, ProductImage, Product } from '@/lib/types';
 import { SizeGuideModal } from '@/components/product/SizeGuideModal';
 import { ProductCard } from '@/components/product/ProductCard';
+import { PreBookingModal } from '@/components/pre-booking/PreBookingModal';
 import { saveLastCheckout } from '@/lib/storage-helper';
 
 interface ProductDetailClientProps {
@@ -36,7 +37,7 @@ interface ProductDetailClientProps {
 
 export function ProductDetailClient({ initialProduct, slug }: ProductDetailClientProps) {
   const router = useRouter();
-  const { products, addToCart, setCartItem, isInWishlist, toggleWishlist } = useStore();
+  const { products, addToCart, setCartItem, isInWishlist, toggleWishlist, storefrontConfig } = useStore();
   const storeProduct = products.find((p) => p.slug === slug);
   const product = storeProduct || initialProduct;
 
@@ -44,12 +45,16 @@ export function ProductDetailClient({ initialProduct, slug }: ProductDetailClien
     notFound();
   }
 
+  const isPreLaunchMode = storefrontConfig?.storefrontMode === 'PRE_LAUNCH';
+  const isPreBookingEligible = isPreLaunchMode && Boolean(product.preLaunchEnabled);
+
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [selectedColor, setSelectedColor] = useState(product.colors[0] || { name: 'Obsidian Black', hex: '#0a0a0a' });
   const [selectedSize, setSelectedSize] = useState<Size>(product.sizes[2] || product.sizes[0] || 'L');
   const [quantity, setQuantity] = useState(1);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [preBookingModalOpen, setPreBookingModalOpen] = useState(false);
   const mobileCarouselRef = useRef<HTMLDivElement>(null);
 
   // Deduplicate product images by URL to ensure no repeated shots are ever displayed
@@ -173,10 +178,19 @@ export function ProductDetailClient({ initialProduct, slug }: ProductDetailClien
         <nav className="flex items-center gap-2 text-[10px] sm:text-[11px] font-mono tracking-wider text-neutral-500 mb-6 sm:mb-8 uppercase overflow-x-auto whitespace-nowrap pb-1">
           <Link href="/" className="hover:text-white transition-colors">HOME</Link>
           <span>/</span>
-          <Link href="/shop" className="hover:text-white transition-colors">T-SHIRTS</Link>
-          <span>/</span>
-          <Link href={`/${product.gender}`} className="hover:text-white transition-colors">{product.gender}</Link>
-          <span>/</span>
+          {isPreLaunchMode ? (
+            <>
+              <Link href="/pre-launch#pre-book-grid" className="text-snake-green hover:underline">FIRST DROP // PRE-LAUNCH</Link>
+              <span>/</span>
+            </>
+          ) : (
+            <>
+              <Link href="/shop" className="hover:text-white transition-colors">T-SHIRTS</Link>
+              <span>/</span>
+              <Link href={`/${product.gender}`} className="hover:text-white transition-colors">{product.gender}</Link>
+              <span>/</span>
+            </>
+          )}
           <span className="text-neutral-300 font-semibold truncate">{product.name}</span>
         </nav>
 
@@ -440,44 +454,108 @@ export function ProductDetailClient({ initialProduct, slug }: ProductDetailClien
 
             {/* Quantity Selector & Action Buttons */}
             <div className="space-y-3 pt-2">
-              <div className="flex gap-3">
-                {/* Quantity */}
-                <div className="flex items-center border border-white/20 rounded bg-neutral-950 px-3">
-                  <button
-                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                    className="text-neutral-400 hover:text-white px-2 py-3"
-                    aria-label="Decrease quantity"
-                  >
-                    -
-                  </button>
-                  <span className="font-mono text-xs text-white px-2 min-w-[24px] text-center">
-                    {quantity}
-                  </span>
-                  <button
-                    onClick={() => setQuantity((q) => q + 1)}
-                    className="text-neutral-400 hover:text-white px-2 py-3"
-                    aria-label="Increase quantity"
-                  >
-                    +
-                  </button>
-                </div>
+              {isPreLaunchMode ? (
+                isPreBookingEligible ? (
+                  <div className="space-y-3">
+                    <div className="flex gap-3">
+                      {/* Quantity */}
+                      <div className="flex items-center border border-white/20 rounded bg-neutral-950 px-3">
+                        <button
+                          onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                          className="text-neutral-400 hover:text-white px-2 py-3"
+                          aria-label="Decrease quantity"
+                        >
+                          -
+                        </button>
+                        <span className="font-mono text-xs text-white px-2 min-w-[24px] text-center">
+                          {quantity}
+                        </span>
+                        <button
+                          onClick={() => setQuantity((q) => q + 1)}
+                          className="text-neutral-400 hover:text-white px-2 py-3"
+                          aria-label="Increase quantity"
+                        >
+                          +
+                        </button>
+                      </div>
 
-                {/* Add To Bag */}
-                <button
-                  onClick={handleAddToBag}
-                  className="flex-1 py-4 bg-snake-green text-black font-mono text-xs tracking-widest font-bold hover:bg-white transition-all duration-300 uppercase shadow-[0_0_20px_rgba(4,252,33,0.3)]"
-                >
-                  ADD TO BAG
-                </button>
-              </div>
+                      {/* Pre-Book Now */}
+                      <button
+                        onClick={() => {
+                          if (!selectedSize) {
+                            setSizeError(true);
+                            return;
+                          }
+                          setSizeError(false);
+                          setPreBookingModalOpen(true);
+                        }}
+                        className="flex-1 py-4 bg-snake-green text-black font-mono text-xs tracking-widest font-bold hover:bg-white transition-all duration-300 uppercase shadow-[0_0_25px_rgba(4,252,33,0.35)] flex items-center justify-center gap-2"
+                      >
+                        <span>PRE-BOOK NOW // FIRST DROP</span>
+                        <ArrowRight size={14} />
+                      </button>
+                    </div>
 
-              {/* Buy Now Direct */}
-              <button
-                onClick={handleBuyNow}
-                className="w-full py-3.5 border border-white/20 hover:border-snake-green text-white hover:text-snake-green font-mono text-xs tracking-widest uppercase transition-all"
-              >
-                BUY NOW DIRECT →
-              </button>
+                    <div className="p-3 bg-neutral-950 border border-white/10 rounded flex items-center justify-between text-[11px] font-mono text-neutral-400">
+                      <span>EXCLUSIVE RESERVATION:</span>
+                      <span className="text-snake-green font-semibold">ZERO ADVANCE REQUIRED • FREE PRIORITY SHIPPING</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <button
+                      disabled
+                      className="w-full py-4 bg-white/10 text-neutral-400 font-mono text-xs tracking-widest font-semibold cursor-not-allowed uppercase border border-white/10"
+                    >
+                      DROPPING AT OFFICIAL LAUNCH
+                    </button>
+                    <p className="text-[11px] font-mono text-neutral-500 text-center">
+                      Pre-booking is currently reserved for select collection pieces. This item drops with the official launch.
+                    </p>
+                  </div>
+                )
+              ) : (
+                <>
+                  <div className="flex gap-3">
+                    {/* Quantity */}
+                    <div className="flex items-center border border-white/20 rounded bg-neutral-950 px-3">
+                      <button
+                        onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                        className="text-neutral-400 hover:text-white px-2 py-3"
+                        aria-label="Decrease quantity"
+                      >
+                        -
+                      </button>
+                      <span className="font-mono text-xs text-white px-2 min-w-[24px] text-center">
+                        {quantity}
+                      </span>
+                      <button
+                        onClick={() => setQuantity((q) => q + 1)}
+                        className="text-neutral-400 hover:text-white px-2 py-3"
+                        aria-label="Increase quantity"
+                      >
+                        +
+                      </button>
+                    </div>
+
+                    {/* Add To Bag */}
+                    <button
+                      onClick={handleAddToBag}
+                      className="flex-1 py-4 bg-snake-green text-black font-mono text-xs tracking-widest font-bold hover:bg-white transition-all duration-300 uppercase shadow-[0_0_20px_rgba(4,252,33,0.3)]"
+                    >
+                      ADD TO BAG
+                    </button>
+                  </div>
+
+                  {/* Buy Now Direct */}
+                  <button
+                    onClick={handleBuyNow}
+                    className="w-full py-3.5 border border-white/20 hover:border-snake-green text-white hover:text-snake-green font-mono text-xs tracking-widest uppercase transition-all"
+                  >
+                    BUY NOW DIRECT →
+                  </button>
+                </>
+              )}
             </div>
 
             {/* Trust Badges */}
@@ -742,13 +820,45 @@ export function ProductDetailClient({ initialProduct, slug }: ProductDetailClien
           </span>
         </div>
 
-        <button
-          onClick={handleAddToBag}
-          className="px-6 py-3 bg-snake-green text-black font-mono text-xs tracking-widest font-bold uppercase rounded hover:bg-white active:scale-95 transition-all shadow-[0_0_15px_rgba(4,252,33,0.3)]"
-        >
-          ADD TO BAG
-        </button>
+        {isPreLaunchMode ? (
+          isPreBookingEligible ? (
+            <button
+              onClick={() => {
+                if (!selectedSize) {
+                  setSizeError(true);
+                  return;
+                }
+                setSizeError(false);
+                setPreBookingModalOpen(true);
+              }}
+              className="px-6 py-3 bg-snake-green text-black font-mono text-xs tracking-widest font-bold uppercase rounded hover:bg-white active:scale-95 transition-all shadow-[0_0_15px_rgba(4,252,33,0.3)]"
+            >
+              PRE-BOOK NOW
+            </button>
+          ) : (
+            <span className="text-[10px] font-mono text-neutral-400 uppercase border border-white/10 px-3 py-2 bg-white/5">
+              DROPS AT LAUNCH
+            </span>
+          )
+        ) : (
+          <button
+            onClick={handleAddToBag}
+            className="px-6 py-3 bg-snake-green text-black font-mono text-xs tracking-widest font-bold uppercase rounded hover:bg-white active:scale-95 transition-all shadow-[0_0_15px_rgba(4,252,33,0.3)]"
+          >
+            ADD TO BAG
+          </button>
+        )}
       </div>
+
+      {/* Pre-Booking Reservation Modal */}
+      <PreBookingModal
+        product={product}
+        selectedColor={selectedColor}
+        selectedSize={selectedSize}
+        quantity={quantity}
+        isOpen={preBookingModalOpen}
+        onClose={() => setPreBookingModalOpen(false)}
+      />
     </div>
   );
 }

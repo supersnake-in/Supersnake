@@ -75,6 +75,8 @@ export interface Product {
   isBestseller?: boolean;
   isSpotlight?: boolean;
   isSignature?: boolean;
+  preLaunchEnabled?: boolean;
+  maxPreBookings?: number;
   rating: number;
   reviewsCount: number;
   createdAt: string;
@@ -277,5 +279,67 @@ export interface MaintenanceConfig {
   updatedAt: string;
   updatedBy: string;
 }
+
+export type StorefrontMode = 'PRE_LAUNCH' | 'LIVE' | 'MAINTENANCE';
+
+export interface StorefrontConfig {
+  id: string;
+  storefrontMode: StorefrontMode;
+  launchDate: string; // e.g. "2026-10-14"
+  launchTime: string; // e.g. "10:00"
+  launchTimezone: string; // e.g. "IST"
+  automaticLaunch: boolean;
+  preLaunchProductLimit: number;
+  maintenanceMessage: string;
+  estimatedRestoreTime: string | null;
+  updatedAt: string;
+  updatedBy: string;
+}
+
+export type PreBookingStatus =
+  | 'CONFIRMED'
+  | 'CONTACTED'
+  | 'CONVERTED_TO_ORDER'
+  | 'CANCELLED';
+
+export interface PreBooking {
+  id: string;
+  bookingNumber: string;
+  referenceCode: string;
+  customerId?: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  streetAddress?: string;
+  city: string;
+  state: string;
+  pincode: string;
+  productId: string;
+  productName: string;
+  productSlug: string;
+  productImage?: string;
+  colorName: string;
+  colorHex?: string;
+  size: string;
+  quantity: number;
+  unitPrice: number;
+  productPrice: number;
+  totalAmount: number;
+  totalPrice: number;
+  paymentStatus: 'Paid' | 'Pending' | 'Reservation';
+  bookingStatus: PreBookingStatus;
+  status: PreBookingStatus;
+  shippingAddress?: {
+    street?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
+  };
+  adminNotes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 
 

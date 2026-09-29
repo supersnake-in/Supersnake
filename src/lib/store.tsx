@@ -15,6 +15,10 @@ import {
   AbandonedCartItem,
   AbandonedCartStatus,
   MaintenanceConfig,
+  StorefrontMode,
+  StorefrontConfig,
+  PreBooking,
+  PreBookingStatus,
 } from './types';
 import {
   fetchProductsFromSupabase,
@@ -41,6 +45,12 @@ import {
   markCartAsRecoveredInSupabase,
   fetchMaintenanceConfigFromSupabase,
   updateMaintenanceConfigInSupabase,
+  fetchStorefrontConfigFromSupabase,
+  updateStorefrontConfigInSupabase,
+  toggleProductPreLaunchInSupabase,
+  fetchPreBookingsFromSupabase,
+  createPreBookingInSupabase,
+  updatePreBookingInSupabase,
 } from './supabase/db';
 import {
   saveCartToStorage,
@@ -179,6 +189,21 @@ export const DEFAULT_SOCIAL_CONFIG: SocialConfig = {
 
 export const DEFAULT_MAINTENANCE_CONFIG: MaintenanceConfig = {
   maintenanceMode: false,
+  maintenanceMessage:
+    'We are calibrating the atelier for our next heavyweight drop. The portal will resume normal operations shortly.',
+  estimatedRestoreTime: null,
+  updatedAt: new Date().toISOString(),
+  updatedBy: 'system',
+};
+
+export const DEFAULT_STOREFRONT_CONFIG: StorefrontConfig = {
+  id: 'default',
+  storefrontMode: 'PRE_LAUNCH',
+  launchDate: '2026-10-14',
+  launchTime: '10:00',
+  launchTimezone: 'IST',
+  automaticLaunch: false,
+  preLaunchProductLimit: 6,
   maintenanceMessage:
     'We are calibrating the atelier for our next heavyweight drop. The portal will resume normal operations shortly.',
   estimatedRestoreTime: null,
@@ -327,6 +352,18 @@ interface StoreContextType {
   maintenanceConfig: MaintenanceConfig;
   updateMaintenanceConfig: (updates: Partial<MaintenanceConfig>, adminEmail?: string) => Promise<{ success: boolean; error?: string }>;
   refreshMaintenanceConfig: () => Promise<MaintenanceConfig>;
+
+  // Storefront Mode & Pre-Launch
+  storefrontConfig: StorefrontConfig;
+  updateStorefrontConfig: (updates: Partial<StorefrontConfig>, adminEmail?: string) => Promise<{ success: boolean; error?: string }>;
+  refreshStorefrontConfig: () => Promise<StorefrontConfig>;
+  toggleProductPreLaunch: (productId: string, enabled: boolean) => Promise<{ success: boolean; error?: string }>;
+
+  // Pre-Bookings
+  preBookings: PreBooking[];
+  createPreBooking: (booking: Omit<PreBooking, 'id' | 'bookingNumber' | 'createdAt' | 'updatedAt' | 'bookingStatus'>) => Promise<PreBooking>;
+  updatePreBookingStatus: (id: string, bookingStatus: PreBookingStatus, notes?: string, paymentStatus?: 'Paid' | 'Pending' | 'Reservation') => Promise<boolean>;
+  refreshPreBookings: () => Promise<PreBooking[]>;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -345,6 +382,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [defectReports, setDefectReports] = useState<DefectReport[]>([]);
   const [abandonedCarts, setAbandonedCarts] = useState<AbandonedCart[]>([]);
   const [maintenanceConfig, setMaintenanceConfig] = useState<MaintenanceConfig>(DEFAULT_MAINTENANCE_CONFIG);
+  const [storefrontConfig, setStorefrontConfig] = useState<StorefrontConfig>(DEFAULT_STOREFRONT_CONFIG);
+  const [preBookings, setPreBookings] = useState<PreBooking[]>([]);
   const [freeShippingThreshold, setFreeShippingThresholdState] = useState<number>(BRAND.freeShippingThreshold);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -516,6 +555,28 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           const parsedMaintenance = JSON.parse(savedMaintenance);
           if (parsedMaintenance && typeof parsedMaintenance.maintenanceMode === 'boolean') {
             setMaintenanceConfig(parsedMaintenance);
+          }
+        } catch (e) {}
+      }
+
+      // Storefront configuration from browser storage
+      const savedStorefront = localStorage.getItem('supersnake_storefront_config');
+      if (savedStorefront) {
+        try {
+          const parsedSf = JSON.parse(savedStorefront);
+          if (parsedSf && parsedSf.storefrontMode) {
+            setStorefrontConfig((prev) => ({ ...prev, ...parsedSf }));
+          }
+        } catch (e) {}
+      }
+
+      // Pre-bookings from browser storage
+      const savedPreBookings = localStorage.getItem('supersnake_pre_bookings');
+      if (savedPreBookings) {
+        try {
+          const parsedPb = JSON.parse(savedPreBookings);
+          if (Array.isArray(parsedPb)) {
+            setPreBookings(parsedPb);
           }
         } catch (e) {}
       }
@@ -704,6 +765,46 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           })
           .catch(() => {});
       });
+
+    // Fetch dynamic storefront configuration from API (or fallback to Supabase)
+    fetch('/api/storefront-mode')
+      .then(async (res) => {
+        if (res.ok) {
+          const cfg = await res.json();
+          if (cfg && cfg.storefrontMode) {
+            setStorefrontConfig(cfg);
+            try {
+              localStorage.setItem('supersnake_storefront_config', JSON.stringify(cfg));
+            } catch (e) {}
+            return;
+          }
+        }
+        throw new Error('API storefront mode fallback');
+      })
+      .catch(() => {
+        fetchStorefrontConfigFromSupabase()
+          .then((dbConfig) => {
+            if (dbConfig) {
+              setStorefrontConfig(dbConfig);
+              try {
+                localStorage.setItem('supersnake_storefront_config', JSON.stringify(dbConfig));
+              } catch (e) {}
+            }
+          })
+          .catch(() => {});
+      });
+
+    // Fetch dynamic pre-bookings from Supabase
+    fetchPreBookingsFromSupabase()
+      .then((bookings) => {
+        if (bookings && bookings.length > 0) {
+          setPreBookings(bookings);
+          try {
+            localStorage.setItem('supersnake_pre_bookings', JSON.stringify(bookings));
+          } catch (e) {}
+        }
+      })
+      .catch(() => {});
 
     // Free shipping threshold sync from localStorage
     try {
@@ -1696,6 +1797,214 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return { success: true };
   };
 
+  const refreshStorefrontConfig = async (): Promise<StorefrontConfig> => {
+    try {
+      const res = await fetch('/api/storefront-mode');
+      if (res.ok) {
+        const cfg = await res.json();
+        if (cfg && cfg.storefrontMode) {
+          setStorefrontConfig(cfg);
+          try {
+            localStorage.setItem('supersnake_storefront_config', JSON.stringify(cfg));
+          } catch (e) {}
+          return cfg;
+        }
+      }
+    } catch (e) {}
+
+    try {
+      const dbConfig = await fetchStorefrontConfigFromSupabase();
+      if (dbConfig) {
+        setStorefrontConfig(dbConfig);
+        try {
+          localStorage.setItem('supersnake_storefront_config', JSON.stringify(dbConfig));
+        } catch (e) {}
+        return dbConfig;
+      }
+    } catch (e) {}
+
+    return storefrontConfig;
+  };
+
+  const updateStorefrontConfig = async (
+    updates: Partial<StorefrontConfig>,
+    adminEmail?: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    const userEmail = adminEmail || 'supersnake.in@gmail.com';
+    const updated: StorefrontConfig = {
+      ...storefrontConfig,
+      ...updates,
+      updatedAt: new Date().toISOString(),
+      updatedBy: userEmail,
+    };
+
+    // Optimistic local update
+    setStorefrontConfig(updated);
+    if (updates.storefrontMode) {
+      setMaintenanceConfig((prev) => ({
+        ...prev,
+        maintenanceMode: updates.storefrontMode === 'MAINTENANCE',
+      }));
+    }
+    try {
+      localStorage.setItem('supersnake_storefront_config', JSON.stringify(updated));
+      window.dispatchEvent(new Event('supersnake_storefront_change'));
+    } catch (e) {}
+
+    try {
+      const res = await fetch('/api/admin/storefront-mode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...updates,
+          adminEmail: userEmail,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success && data.config) {
+        setStorefrontConfig(data.config);
+        try {
+          localStorage.setItem('supersnake_storefront_config', JSON.stringify(data.config));
+        } catch (e) {}
+        return { success: true };
+      }
+
+      if (!res.ok) {
+        const directSuccess = await updateStorefrontConfigInSupabase(updated, userEmail);
+        if (directSuccess) return { success: true };
+        return { success: false, error: data.message || 'Failed to update storefront mode' };
+      }
+    } catch (err: any) {
+      console.warn('API storefront mode update failed, writing directly to Supabase:', err);
+      try {
+        const directSuccess = await updateStorefrontConfigInSupabase(updated, userEmail);
+        if (directSuccess) return { success: true };
+      } catch (dbErr: any) {
+        return { success: false, error: dbErr?.message || 'Database connection error' };
+      }
+    }
+
+    return { success: true };
+  };
+
+  const toggleProductPreLaunch = async (
+    productId: string,
+    enabled: boolean
+  ): Promise<{ success: boolean; error?: string }> => {
+    if (enabled) {
+      const currentCount = products.filter((p) => p.preLaunchEnabled && p.id !== productId).length;
+      const limit = storefrontConfig.preLaunchProductLimit || 6;
+      if (currentCount >= limit) {
+        return {
+          success: false,
+          error: `You can currently feature a maximum of ${limit} products during Pre-Launch. Disable an existing product before adding another.`,
+        };
+      }
+    }
+
+    // Update in memory and localStorage
+    setProducts((prev) => {
+      const next = prev.map((p) => (p.id === productId ? { ...p, preLaunchEnabled: enabled } : p));
+      saveProductsToLocalStorage(next);
+      return next;
+    });
+
+    try {
+      await toggleProductPreLaunchInSupabase(productId, enabled);
+    } catch (e) {
+      console.warn('Could not sync pre-launch toggle to Supabase:', e);
+    }
+
+    return { success: true };
+  };
+
+  const refreshPreBookings = async (): Promise<PreBooking[]> => {
+    try {
+      const data = await fetchPreBookingsFromSupabase();
+      if (data && data.length > 0) {
+        setPreBookings(data);
+        try {
+          localStorage.setItem('supersnake_pre_bookings', JSON.stringify(data));
+        } catch (e) {}
+        return data;
+      }
+    } catch (e) {}
+    return preBookings;
+  };
+
+  const createPreBooking = async (
+    bookingData: Omit<PreBooking, 'id' | 'bookingNumber' | 'createdAt' | 'updatedAt' | 'bookingStatus'>
+  ): Promise<PreBooking> => {
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    const bookingNumber = `SS-PB-${new Date().getFullYear()}-${randomSuffix}`;
+    const newBooking: PreBooking = {
+      ...bookingData,
+      id: `pb-${Date.now()}-${randomSuffix}`,
+      bookingNumber,
+      referenceCode: bookingNumber,
+      bookingStatus: 'CONFIRMED',
+      status: 'CONFIRMED',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    setPreBookings((prev) => {
+      const next = [newBooking, ...prev];
+      try {
+        localStorage.setItem('supersnake_pre_bookings', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+
+    try {
+      await createPreBookingInSupabase(newBooking);
+    } catch (err) {
+      console.warn('Could not persist pre-booking directly to Supabase:', err);
+    }
+
+    return newBooking;
+  };
+
+  const updatePreBookingStatus = async (
+    id: string,
+    bookingStatus: PreBookingStatus,
+    notes?: string,
+    paymentStatus?: 'Paid' | 'Pending' | 'Reservation'
+  ): Promise<boolean> => {
+    setPreBookings((prev) => {
+      const next = prev.map((b) => {
+        if (b.id === id) {
+          return {
+            ...b,
+            bookingStatus,
+            status: bookingStatus,
+            ...(notes !== undefined ? { adminNotes: notes } : {}),
+            ...(paymentStatus !== undefined ? { paymentStatus } : {}),
+            updatedAt: new Date().toISOString(),
+          };
+        }
+        return b;
+      });
+      try {
+        localStorage.setItem('supersnake_pre_bookings', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+
+    try {
+      await updatePreBookingInSupabase(id, {
+        bookingStatus,
+        status: bookingStatus,
+        adminNotes: notes,
+        paymentStatus,
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   return (
     <StoreContext.Provider
       value={{
@@ -1752,6 +2061,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         maintenanceConfig,
         updateMaintenanceConfig,
         refreshMaintenanceConfig,
+        storefrontConfig,
+        updateStorefrontConfig,
+        refreshStorefrontConfig,
+        toggleProductPreLaunch,
+        preBookings,
+        createPreBooking,
+        updatePreBookingStatus,
+        refreshPreBookings,
       }}
     >
       {children}

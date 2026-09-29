@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// In-memory Edge cache to ensure sub-millisecond middleware execution
-let edgeMaintenanceState = {
-  active: false,
-  message: '',
+export type StorefrontMode = 'PRE_LAUNCH' | 'LIVE' | 'MAINTENANCE';
+
+// In-memory Edge cache for sub-millisecond middleware execution
+let edgeStorefrontState = {
+  mode: 'PRE_LAUNCH' as StorefrontMode,
+  launchDate: '2026-10-14',
+  launchTime: '10:00',
+  launchTimezone: 'IST',
+  automaticLaunch: false,
+  maintenanceMessage: '',
   restoreTime: null as string | null,
 };
 let lastFetchTime = 0;
@@ -12,22 +18,69 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ioinroemah
 const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlvaW5yb2VtYWhlYWpxaHdzZ3hyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3OTQ5MDksImV4cCI6MjEwNTM3MDkwOX0.zIeBSkNWxzAz4q8b5GPiMBEJtOTXkrYC7_5Co1c9frs';
 
 /**
- * Fetch maintenance status from Supabase with 2-second in-memory Edge caching
+ * Check if the current time has passed the configured launch datetime
  */
-async function getMaintenanceStatus(): Promise<{
-  active: boolean;
-  message: string;
-  restoreTime: string | null;
-}> {
+function isPastLaunch(launchDate: string, launchTime: string): boolean {
+  try {
+    const combined = `${launchDate}T${launchTime || '00:00'}:00+05:30`;
+    const targetMs = new Date(combined).getTime();
+    if (!isNaN(targetMs)) {
+      return Date.now() >= targetMs;
+    }
+  } catch (e) {}
+  return false;
+}
+
+/**
+ * Fetch storefront mode from Supabase with 2-second in-memory Edge caching
+ */
+async function getStorefrontStatus(): Promise<typeof edgeStorefrontState> {
   const now = Date.now();
-  // Return cached result if within 2000ms
   if (now - lastFetchTime < 2000 && lastFetchTime > 0) {
-    return edgeMaintenanceState;
+    return edgeStorefrontState;
   }
 
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 1200);
+
+    // 1. Try fetching from storefront_config
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/storefront_config?id=eq.default&select=storefront_mode,launch_date,launch_time,launch_timezone,automatic_launch,maintenance_message,estimated_restore_time`,
+      {
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+        },
+        signal: controller.signal,
+        cache: 'no-store',
+      }
+    );
+
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        edgeStorefrontState = {
+          mode: (data[0].storefront_mode as StorefrontMode) || 'PRE_LAUNCH',
+          launchDate: data[0].launch_date || '2026-10-14',
+          launchTime: data[0].launch_time || '10:00',
+          launchTimezone: data[0].launch_timezone || 'IST',
+          automaticLaunch: Boolean(data[0].automatic_launch),
+          maintenanceMessage: data[0].maintenance_message || '',
+          restoreTime: data[0].estimated_restore_time || null,
+        };
+        lastFetchTime = now;
+        return edgeStorefrontState;
+      }
+    }
+  } catch (err) {}
+
+  // 2. Fallback to maintenance_config if storefront_config table is not yet migrated
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1000);
 
     const res = await fetch(
       `${SUPABASE_URL}/rest/v1/maintenance_config?id=eq.default&select=maintenance_mode,maintenance_message,estimated_restore_time`,
@@ -46,20 +99,24 @@ async function getMaintenanceStatus(): Promise<{
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0) {
-        edgeMaintenanceState = {
-          active: Boolean(data[0].maintenance_mode),
-          message: data[0].maintenance_message || '',
+        const isMaint = Boolean(data[0].maintenance_mode);
+        edgeStorefrontState = {
+          mode: isMaint ? 'MAINTENANCE' : 'PRE_LAUNCH',
+          launchDate: '2026-10-14',
+          launchTime: '10:00',
+          launchTimezone: 'IST',
+          automaticLaunch: false,
+          maintenanceMessage: data[0].maintenance_message || '',
           restoreTime: data[0].estimated_restore_time || null,
         };
         lastFetchTime = now;
       }
     }
   } catch (err) {
-    // If network or database is unavailable, retain last known state
     lastFetchTime = now;
   }
 
-  return edgeMaintenanceState;
+  return edgeStorefrontState;
 }
 
 export async function middleware(request: NextRequest) {
@@ -68,7 +125,9 @@ export async function middleware(request: NextRequest) {
   // 1. Always allow Next.js system internals and static asset requests
   if (
     pathname.startsWith('/_next') ||
+    pathname === '/api/storefront-mode' ||
     pathname === '/api/maintenance' ||
+    pathname.startsWith('/api/pre-booking') ||
     pathname.startsWith('/api/admin') ||
     pathname.startsWith('/api/auth') ||
     pathname === '/auth/callback' ||
@@ -90,23 +149,35 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 4. Retrieve current maintenance status
-  const { active: isMaintenanceActive, restoreTime } = await getMaintenanceStatus();
+  // 4. Retrieve current storefront mode and configuration
+  const state = await getStorefrontStatus();
+  let effectiveMode: StorefrontMode = state.mode;
 
-  // CASE A: MAINTENANCE MODE IS ACTIVE (Storefront is locked down)
-  if (isMaintenanceActive) {
-    // A1. Customer-facing API routes: Respond with HTTP 503 Service Unavailable
+  // Check automatic launch trigger
+  if (
+    effectiveMode === 'PRE_LAUNCH' &&
+    state.automaticLaunch &&
+    isPastLaunch(state.launchDate, state.launchTime)
+  ) {
+    effectiveMode = 'LIVE';
+  }
+
+  // =========================================================================
+  // CASE 1: MAINTENANCE MODE (Storefront is locked down)
+  // =========================================================================
+  if (effectiveMode === 'MAINTENANCE') {
+    // A1. Customer APIs: Return 503 Service Unavailable
     if (pathname.startsWith('/api/')) {
-      const retrySeconds = restoreTime
-        ? Math.max(60, Math.floor((new Date(restoreTime).getTime() - Date.now()) / 1000))
+      const retrySeconds = state.restoreTime
+        ? Math.max(60, Math.floor((new Date(state.restoreTime).getTime() - Date.now()) / 1000))
         : 1800;
 
       return new NextResponse(
         JSON.stringify({
           error: 'Service Unavailable',
-          message: 'The SuperSnake atelier is currently undergoing scheduled maintenance.',
+          message: 'The SuperSnake atelier is currently undergoing scheduled curation.',
           maintenance: true,
-          estimatedRestoreTime: restoreTime,
+          estimatedRestoreTime: state.restoreTime,
         }),
         {
           status: 503,
@@ -121,23 +192,18 @@ export async function middleware(request: NextRequest) {
       );
     }
 
-    // A2. The /maintenance page itself: Allow access, but stamp with HTTP 503 & SEO noindex headers
+    // A2. /maintenance page itself: Allow access with noindex headers
     if (pathname === '/maintenance') {
       const response = NextResponse.next();
       response.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
       response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
       response.headers.set('Pragma', 'no-cache');
-      if (restoreTime) {
-        const retrySeconds = Math.max(60, Math.floor((new Date(restoreTime).getTime() - Date.now()) / 1000));
-        response.headers.set('Retry-After', String(retrySeconds));
-      }
       return response;
     }
 
-    // A3. All other customer-facing storefront routes: Intercept & redirect to /maintenance
+    // A3. All other customer routes redirect to /maintenance
     const maintenanceUrl = request.nextUrl.clone();
     maintenanceUrl.pathname = '/maintenance';
-
     const response = NextResponse.redirect(maintenanceUrl, { status: 307 });
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     response.headers.set('Pragma', 'no-cache');
@@ -145,15 +211,90 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // CASE B: MAINTENANCE MODE IS OFF (Storefront is normal)
-  // If a customer tries to access /maintenance directly when maintenance is OFF, redirect to home
-  if (pathname === '/maintenance') {
+  // =========================================================================
+  // CASE 2: PRE-LAUNCH MODE (Exclusive First Drop & Pre-Booking Phase)
+  // =========================================================================
+  if (effectiveMode === 'PRE_LAUNCH') {
+    // If visitor lands on /maintenance while in PRE_LAUNCH, redirect to /pre-launch
+    if (pathname === '/maintenance') {
+      const targetUrl = request.nextUrl.clone();
+      targetUrl.pathname = '/pre-launch';
+      return NextResponse.redirect(targetUrl, { status: 307 });
+    }
+
+    // If customer visits root '/', rewrite internally to /pre-launch
+    // This allows supersnake.in to cleanly present the pre-launch experience with NO ugly redirect!
+    if (pathname === '/') {
+      const preLaunchUrl = request.nextUrl.clone();
+      preLaunchUrl.pathname = '/pre-launch';
+      const response = NextResponse.rewrite(preLaunchUrl);
+      response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+      return response;
+    }
+
+    // Routes explicitly allowed during Pre-Launch:
+    // - /pre-launch and /pre-launch/*
+    // - /product/* (so customers can view and pre-book eligible products)
+    // - /account and /account/* (for viewing pre-bookings)
+    // - /login, /signup, /verify-email, /forgot-password, /reset-password
+    // - Informational / Brand pages: /contact, /about, /privacy, /terms, /size-guide, /care-guide, /cookies
+    if (
+      pathname.startsWith('/pre-launch') ||
+      pathname.startsWith('/product/') ||
+      pathname.startsWith('/account') ||
+      pathname === '/login' ||
+      pathname === '/signup' ||
+      pathname === '/verify-email' ||
+      pathname === '/forgot-password' ||
+      pathname === '/reset-password' ||
+      pathname === '/contact' ||
+      pathname === '/about' ||
+      pathname === '/privacy' ||
+      pathname === '/terms' ||
+      pathname === '/size-guide' ||
+      pathname === '/care-guide' ||
+      pathname === '/cookies'
+    ) {
+      const response = NextResponse.next();
+      response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+      return response;
+    }
+
+    // Customer shopping APIs blocked during Pre-Launch:
+    if (pathname === '/api/checkout' || pathname === '/api/create-order') {
+      return new NextResponse(
+        JSON.stringify({
+          error: 'Pre-Launch Active',
+          message: 'Full checkout is currently disabled. Use exclusive Pre-Booking.',
+          preLaunch: true,
+        }),
+        {
+          status: 403,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // All unavailable live shopping routes (/shop, /collections, /cart, /bag, /checkout, /orders, /bestsellers, /men, /women, /new-drops):
+    // Redirect to /pre-launch with 307
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = '/pre-launch';
+    const response = NextResponse.redirect(redirectUrl, { status: 307 });
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    return response;
+  }
+
+  // =========================================================================
+  // CASE 3: LIVE MODE (Full Storefront Operational)
+  // =========================================================================
+  // If a visitor accesses /maintenance or /pre-launch when LIVE, redirect them to home
+  if (pathname === '/maintenance' || pathname === '/pre-launch') {
     const homeUrl = request.nextUrl.clone();
     homeUrl.pathname = '/';
     return NextResponse.redirect(homeUrl, { status: 307 });
   }
 
-  // Proceed with normal storefront request
+  // Allow normal storefront request
   return NextResponse.next();
 }
 

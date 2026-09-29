@@ -12,6 +12,9 @@ import {
   AbandonedCartItem,
   AbandonedCartStatus,
   MaintenanceConfig,
+  StorefrontConfig,
+  PreBooking,
+  PreBookingStatus,
 } from '../types';
 
 /**
@@ -132,6 +135,8 @@ export async function fetchProductsFromSupabase(): Promise<Product[] | null> {
         isBestseller: row.is_bestseller,
         isSpotlight: row.is_spotlight,
         isSignature: Boolean(row.is_signature),
+        preLaunchEnabled: Boolean(row.pre_launch_enabled),
+        maxPreBookings: row.max_pre_bookings ? Number(row.max_pre_bookings) : undefined,
         rating: Number(row.rating || 5.0),
         reviewsCount: Number(row.reviews_count || 0),
         createdAt: row.created_at || new Date().toISOString(),
@@ -183,6 +188,8 @@ export async function createProductInSupabase(product: Product): Promise<boolean
       reviews_count: product.reviewsCount,
       colors: product.colors,
       sizes: product.sizes,
+      pre_launch_enabled: Boolean(product.preLaunchEnabled),
+      max_pre_bookings: product.maxPreBookings || null,
     };
     if (isUuid) {
       insertPayload.id = product.id;
@@ -332,6 +339,8 @@ export async function updateProductInSupabase(product: Product): Promise<boolean
       reviews_count: product.reviewsCount,
       colors: product.colors,
       sizes: product.sizes,
+      pre_launch_enabled: Boolean(product.preLaunchEnabled),
+      max_pre_bookings: product.maxPreBookings || null,
       updated_at: new Date().toISOString(),
     };
 
@@ -1161,6 +1170,279 @@ export async function updateMaintenanceConfigInSupabase(
     return true;
   } catch (err) {
     console.warn('Exception updating maintenance config in Supabase:', err);
+    return false;
+  }
+}
+
+/**
+ * FETCH STOREFRONT CONFIG FROM SUPABASE
+ */
+export async function fetchStorefrontConfigFromSupabase(): Promise<StorefrontConfig | null> {
+  try {
+    const { data, error } = await supabase
+      .from('storefront_config')
+      .select('*')
+      .eq('id', 'default')
+      .maybeSingle();
+
+    if (!error && data) {
+      return {
+        id: data.id || 'default',
+        storefrontMode: (data.storefront_mode as any) || 'PRE_LAUNCH',
+        launchDate: data.launch_date || '2026-10-14',
+        launchTime: data.launch_time || '10:00',
+        launchTimezone: data.launch_timezone || 'IST',
+        automaticLaunch: Boolean(data.automatic_launch),
+        preLaunchProductLimit: Number(data.pre_launch_product_limit || 6),
+        maintenanceMessage: data.maintenance_message || '',
+        estimatedRestoreTime: data.estimated_restore_time || null,
+        updatedAt: data.updated_at || new Date().toISOString(),
+        updatedBy: data.updated_by || 'system',
+      };
+    }
+  } catch (err) {}
+
+  // Fallback to maintenance_config if storefront_config table not yet migrated
+  try {
+    const { data: mData } = await supabase
+      .from('maintenance_config')
+      .select('*')
+      .eq('id', 'default')
+      .maybeSingle();
+
+    if (mData) {
+      const isMaint = Boolean(mData.maintenance_mode);
+      return {
+        id: 'default',
+        storefrontMode: isMaint ? 'MAINTENANCE' : ((mData.storefront_mode as any) || 'PRE_LAUNCH'),
+        launchDate: mData.launch_date || '2026-10-14',
+        launchTime: mData.launch_time || '10:00',
+        launchTimezone: mData.launch_timezone || 'IST',
+        automaticLaunch: Boolean(mData.automatic_launch),
+        preLaunchProductLimit: Number(mData.pre_launch_product_limit || 6),
+        maintenanceMessage: mData.maintenance_message || '',
+        estimatedRestoreTime: mData.estimated_restore_time || null,
+        updatedAt: mData.updated_at || new Date().toISOString(),
+        updatedBy: mData.updated_by || 'system',
+      };
+    }
+  } catch (err) {}
+
+  return null;
+}
+
+/**
+ * UPDATE STOREFRONT CONFIG IN SUPABASE
+ */
+export async function updateStorefrontConfigInSupabase(
+  config: Partial<StorefrontConfig>,
+  adminEmail: string = 'system'
+): Promise<boolean> {
+  try {
+    const now = new Date().toISOString();
+    const payload: any = {
+      updated_at: now,
+      updated_by: adminEmail,
+    };
+
+    if (config.storefrontMode !== undefined) payload.storefront_mode = config.storefrontMode;
+    if (config.launchDate !== undefined) payload.launch_date = config.launchDate;
+    if (config.launchTime !== undefined) payload.launch_time = config.launchTime;
+    if (config.launchTimezone !== undefined) payload.launch_timezone = config.launchTimezone;
+    if (config.automaticLaunch !== undefined) payload.automatic_launch = Boolean(config.automaticLaunch);
+    if (config.preLaunchProductLimit !== undefined) payload.pre_launch_product_limit = Number(config.preLaunchProductLimit);
+    if (config.maintenanceMessage !== undefined) payload.maintenance_message = config.maintenanceMessage;
+    if (config.estimatedRestoreTime !== undefined) payload.estimated_restore_time = config.estimatedRestoreTime || null;
+
+    // 1. Try upserting into storefront_config
+    const { error: sfError } = await supabase
+      .from('storefront_config')
+      .upsert({ id: 'default', ...payload }, { onConflict: 'id' });
+
+    if (sfError) {
+      console.warn('Notice: storefront_config upsert warning (migration may be pending):', sfError.message);
+    }
+
+    // 2. Also synchronize maintenance_config for backwards-compatibility
+    const maintPayload: any = {
+      updated_at: now,
+      updated_by: adminEmail,
+      maintenance_mode: config.storefrontMode === 'MAINTENANCE',
+    };
+    if (config.maintenanceMessage !== undefined) maintPayload.maintenance_message = config.maintenanceMessage;
+    if (config.estimatedRestoreTime !== undefined) maintPayload.estimated_restore_time = config.estimatedRestoreTime || null;
+
+    await supabase.from('maintenance_config').upsert({ id: 'default', ...maintPayload }, { onConflict: 'id' });
+
+    return true;
+  } catch (err) {
+    console.warn('Exception updating storefront config in Supabase:', err);
+    return false;
+  }
+}
+
+/**
+ * TOGGLE PRODUCT PRE-LAUNCH IN SUPABASE
+ */
+export async function toggleProductPreLaunchInSupabase(
+  productId: string,
+  preLaunchEnabled: boolean
+): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('products')
+      .update({ pre_launch_enabled: preLaunchEnabled, updated_at: new Date().toISOString() })
+      .eq('id', productId);
+
+    return !error;
+  } catch (err) {
+    console.warn('Error toggling product pre-launch in Supabase:', err);
+    return false;
+  }
+}
+
+/**
+ * FETCH PRE-BOOKINGS FROM SUPABASE
+ */
+export async function fetchPreBookingsFromSupabase(): Promise<PreBooking[] | null> {
+  try {
+    const { data, error } = await supabase
+      .from('pre_bookings')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.warn('Error fetching pre_bookings from Supabase:', error.message);
+      return null;
+    }
+
+    return (data || []).map((row: any) => {
+      const shipping = row.shipping_address || {};
+      const bookingNo = row.booking_number || `SS-PB-${row.id.slice(0, 8).toUpperCase()}`;
+      const unitPr = Number(row.unit_price || 0);
+      const qty = Number(row.quantity || 1);
+      const totalAmt = Number(row.total_amount || unitPr * qty);
+      const bStatus = (row.booking_status || 'CONFIRMED').toUpperCase() as PreBookingStatus;
+
+      return {
+        id: row.id,
+        bookingNumber: bookingNo,
+        referenceCode: bookingNo,
+        customerId: row.customer_id || undefined,
+        customerName: row.customer_name || 'Guest Patron',
+        customerEmail: row.customer_email || '',
+        customerPhone: row.customer_phone || '',
+        streetAddress: shipping.street || '',
+        city: shipping.city || '',
+        state: shipping.state || '',
+        pincode: shipping.postalCode || '',
+        productId: row.product_id,
+        productName: row.product_name,
+        productSlug: row.product_slug,
+        productImage: row.product_image || undefined,
+        colorName: row.color_name,
+        colorHex: row.color_hex || '#0a0a0a',
+        size: row.size,
+        quantity: qty,
+        unitPrice: unitPr,
+        productPrice: unitPr,
+        totalAmount: totalAmt,
+        totalPrice: totalAmt,
+        paymentStatus: (row.payment_status as any) || 'Reservation',
+        bookingStatus: bStatus,
+        status: bStatus,
+        shippingAddress: row.shipping_address || undefined,
+        adminNotes: row.admin_notes || undefined,
+        createdAt: row.created_at || new Date().toISOString(),
+        updatedAt: row.updated_at || new Date().toISOString(),
+      };
+    });
+  } catch (err) {
+    console.warn('Exception fetching pre_bookings from Supabase:', err);
+    return null;
+  }
+}
+
+/**
+ * CREATE PRE-BOOKING IN SUPABASE
+ */
+export async function createPreBookingInSupabase(booking: PreBooking): Promise<boolean> {
+  try {
+    const bookingNum = booking.referenceCode || booking.bookingNumber;
+    const unitPr = booking.unitPrice || booking.productPrice || 0;
+    const totalAmt = booking.totalAmount || booking.totalPrice || unitPr * booking.quantity;
+    const bStatus = (booking.status || booking.bookingStatus || 'CONFIRMED').toUpperCase();
+
+    const shipping = booking.shippingAddress || {
+      street: booking.streetAddress || '',
+      city: booking.city || '',
+      state: booking.state || '',
+      postalCode: booking.pincode || '',
+      country: 'India',
+    };
+
+    const payload = {
+      id: booking.id,
+      booking_number: bookingNum,
+      customer_id: booking.customerId || null,
+      customer_name: booking.customerName,
+      customer_email: booking.customerEmail.toLowerCase().trim(),
+      customer_phone: booking.customerPhone || null,
+      product_id: booking.productId,
+      product_name: booking.productName,
+      product_slug: booking.productSlug,
+      product_image: booking.productImage || null,
+      color_name: booking.colorName,
+      color_hex: booking.colorHex || null,
+      size: booking.size,
+      quantity: booking.quantity,
+      unit_price: unitPr,
+      total_amount: totalAmt,
+      payment_status: booking.paymentStatus || 'Reservation',
+      booking_status: bStatus,
+      shipping_address: shipping,
+      admin_notes: booking.adminNotes || null,
+      created_at: booking.createdAt,
+      updated_at: booking.updatedAt,
+    };
+
+    const { error } = await supabase.from('pre_bookings').insert(payload);
+    if (error) {
+      console.warn('Error inserting pre_booking in Supabase:', error.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('Exception creating pre_booking in Supabase:', err);
+    return false;
+  }
+}
+
+/**
+ * UPDATE PRE-BOOKING IN SUPABASE
+ */
+export async function updatePreBookingInSupabase(
+  id: string,
+  updates: Partial<PreBooking>
+): Promise<boolean> {
+  try {
+    const payload: any = {
+      updated_at: new Date().toISOString(),
+    };
+    const bStatus = updates.status || updates.bookingStatus;
+    if (bStatus) payload.booking_status = bStatus.toUpperCase();
+    if (updates.paymentStatus) payload.payment_status = updates.paymentStatus;
+    if (updates.adminNotes !== undefined) payload.admin_notes = updates.adminNotes;
+    if (updates.shippingAddress) payload.shipping_address = updates.shippingAddress;
+
+    const { error } = await supabase
+      .from('pre_bookings')
+      .update(payload)
+      .eq('id', id);
+
+    return !error;
+  } catch (err) {
+    console.warn('Exception updating pre_booking in Supabase:', err);
     return false;
   }
 }

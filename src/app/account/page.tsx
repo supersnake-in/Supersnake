@@ -12,14 +12,21 @@ import {
   CheckCircle2,
   Clock,
   Sparkles,
+  Calendar,
 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useAuth } from '@/lib/auth-context';
 import { formatPrice } from '@/lib/design-tokens';
 
 export default function AccountOverviewPage() {
-  const { orders, wishlist } = useStore();
+  const { orders, wishlist, preBookings, storefrontConfig } = useStore();
   const { profile, user } = useAuth();
+
+  const userEmail = (user?.email || profile?.email || '').toLowerCase().trim();
+  const userBookings = preBookings.filter((b) => {
+    if (!userEmail) return true;
+    return b.customerEmail.toLowerCase().trim() === userEmail;
+  });
 
   const recentOrder = orders[0];
   const activeOrders = orders.filter(
@@ -105,6 +112,72 @@ export default function AccountOverviewPage() {
           </p>
         </div>
       </div>
+
+      {/* Active Pre-Bookings Block */}
+      {(userBookings.length > 0 || storefrontConfig?.storefrontMode === 'PRE_LAUNCH') && (
+        <div className="bg-[#0a0a0a] border border-snake-green/30 p-6 rounded-sm space-y-4 relative overflow-hidden">
+          <div className="flex items-center justify-between border-b border-white/10 pb-4">
+            <div className="space-y-1">
+              <span className="text-[10px] font-mono tracking-widest text-snake-green uppercase flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-snake-green animate-pulse" />
+                <span>FIRST DROP PIPELINE</span>
+              </span>
+              <h3 className="text-lg font-display font-medium text-white uppercase">
+                MY PRE-BOOKINGS ({userBookings.length})
+              </h3>
+            </div>
+            <Link
+              href="/account/pre-bookings"
+              className="text-xs font-mono text-snake-green hover:underline flex items-center gap-1 uppercase font-bold"
+            >
+              <span>VIEW ALL PRE-BOOKINGS</span>
+              <ArrowRight size={13} />
+            </Link>
+          </div>
+
+          {userBookings.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {userBookings.slice(0, 2).map((b) => (
+                <div key={b.id} className="p-3 bg-black/60 border border-white/10 rounded flex items-center gap-3">
+                  {b.productImage && (
+                    <div className="relative w-12 h-14 bg-neutral-900 rounded overflow-hidden flex-shrink-0 border border-white/10">
+                      <Image
+                        src={b.productImage}
+                        alt={b.productName}
+                        fill
+                        sizes="60px"
+                        unoptimized={Boolean(b.productImage.startsWith('data:') || b.productImage.startsWith('blob:'))}
+                        className="object-cover"
+                      />
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1 text-xs">
+                    <p className="font-bold text-white uppercase truncate">{b.productName}</p>
+                    <p className="text-[10px] font-mono text-neutral-400">
+                      Ref: <span className="text-snake-green">{b.referenceCode}</span> • Size: {b.size}
+                    </p>
+                    <p className="text-[10px] font-mono text-neutral-500">
+                      Status: <span className="text-neutral-300 font-semibold">{b.status}</span>
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <p className="text-neutral-400">
+                You have not pre-booked any exclusive pieces from the First Drop yet.
+              </p>
+              <Link
+                href="/#pre-book-grid"
+                className="px-4 py-2 bg-snake-green hover:bg-white text-black font-bold uppercase text-[11px] rounded transition-all whitespace-nowrap self-start"
+              >
+                EXPLORE DROP
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Recent Order Snapshot */}
       <div className="bg-[#0a0a0a] border border-white/10 p-6 rounded-sm space-y-6">

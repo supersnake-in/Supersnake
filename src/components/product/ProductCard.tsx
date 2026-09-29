@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Heart, Eye, Plus } from 'lucide-react';
+import { Heart, Eye, Plus, Sparkles } from 'lucide-react';
 import { Product } from '@/lib/types';
 import { formatPrice } from '@/lib/design-tokens';
 import { useStore } from '@/lib/store';
@@ -11,12 +11,21 @@ import { useStore } from '@/lib/store';
 interface ProductCardProps {
   product: Product;
   priority?: boolean;
+  isPreLaunch?: boolean;
+  onPreBook?: (product: Product) => void;
 }
 
-export function ProductCard({ product, priority = false }: ProductCardProps) {
-  const { isInWishlist, toggleWishlist, openQuickView, addToCart } = useStore();
+export function ProductCard({
+  product,
+  priority = false,
+  isPreLaunch = false,
+  onPreBook,
+}: ProductCardProps) {
+  const { isInWishlist, toggleWishlist, openQuickView, addToCart, storefrontConfig } = useStore();
   const [isHovered, setIsHovered] = useState(false);
   const [mounted, setMounted] = useState(false);
+
+  const activePreLaunch = isPreLaunch || storefrontConfig?.storefrontMode === 'PRE_LAUNCH';
 
   useEffect(() => {
     setMounted(true);
@@ -40,6 +49,12 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (activePreLaunch) {
+      if (onPreBook) {
+        onPreBook(product);
+      }
+      return;
+    }
     const defaultColor = product.colors[0];
     const defaultSize = product.sizes[2] || product.sizes[0];
     addToCart(product, defaultSize, defaultColor, 1);
@@ -107,8 +122,12 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
         </Link>
 
         {/* Tagline / Subtitle badge */}
-        <div className="absolute top-3 left-3 z-10 px-2 py-0.5 bg-black/60 backdrop-blur-md text-[9px] font-mono tracking-widest text-neutral-300 border border-white/10 uppercase max-w-[70%] truncate pointer-events-none">
-          {product.tagline || `${product.gsm} GSM`}
+        <div className="absolute top-3 left-3 z-10 px-2 py-0.5 bg-black/60 backdrop-blur-md text-[9px] font-mono tracking-widest text-neutral-300 border border-white/10 uppercase max-w-[75%] truncate pointer-events-none">
+          {activePreLaunch ? (
+            <span className="text-snake-green font-bold">PRE-BOOK // FIRST DROP</span>
+          ) : (
+            product.tagline || `${product.gsm} GSM`
+          )}
         </div>
 
         {/* Wishlist Button - 44px min tap target */}
@@ -130,9 +149,9 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
           type="button"
           onClick={handleQuickAdd}
           className="lg:hidden absolute bottom-2.5 right-2.5 z-10 w-8 h-8 rounded-full bg-black/70 backdrop-blur-md border border-white/20 flex items-center justify-center text-white active:scale-90 active:bg-snake-green active:text-black transition-all shadow-md"
-          aria-label="Quick Add to Bag"
+          aria-label={activePreLaunch ? 'Pre-Book Garment' : 'Quick Add to Bag'}
         >
-          <Plus size={14} />
+          {activePreLaunch ? <Sparkles size={13} className="text-snake-green" /> : <Plus size={14} />}
         </button>
 
         {/* Desktop Floating Actions on Hover (LOCKED & UNTOUCHED FOR lg: AND ABOVE) */}
@@ -142,7 +161,15 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
             onClick={handleQuickAdd}
             className="flex-1 py-2 px-3 bg-black/80 hover:bg-snake-green hover:text-black text-white backdrop-blur-md border border-white/20 hover:border-snake-green font-mono text-[10px] tracking-widest uppercase transition-all duration-200 flex items-center justify-center gap-1.5 shadow-lg active:scale-98"
           >
-            <Plus size={13} /> QUICK ADD
+            {activePreLaunch ? (
+              <>
+                <Sparkles size={13} className="text-snake-green" /> PRE-BOOK NOW
+              </>
+            ) : (
+              <>
+                <Plus size={13} /> QUICK ADD
+              </>
+            )}
           </button>
           <button
             type="button"
