@@ -267,45 +267,102 @@ export default function PreLaunchPage() {
       </section>
 
       {/* ============================================================
-          03 — CRAFTSMANSHIP & ATELIER PROMISE
+          03 — THE SUPERSNAKE ATELIER MANIFESTO
           ============================================================ */}
-      <section className="py-16 sm:py-24 border-t border-white/[0.08] bg-[#050505]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center sm:text-left">
-            <div className="space-y-2 p-6 border border-white/5 bg-black/40 rounded">
-              <span className="text-[10px] font-mono tracking-widest text-snake-green uppercase block">
-                01 // FABRIC MONOLITH
-              </span>
-              <h3 className="text-lg font-display font-bold uppercase text-white">
-                280–300 GSM SUPIMA®
-              </h3>
-              <p className="text-xs font-mono text-neutral-400 leading-relaxed">
-                Extremely dense, heavyweight combed long-staple cotton with a substantial architectural drape that holds its boxy structure all day.
-              </p>
+      <section className="py-20 sm:py-28 border-t border-white/[0.08] bg-[#030303] relative overflow-hidden">
+        {/* Subtle background ambient glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-48 bg-snake-green/[0.03] blur-[120px] pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 relative z-10">
+          {/* Section Header with Brand Logo */}
+          <div className="flex flex-col items-center text-center mb-14 sm:mb-20 space-y-4">
+            <div className="mb-2">
+              <SuperSnakeLogo size="md" showText={false} withLink={false} withGlow={true} />
+            </div>
+            <span className="text-[10px] sm:text-xs font-mono tracking-[0.35em] text-snake-green uppercase block">
+              THE SUPERSNAKE STANDARD
+            </span>
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-display font-medium uppercase tracking-tight text-white max-w-2xl">
+              AN ELITE LUXURY HOUSE DEFINED BY DISCIPLINE
+            </h2>
+            <p className="text-xs sm:text-sm font-mono text-neutral-400 max-w-xl mx-auto leading-relaxed">
+              Operating beyond temporary fashion cycles. SuperSnake embodies architectural presence, strictly finite allocations, and white-glove patron care.
+            </p>
+            <div className="w-12 h-px bg-white/20 pt-1" />
+          </div>
+
+          {/* 3 Brand Pillars */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+            {/* Pillar 01 */}
+            <div className="relative group p-8 border border-white/10 bg-neutral-950/60 backdrop-blur-sm rounded-sm hover:border-snake-green/40 transition-all duration-300 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/5">
+                  <span className="text-[10px] font-mono tracking-[0.25em] text-snake-green uppercase">
+                    01 // ARCHITECTURAL PURITY
+                  </span>
+                  <div className="opacity-40 group-hover:opacity-100 transition-opacity">
+                    <SuperSnakeLogo size="sm" showText={false} withLink={false} />
+                  </div>
+                </div>
+                <h3 className="text-lg sm:text-xl font-display font-bold uppercase text-white mb-3 tracking-wide">
+                  MONOLITHIC ESSENCE
+                </h3>
+                <p className="text-xs font-mono text-neutral-400 leading-relaxed">
+                  Conceived through sculptural geometry, deliberate proportion, and relentless aesthetic restraint. Every silhouette is built to command presence without ever asking for attention.
+                </p>
+              </div>
+              <div className="mt-8 pt-4 border-t border-white/5 flex items-center justify-between text-[10px] font-mono text-neutral-500 uppercase tracking-widest">
+                <span>PERMANENT SILHOUETTE</span>
+                <span className="text-snake-green">01</span>
+              </div>
             </div>
 
-            <div className="space-y-2 p-6 border border-white/5 bg-black/40 rounded">
-              <span className="text-[10px] font-mono tracking-widest text-snake-green uppercase block">
-                02 // COLLAR TENSION
-              </span>
-              <h3 className="text-lg font-display font-bold uppercase text-white">
-                ZERO-SAG 1-INCH COLLAR
-              </h3>
-              <p className="text-xs font-mono text-neutral-400 leading-relaxed">
-                Reinforced 1-inch rib with internal cotton herringbone tape that locks neck tension permanently through 100+ wash cycles.
-              </p>
+            {/* Pillar 02 */}
+            <div className="relative group p-8 border border-white/10 bg-neutral-950/60 backdrop-blur-sm rounded-sm hover:border-snake-green/40 transition-all duration-300 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/5">
+                  <span className="text-[10px] font-mono tracking-[0.25em] text-snake-green uppercase">
+                    02 // SERIALIZED EXCLUSIVITY
+                  </span>
+                  <div className="opacity-40 group-hover:opacity-100 transition-opacity">
+                    <SuperSnakeLogo size="sm" showText={false} withLink={false} />
+                  </div>
+                </div>
+                <h3 className="text-lg sm:text-xl font-display font-bold uppercase text-white mb-3 tracking-wide">
+                  STRICT ATELIER ARCHIVE
+                </h3>
+                <p className="text-xs font-mono text-neutral-400 leading-relaxed">
+                  We reject mass commercial overproduction. Every drop is capped to strictly finite allocations. Once an edition concludes, the design archive is sealed to preserve permanent rarity.
+                </p>
+              </div>
+              <div className="mt-8 pt-4 border-t border-white/5 flex items-center justify-between text-[10px] font-mono text-neutral-500 uppercase tracking-widest">
+                <span>LIMITED RUNS ONLY</span>
+                <span className="text-snake-green">02</span>
+              </div>
             </div>
 
-            <div className="space-y-2 p-6 border border-white/5 bg-black/40 rounded">
-              <span className="text-[10px] font-mono tracking-widest text-snake-green uppercase block">
-                03 // RESERVATION GUARANTEE
-              </span>
-              <h3 className="text-lg font-display font-bold uppercase text-white">
-                PRIORITY ALLOCATION
-              </h3>
-              <p className="text-xs font-mono text-neutral-400 leading-relaxed">
-                Every pre-booking locks in a serial numbered piece from our inaugural drop. Dispatched on priority air express upon launch.
-              </p>
+            {/* Pillar 03 */}
+            <div className="relative group p-8 border border-white/10 bg-neutral-950/60 backdrop-blur-sm rounded-sm hover:border-snake-green/40 transition-all duration-300 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/5">
+                  <span className="text-[10px] font-mono tracking-[0.25em] text-snake-green uppercase">
+                    03 // PATRON PRIVILEGE
+                  </span>
+                  <div className="opacity-40 group-hover:opacity-100 transition-opacity">
+                    <SuperSnakeLogo size="sm" showText={false} withLink={false} />
+                  </div>
+                </div>
+                <h3 className="text-lg sm:text-xl font-display font-bold uppercase text-white mb-3 tracking-wide">
+                  WHITE-GLOVE CONCIERGE
+                </h3>
+                <p className="text-xs font-mono text-neutral-400 leading-relaxed">
+                  Securing a pre-booking reserves your private standing in our circle. Patrons receive serialized delivery tracking, personal client support, and priority access to all forthcoming drops.
+                </p>
+              </div>
+              <div className="mt-8 pt-4 border-t border-white/5 flex items-center justify-between text-[10px] font-mono text-neutral-500 uppercase tracking-widest">
+                <span>CONCIERGE ALLOCATION</span>
+                <span className="text-snake-green">03</span>
+              </div>
             </div>
           </div>
         </div>
