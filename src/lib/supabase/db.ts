@@ -1336,6 +1336,7 @@ export async function fetchPreBookingsFromSupabase(): Promise<PreBooking[] | nul
         city: shipping.city || '',
         state: shipping.state || '',
         pincode: shipping.postalCode || '',
+        postOffice: shipping.postOffice || (row as any).post_office || undefined,
         productId: row.product_id,
         productName: row.product_name,
         productSlug: row.product_slug,
@@ -1384,6 +1385,7 @@ export async function createPreBookingInSupabase(booking: PreBooking): Promise<b
       city: booking.city || '',
       state: booking.state || '',
       postalCode: booking.pincode || '',
+      postOffice: booking.postOffice || '',
       country: 'India',
     };
 

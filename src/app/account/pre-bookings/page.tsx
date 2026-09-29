@@ -253,7 +253,9 @@ export default function CustomerPreBookingsPage() {
                     </div>
                     <p className="font-bold text-white">{b.customerName}</p>
                     <p className="text-neutral-400 truncate">{b.city}, {b.state}</p>
-                    <p className="text-neutral-500 text-[10px]">PIN: {b.pincode}</p>
+                    <p className="text-neutral-500 text-[10px]">
+                      PIN: {b.pincode}{b.postOffice ? ` • ${b.postOffice}` : ''}
+                    </p>
                   </div>
                 </div>
 

@@ -314,6 +314,7 @@ export interface PreBooking {
   city: string;
   state: string;
   pincode: string;
+  postOffice?: string;
   productId: string;
   productName: string;
   productSlug: string;
@@ -340,6 +341,7 @@ export interface PreBooking {
     city?: string;
     state?: string;
     postalCode?: string;
+    postOffice?: string;
     country?: string;
   };
   adminNotes?: string;

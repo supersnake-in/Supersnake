@@ -18,6 +18,8 @@ import {
   Minus,
   Plus,
   Copy,
+  Loader2,
+  ChevronDown,
 } from 'lucide-react';
 import { Product, Size, PreBooking } from '@/lib/types';
 import { formatPrice } from '@/lib/design-tokens';
@@ -78,6 +80,10 @@ export function PreBookingModal({
   const [city, setCity] = useState('');
   const [stateName, setStateName] = useState('');
   const [pincode, setPincode] = useState('');
+  const [postOffice, setPostOffice] = useState('');
+  const [postOffices, setPostOffices] = useState<Array<{ name: string; branchType?: string; deliveryStatus?: string }>>([]);
+  const [isFetchingPincode, setIsFetchingPincode] = useState(false);
+  const [pincodeMessage, setPincodeMessage] = useState<string | null>(null);
 
   // Modal flow state
   const [step, setStep] = useState<'form' | 'success'>('form');
@@ -94,6 +100,10 @@ export function PreBookingModal({
       setCurrentQty(quantity || 1);
       setErrorMsg(null);
       setStep('form');
+      setPostOffice('');
+      setPostOffices([]);
+      setPincodeMessage(null);
+      setIsFetchingPincode(false);
       loadRazorpayScript();
     }
   }, [isOpen, selectedColor, selectedSize, quantity, product]);
@@ -141,6 +151,99 @@ export function PreBookingModal({
     setTimeout(() => setCopiedCode(false), 2000);
   };
 
+  const lookupPincode = async (code: string) => {
+    const cleanCode = code.trim();
+    if (!/^\d{6}$/.test(cleanCode)) {
+      setPostOffices([]);
+      setPincodeMessage(null);
+      return;
+    }
+
+    setIsFetchingPincode(true);
+    setPincodeMessage(null);
+
+    try {
+      let data: any = null;
+      try {
+        const res = await fetch(`/api/pincode/${cleanCode}`);
+        if (res.ok) {
+          data = await res.json();
+        }
+      } catch (err) {}
+
+      // Direct fallback if internal API route is unreachable
+      if (!data || !data.success) {
+        try {
+          const directRes = await fetch(`https://api.postalpincode.in/pincode/${cleanCode}`);
+          if (directRes.ok) {
+            const directData = await directRes.json();
+            if (Array.isArray(directData) && directData[0]?.Status === 'Success' && directData[0]?.PostOffice?.length) {
+              const rawPOs = directData[0].PostOffice;
+              data = {
+                success: true,
+                district: rawPOs[0].District || rawPOs[0].Division || '',
+                state: rawPOs[0].State || '',
+                postOffices: rawPOs.map((po: any) => ({
+                  name: po.Name,
+                  branchType: po.BranchType || '',
+                  deliveryStatus: po.DeliveryStatus || '',
+                })),
+              };
+            }
+          }
+        } catch (directErr) {}
+      }
+
+      if (data && data.success && Array.isArray(data.postOffices) && data.postOffices.length > 0) {
+        const district = data.district || '';
+        const fetchedState = data.state || '';
+        const poList = data.postOffices;
+
+        // Prioritize delivery post offices, then alphabetical
+        const sortedPOs = [...poList].sort((a: any, b: any) => {
+          if (a.deliveryStatus === 'Delivery' && b.deliveryStatus !== 'Delivery') return -1;
+          if (a.deliveryStatus !== 'Delivery' && b.deliveryStatus === 'Delivery') return 1;
+          return a.name.localeCompare(b.name);
+        });
+
+        setPostOffices(sortedPOs);
+        if (district) setCity(district);
+        if (fetchedState) setStateName(fetchedState);
+
+        if (sortedPOs.length === 1) {
+          setPostOffice(sortedPOs[0].name);
+        } else {
+          setPostOffice(sortedPOs[0]?.name || '');
+        }
+
+        if (poList.length > 1) {
+          setPincodeMessage(`${poList.length} locations detected in PIN ${cleanCode}`);
+        } else {
+          setPincodeMessage('Postal location auto-detected');
+        }
+      } else {
+        setPostOffices([]);
+        setPincodeMessage('PIN code not found. You can enter details manually.');
+      }
+    } catch (error) {
+      console.error('Failed to lookup PIN code:', error);
+      setPincodeMessage(null);
+    } finally {
+      setIsFetchingPincode(false);
+    }
+  };
+
+  const handlePincodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+    setPincode(val);
+    if (val.length === 6) {
+      lookupPincode(val);
+    } else {
+      if (postOffices.length > 0) setPostOffices([]);
+      if (pincodeMessage) setPincodeMessage(null);
+    }
+  };
+
   const handlePayAndBook = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
@@ -166,12 +269,17 @@ export function PreBookingModal({
     }
 
     if (!street.trim() || !city.trim() || !stateName.trim() || !pincode.trim()) {
-      setErrorMsg('Please complete your full delivery coordinates (Street, City, State, and PIN code).');
+      setErrorMsg('Please complete your full delivery coordinates (Street, PIN code, City, and State).');
       return;
     }
 
     if (pincode.replace(/\D/g, '').length !== 6) {
       setErrorMsg('Please enter a valid 6-digit postal PIN code.');
+      return;
+    }
+
+    if (postOffices.length > 1 && !postOffice.trim()) {
+      setErrorMsg('Please select your post office / area from the dropdown.');
       return;
     }
 
@@ -184,6 +292,7 @@ export function PreBookingModal({
       city: city.trim(),
       state: stateName.trim(),
       postalCode: pincode.trim(),
+      postOffice: postOffice.trim() || undefined,
       country: 'India',
     };
 
@@ -523,8 +632,87 @@ export function PreBookingModal({
                   />
                 </div>
 
+                {/* PIN CODE INPUT with auto-lookup */}
+                <div className="space-y-1 sm:col-span-2">
+                  <label className="text-neutral-400 uppercase text-[10px] flex items-center justify-between">
+                    <span className="text-white font-semibold">PIN CODE *</span>
+                    {isFetchingPincode ? (
+                      <span className="text-[10px] text-snake-green font-mono flex items-center gap-1">
+                        <Loader2 size={11} className="animate-spin" />
+                        DETECTING DETAILS...
+                      </span>
+                    ) : pincodeMessage ? (
+                      <span className={`text-[10px] font-mono ${postOffices.length > 0 ? 'text-snake-green' : 'text-neutral-400'}`}>
+                        {pincodeMessage}
+                      </span>
+                    ) : (
+                      <span className="text-[9px] text-neutral-500">AUTO-FILLS LOCATION DETAILS</span>
+                    )}
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    inputMode="numeric"
+                    value={pincode}
+                    onChange={handlePincodeChange}
+                    placeholder="e.g. 560094"
+                    maxLength={6}
+                    className="w-full bg-black border border-white/15 px-3 py-2 text-white rounded text-xs focus:border-snake-green focus:outline-none font-mono"
+                  />
+                </div>
+
+                {/* POST OFFICE / AREA (when multiple exist) */}
+                {postOffices.length > 1 && (
+                  <div className="space-y-1 sm:col-span-2 animate-fadeIn">
+                    <label className="text-neutral-400 uppercase text-[10px] flex items-center justify-between">
+                      <span className="text-white font-semibold">POST OFFICE / AREA *</span>
+                      <span className="text-[9px] text-snake-green font-mono">
+                        {postOffices.length} LOCATIONS IN THIS PIN CODE
+                      </span>
+                    </label>
+                    <div className="relative">
+                      <select
+                        required
+                        value={postOffice}
+                        onChange={(e) => setPostOffice(e.target.value)}
+                        className="w-full bg-[#111] border border-snake-green/60 px-3 py-2 text-xs text-white rounded focus:outline-none focus:border-snake-green appearance-none pr-8 cursor-pointer font-mono"
+                      >
+                        <option value="" disabled className="bg-black text-neutral-500">
+                          -- SELECT POST OFFICE / AREA --
+                        </option>
+                        {postOffices.map((po) => (
+                          <option key={po.name} value={po.name} className="bg-neutral-900 text-white">
+                            {po.name} {po.deliveryStatus ? `(${po.deliveryStatus})` : ''}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-snake-green pointer-events-none" />
+                    </div>
+                  </div>
+                )}
+
+                {/* POST OFFICE / AREA (when single post office detected) */}
+                {postOffices.length === 1 && (
+                  <div className="space-y-1 sm:col-span-2 animate-fadeIn">
+                    <label className="text-neutral-400 uppercase text-[10px] flex items-center justify-between">
+                      <span>POST OFFICE / AREA</span>
+                      <span className="text-[9px] text-snake-green font-mono">AUTO-DETECTED</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={postOffice}
+                      onChange={(e) => setPostOffice(e.target.value)}
+                      placeholder="Post Office name"
+                      className="w-full bg-black border border-white/15 px-3 py-2 text-white rounded text-xs focus:border-snake-green focus:outline-none font-mono"
+                    />
+                  </div>
+                )}
+
                 <div className="space-y-1">
-                  <label className="text-neutral-400 uppercase text-[10px] block">CITY *</label>
+                  <label className="text-neutral-400 uppercase text-[10px] flex items-center justify-between">
+                    <span>CITY / DISTRICT *</span>
+                    {city && <span className="text-[9px] text-snake-green font-mono">AUTO-FILLED</span>}
+                  </label>
                   <input
                     type="text"
                     required
@@ -535,30 +723,19 @@ export function PreBookingModal({
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <label className="text-neutral-400 uppercase text-[10px] block">STATE *</label>
-                    <input
-                      type="text"
-                      required
-                      value={stateName}
-                      onChange={(e) => setStateName(e.target.value)}
-                      placeholder="Karnataka"
-                      className="w-full bg-black border border-white/15 px-3 py-2 text-white rounded text-xs focus:border-snake-green focus:outline-none"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-neutral-400 uppercase text-[10px] block">PIN CODE *</label>
-                    <input
-                      type="text"
-                      required
-                      value={pincode}
-                      onChange={(e) => setPincode(e.target.value)}
-                      placeholder="560001"
-                      maxLength={6}
-                      className="w-full bg-black border border-white/15 px-3 py-2 text-white rounded text-xs focus:border-snake-green focus:outline-none"
-                    />
-                  </div>
+                <div className="space-y-1">
+                  <label className="text-neutral-400 uppercase text-[10px] flex items-center justify-between">
+                    <span>STATE *</span>
+                    {stateName && <span className="text-[9px] text-snake-green font-mono">AUTO-FILLED</span>}
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={stateName}
+                    onChange={(e) => setStateName(e.target.value)}
+                    placeholder="e.g. Karnataka"
+                    className="w-full bg-black border border-white/15 px-3 py-2 text-white rounded text-xs focus:border-snake-green focus:outline-none"
+                  />
                 </div>
               </div>
             </div>
@@ -654,6 +831,12 @@ export function PreBookingModal({
                 <div className="flex justify-between">
                   <span>DISPATCH TARGET:</span>
                   <span className="text-white">{launchDateText}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>DESTINATION:</span>
+                  <span className="text-white text-right truncate max-w-[220px]">
+                    {postOffice ? `${postOffice}, ` : ''}{city}, {stateName} ({pincode})
+                  </span>
                 </div>
               </div>
             </div>

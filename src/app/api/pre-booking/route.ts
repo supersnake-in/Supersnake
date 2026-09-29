@@ -183,6 +183,7 @@ export async function POST(req: NextRequest) {
       city: shippingAddress?.city || '',
       state: shippingAddress?.state || '',
       pincode: shippingAddress?.postalCode || '',
+      postOffice: shippingAddress?.postOffice || undefined,
       productId: product.id,
       productName: product.name,
       productSlug: product.slug,

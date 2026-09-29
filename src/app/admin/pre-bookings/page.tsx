@@ -390,7 +390,7 @@ export default function AdminPreBookingsPage() {
                         <span className="truncate max-w-[140px] font-semibold">{b.city}, {b.state}</span>
                       </div>
                       <span className="text-[10px] text-neutral-500 block truncate max-w-[140px]">
-                        PIN: {b.pincode}
+                        PIN: {b.pincode}{b.postOffice ? ` • ${b.postOffice}` : ''}
                       </span>
                     </td>
 
@@ -532,6 +532,9 @@ export default function AdminPreBookingsPage() {
                 <span className="text-[10px] text-neutral-400 uppercase font-bold block">PRIORITY SHIPPING ADDRESS</span>
                 <div className="space-y-1 text-xs text-neutral-300">
                   <p>{activeModalBooking.streetAddress || 'Not provided'}</p>
+                  {activeModalBooking.postOffice && (
+                    <p className="text-neutral-400">Area / PO: <span className="text-white font-semibold">{activeModalBooking.postOffice}</span></p>
+                  )}
                   <p>{activeModalBooking.city}, {activeModalBooking.state}</p>
                   <p className="text-snake-green font-bold">PIN: {activeModalBooking.pincode}</p>
                 </div>
