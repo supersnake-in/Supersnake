@@ -121,12 +121,6 @@ export default function PreLaunchPage() {
 
         {/* Hero Content Stage */}
         <div className="relative z-10 max-w-5xl mx-auto w-full text-center space-y-8">
-          {/* Subtle Monolithic Tag */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-[10px] font-mono tracking-[0.3em] uppercase text-neutral-300">
-            <span className="w-1.5 h-1.5 rounded-full bg-snake-green animate-pulse" />
-            <span>EXCLUSIVE PRE-LAUNCH // THE FIRST DROP</span>
-          </div>
-
           {/* Monumental Headline */}
           <div className="space-y-3">
             <span className="text-xs sm:text-sm font-mono tracking-[0.4em] text-snake-green uppercase block">
