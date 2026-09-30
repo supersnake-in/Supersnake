@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -22,11 +22,37 @@ export default function AccountOverviewPage() {
   const { orders, wishlist, preBookings, storefrontConfig } = useStore();
   const { profile, user } = useAuth();
 
-  const userEmail = (user?.email || profile?.email || '').toLowerCase().trim();
-  const userBookings = preBookings.filter((b) => {
-    if (!userEmail) return true;
-    return b.customerEmail.toLowerCase().trim() === userEmail;
-  });
+  const userBookings = useMemo(() => {
+    const authEmail = (user?.email || profile?.email || '').toLowerCase().trim();
+    let guestEmail = '';
+    let guestCodes: string[] = [];
+    if (typeof window !== 'undefined') {
+      guestEmail = (localStorage.getItem('supersnake_guest_email') || '').toLowerCase().trim();
+      try {
+        guestCodes = JSON.parse(localStorage.getItem('supersnake_my_prebooking_codes') || '[]');
+      } catch (e) {}
+    }
+    const targetEmail = authEmail || guestEmail;
+
+    const filtered = preBookings.filter((b) => {
+      const bEmail = b.customerEmail.toLowerCase().trim();
+      const bCode = (b.referenceCode || b.bookingNumber || '').toUpperCase();
+      if (guestCodes.some((gc) => gc.toUpperCase() === bCode || gc === b.id)) return true;
+      if (targetEmail && bEmail === targetEmail) return true;
+      return false;
+    });
+
+    const seen = new Set<string>();
+    const dedupe: typeof preBookings = [];
+    for (const b of filtered) {
+      const key = b.razorpayPaymentId ? `txn_${b.razorpayPaymentId}` : (b.referenceCode || b.bookingNumber);
+      if (!seen.has(key)) {
+        seen.add(key);
+        dedupe.push(b);
+      }
+    }
+    return dedupe;
+  }, [preBookings, user?.email, profile?.email]);
 
   const recentOrder = orders[0];
   const activeOrders = orders.filter(

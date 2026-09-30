@@ -395,6 +395,17 @@ export function PreBookingModal({
 
             const bookData = await bookRes.json();
             if (bookData.success && bookData.booking) {
+              try {
+                const storedCodes = JSON.parse(localStorage.getItem('supersnake_my_prebooking_codes') || '[]');
+                const refCode = bookData.booking.referenceCode || bookData.booking.bookingNumber;
+                if (refCode && !storedCodes.includes(refCode)) {
+                  storedCodes.unshift(refCode);
+                  localStorage.setItem('supersnake_my_prebooking_codes', JSON.stringify(storedCodes));
+                }
+                localStorage.setItem('supersnake_guest_email', cleanEmail);
+                localStorage.setItem('supersnake_guest_phone', cleanPhone);
+              } catch (e) {}
+
               await createPreBooking(bookData.booking);
               setConfirmedBooking(bookData.booking);
               setStep('success');

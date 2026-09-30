@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -14,11 +14,12 @@ import {
   MapPin,
   ExternalLink,
   Package,
+  Search,
 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useAuth } from '@/lib/auth-context';
 import { formatPrice } from '@/lib/design-tokens';
-import { PreBookingStatus } from '@/lib/types';
+import { PreBookingStatus, PreBooking } from '@/lib/types';
 
 const STATUS_BADGES: Record<
   PreBookingStatus,
@@ -58,23 +59,77 @@ export default function CustomerPreBookingsPage() {
   const { preBookings, storefrontConfig } = useStore();
   const { user, profile } = useAuth();
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [guestEmail, setGuestEmail] = useState('');
+  const [guestPhone, setGuestPhone] = useState('');
+  const [guestCodes, setGuestCodes] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // Match customer bookings by authenticated email or phone, or show localStorage stored ones
+  // Load guest patron identity from device storage on mount
+  useEffect(() => {
+    try {
+      const email = localStorage.getItem('supersnake_guest_email') || '';
+      const phone = localStorage.getItem('supersnake_guest_phone') || '';
+      const codes = JSON.parse(localStorage.getItem('supersnake_my_prebooking_codes') || '[]');
+      setGuestEmail(email.toLowerCase().trim());
+      setGuestPhone(phone.replace(/[^0-9]/g, ''));
+      setGuestCodes(Array.isArray(codes) ? codes : []);
+    } catch (e) {}
+  }, []);
+
+  // Match customer bookings strictly by authenticated account, guest session, or explicit lookup
   const userBookings = useMemo(() => {
-    const userEmail = (user?.email || profile?.email || '').toLowerCase().trim();
-    const userPhone = (profile?.phone || '').replace(/[^0-9]/g, '');
+    const authEmail = (user?.email || profile?.email || '').toLowerCase().trim();
+    const authPhone = (profile?.phone || '').replace(/[^0-9]/g, '');
 
-    if (!userEmail && !userPhone) {
-      // If guest, show all in store for this session or return preBookings
-      return preBookings;
-    }
+    const activeEmail = authEmail || guestEmail;
+    const activePhone = authPhone || guestPhone;
 
-    return preBookings.filter((b) => {
+    const matching = preBookings.filter((b) => {
       const bEmail = b.customerEmail.toLowerCase().trim();
       const bPhone = b.customerPhone.replace(/[^0-9]/g, '');
-      return (userEmail && bEmail === userEmail) || (userPhone && bPhone === userPhone);
+      const bCode = (b.referenceCode || b.bookingNumber || '').toUpperCase();
+
+      // 1. If explicit search query is typed by patron:
+      if (searchQuery.trim()) {
+        const q = searchQuery.trim().toLowerCase();
+        return (
+          bCode.toLowerCase().includes(q) ||
+          bEmail.includes(q) ||
+          bPhone.includes(q) ||
+          (b.razorpayPaymentId && b.razorpayPaymentId.toLowerCase().includes(q))
+        );
+      }
+
+      // 2. Match by guest session booking reference codes placed from this browser
+      if (guestCodes.some((gc) => gc.toUpperCase() === bCode || gc === b.id)) {
+        return true;
+      }
+
+      // 3. Match by email or phone
+      if (activeEmail && bEmail === activeEmail) {
+        return true;
+      }
+      if (activePhone && bPhone === activePhone) {
+        return true;
+      }
+
+      // NEVER show arbitrary/other patrons' pre-bookings!
+      return false;
     });
-  }, [preBookings, user?.email, profile?.email, profile?.phone]);
+
+    // Deduplicate: merge any accidental duplicates sharing the same transaction ID or reference
+    const seen = new Set<string>();
+    const deduplicated: PreBooking[] = [];
+    for (const b of matching) {
+      const key = b.razorpayPaymentId ? `txn_${b.razorpayPaymentId}` : `ref_${b.referenceCode || b.bookingNumber}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        deduplicated.push(b);
+      }
+    }
+
+    return deduplicated;
+  }, [preBookings, user?.email, profile?.email, profile?.phone, guestEmail, guestPhone, guestCodes, searchQuery]);
 
   const handleCopy = (code: string) => {
     navigator.clipboard.writeText(code);
@@ -98,7 +153,7 @@ export default function CustomerPreBookingsPage() {
             MY PRE-BOOKINGS
           </h2>
           <p className="text-neutral-400 max-w-xl leading-relaxed text-xs">
-            Review your secured pieces from the SuperSnake First Drop. Zero advance payment was required.
+            Review your secured pieces from the SuperSnake First Drop. Payment verified and piece guaranteed.
             When the collection officially drops, you receive priority air dispatch.
           </p>
         </div>
@@ -128,6 +183,28 @@ export default function CustomerPreBookingsPage() {
         </div>
       )}
 
+      {/* Quick Lookup Bar */}
+      <div className="bg-[#0a0a0a] border border-white/10 p-3 sm:p-4 rounded-sm flex flex-col sm:flex-row items-center gap-3">
+        <div className="relative flex-1 w-full">
+          <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by Reference Code (e.g. SS-PB-...), Email, or Mobile..."
+            className="w-full bg-black border border-white/15 pl-9 pr-4 py-2 text-white text-xs rounded focus:outline-none focus:border-snake-green placeholder:text-neutral-600 font-mono"
+          />
+        </div>
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery('')}
+            className="text-[10px] text-neutral-400 hover:text-white px-3 py-2 bg-white/5 border border-white/10 rounded uppercase font-bold"
+          >
+            RESET
+          </button>
+        )}
+      </div>
+
       {/* Pre-Bookings List */}
       {userBookings.length === 0 ? (
         <div className="bg-[#0a0a0a] border border-white/10 p-12 text-center rounded-sm space-y-4">
@@ -136,10 +213,12 @@ export default function CustomerPreBookingsPage() {
           </div>
           <div className="space-y-1">
             <h3 className="text-base font-display font-bold uppercase text-white tracking-tight">
-              NO PRE-BOOKINGS ON RECORD
+              {searchQuery ? 'NO MATCHING PRE-BOOKINGS FOUND' : 'NO PRE-BOOKINGS ON RECORD'}
             </h3>
             <p className="text-neutral-400 max-w-md mx-auto leading-relaxed text-xs">
-              You haven&apos;t reserved any garments from our upcoming drop yet. Explore the limited First Drop pieces open for pre-booking.
+              {searchQuery
+                ? `No reservation matches "${searchQuery}". Please verify your reference code or contact email.`
+                : "You haven't reserved any garments from our upcoming drop yet. If you completed a booking as a guest, search with your reference code or email above."}
             </p>
           </div>
           <div className="pt-2">

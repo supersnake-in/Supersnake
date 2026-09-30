@@ -1934,33 +1934,45 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   };
 
   const createPreBooking = async (
-    bookingData: Omit<PreBooking, 'id' | 'bookingNumber' | 'createdAt' | 'updatedAt' | 'bookingStatus'>
+    bookingData: Partial<PreBooking> & Omit<PreBooking, 'id' | 'bookingNumber' | 'createdAt' | 'updatedAt' | 'bookingStatus'>
   ): Promise<PreBooking> => {
+    const existingId = (bookingData as any).id;
+    const existingBookingNumber = (bookingData as any).bookingNumber || (bookingData as any).referenceCode;
+
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-    const bookingNumber = `SS-PB-${new Date().getFullYear()}-${randomSuffix}`;
+    const bookingNumber = existingBookingNumber || `SS-PB-${new Date().getFullYear()}-${randomSuffix}`;
     const newBooking: PreBooking = {
       ...bookingData,
-      id: `pb-${Date.now()}-${randomSuffix}`,
+      id: existingId || `pb-${Date.now()}-${randomSuffix}`,
       bookingNumber,
       referenceCode: bookingNumber,
-      bookingStatus: 'CONFIRMED',
-      status: 'CONFIRMED',
-      createdAt: new Date().toISOString(),
+      bookingStatus: (bookingData as any).bookingStatus || (bookingData as any).status || 'CONFIRMED',
+      status: (bookingData as any).status || (bookingData as any).bookingStatus || 'CONFIRMED',
+      createdAt: (bookingData as any).createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
     setPreBookings((prev) => {
-      const next = [newBooking, ...prev];
+      const filtered = prev.filter((b) => {
+        if (newBooking.id && b.id === newBooking.id) return false;
+        if (newBooking.bookingNumber && (b.bookingNumber === newBooking.bookingNumber || b.referenceCode === newBooking.bookingNumber)) return false;
+        if (newBooking.razorpayPaymentId && b.razorpayPaymentId && b.razorpayPaymentId === newBooking.razorpayPaymentId) return false;
+        return true;
+      });
+      const next = [newBooking, ...filtered];
       try {
         localStorage.setItem('supersnake_pre_bookings', JSON.stringify(next));
       } catch (e) {}
       return next;
     });
 
-    try {
-      await createPreBookingInSupabase(newBooking);
-    } catch (err) {
-      console.warn('Could not persist pre-booking directly to Supabase:', err);
+    // Only create in Supabase if this booking didn't come already created from /api/pre-booking
+    if (!existingId) {
+      try {
+        await createPreBookingInSupabase(newBooking);
+      } catch (err) {
+        console.warn('Could not persist pre-booking directly to Supabase:', err);
+      }
     }
 
     return newBooking;
