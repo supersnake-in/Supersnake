@@ -271,19 +271,55 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
+    const code = searchParams.get('code') || searchParams.get('ref') || searchParams.get('bookingNumber');
     const email = searchParams.get('email');
+    const phone = searchParams.get('phone');
+    const query = searchParams.get('query') || searchParams.get('q');
 
     const bookings = await fetchPreBookingsFromSupabase();
     if (!bookings) {
       return NextResponse.json({ bookings: [] });
     }
 
-    if (email) {
-      const filtered = bookings.filter((b) => b.customerEmail.toLowerCase() === email.toLowerCase().trim());
-      return NextResponse.json({ bookings: filtered });
+    let filtered = [...bookings];
+
+    if (code) {
+      const cleanCode = code.trim().toLowerCase();
+      filtered = filtered.filter(
+        (b) =>
+          b.bookingNumber?.toLowerCase() === cleanCode ||
+          b.referenceCode?.toLowerCase() === cleanCode ||
+          b.id?.toLowerCase() === cleanCode
+      );
+    } else if (query) {
+      const q = query.trim().toLowerCase();
+      filtered = filtered.filter(
+        (b) =>
+          b.bookingNumber?.toLowerCase().includes(q) ||
+          b.referenceCode?.toLowerCase().includes(q) ||
+          b.customerEmail?.toLowerCase().includes(q) ||
+          b.customerPhone?.replace(/\D/g, '').includes(q.replace(/\D/g, '')) ||
+          b.customerName?.toLowerCase().includes(q) ||
+          b.razorpayPaymentId?.toLowerCase().includes(q)
+      );
+    } else {
+      if (email) {
+        const cleanEmail = email.toLowerCase().trim();
+        filtered = filtered.filter((b) => b.customerEmail.toLowerCase().trim() === cleanEmail);
+      }
+      if (phone) {
+        const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+        if (cleanPhone) {
+          filtered = filtered.filter((b) => b.customerPhone.replace(/\D/g, '').endsWith(cleanPhone));
+        }
+      }
     }
 
-    return NextResponse.json({ bookings });
+    return NextResponse.json({
+      success: true,
+      booking: filtered[0] || null,
+      bookings: filtered,
+    });
   } catch (err: any) {
     return NextResponse.json({ error: 'Failed to retrieve pre-bookings', bookings: [] }, { status: 500 });
   }

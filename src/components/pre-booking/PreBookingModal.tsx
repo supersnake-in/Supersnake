@@ -858,20 +858,28 @@ export function PreBookingModal({
             </p>
 
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
-              <button
-                type="button"
+              <Link
+                href={`/track-order?ref=${encodeURIComponent(confirmedBooking?.bookingNumber || '')}`}
                 onClick={onClose}
-                className="w-full sm:w-auto px-6 py-3 bg-white hover:bg-snake-green text-black font-bold uppercase text-xs rounded transition-colors"
+                className="w-full sm:w-auto px-6 py-3 bg-snake-green hover:bg-white text-black font-bold uppercase text-xs rounded transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(4,252,33,0.3)]"
               >
-                CONTINUE BROWSING
-              </button>
+                <span>TRACK PRE-BOOKING STATUS</span>
+                <ArrowRight size={13} />
+              </Link>
               <Link
                 href="/account/pre-bookings"
                 onClick={onClose}
-                className="w-full sm:w-auto px-6 py-3 border border-white/20 hover:border-white text-white font-bold uppercase text-xs rounded transition-colors"
+                className="w-full sm:w-auto px-6 py-3 border border-white/20 hover:border-white text-white font-bold uppercase text-xs rounded transition-colors text-center"
               >
-                VIEW IN MY PRE-BOOKINGS
+                MY PRE-BOOKINGS
               </Link>
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-full sm:w-auto px-4 py-3 text-neutral-400 hover:text-white uppercase text-xs font-mono transition-colors text-center"
+              >
+                CLOSE
+              </button>
             </div>
           </div>
         )}

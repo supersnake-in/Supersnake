@@ -298,6 +298,9 @@ export interface StorefrontConfig {
 
 export type PreBookingStatus =
   | 'CONFIRMED'
+  | 'PRODUCTION'
+  | 'IN_TRANSIT'
+  | 'DELIVERED'
   | 'CONTACTED'
   | 'CONVERTED_TO_ORDER'
   | 'CANCELLED';
@@ -345,6 +348,8 @@ export interface PreBooking {
     country?: string;
   };
   adminNotes?: string;
+  carrierName?: string;
+  trackingNumber?: string;
   createdAt: string;
   updatedAt: string;
 }

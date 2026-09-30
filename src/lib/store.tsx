@@ -362,7 +362,14 @@ interface StoreContextType {
   // Pre-Bookings
   preBookings: PreBooking[];
   createPreBooking: (booking: Omit<PreBooking, 'id' | 'bookingNumber' | 'createdAt' | 'updatedAt' | 'bookingStatus'>) => Promise<PreBooking>;
-  updatePreBookingStatus: (id: string, bookingStatus: PreBookingStatus, notes?: string, paymentStatus?: 'Paid' | 'Pending' | 'Reservation') => Promise<boolean>;
+  updatePreBookingStatus: (
+    id: string,
+    bookingStatus: PreBookingStatus,
+    notes?: string,
+    paymentStatus?: 'Paid' | 'Pending' | 'Reservation',
+    carrierName?: string,
+    trackingNumber?: string
+  ) => Promise<boolean>;
   refreshPreBookings: () => Promise<PreBooking[]>;
 }
 
@@ -1982,7 +1989,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     id: string,
     bookingStatus: PreBookingStatus,
     notes?: string,
-    paymentStatus?: 'Paid' | 'Pending' | 'Reservation'
+    paymentStatus?: 'Paid' | 'Pending' | 'Reservation',
+    carrierName?: string,
+    trackingNumber?: string
   ): Promise<boolean> => {
     setPreBookings((prev) => {
       const next = prev.map((b) => {
@@ -1993,6 +2002,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             status: bookingStatus,
             ...(notes !== undefined ? { adminNotes: notes } : {}),
             ...(paymentStatus !== undefined ? { paymentStatus } : {}),
+            ...(carrierName !== undefined ? { carrierName } : {}),
+            ...(trackingNumber !== undefined ? { trackingNumber } : {}),
             updatedAt: new Date().toISOString(),
           };
         }
@@ -2010,6 +2021,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         status: bookingStatus,
         adminNotes: notes,
         paymentStatus,
+        carrierName,
+        trackingNumber,
       });
       return true;
     } catch {

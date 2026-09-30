@@ -261,6 +261,46 @@ export default function PreLaunchPage() {
       </section>
 
       {/* ============================================================
+          02.5 — PATRON TRACKING & RESERVATION LOOKUP BANNER
+          ============================================================ */}
+      <section className="py-12 border-t border-white/[0.08] bg-black relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12">
+          <div className="p-6 sm:p-8 rounded-lg bg-[#0a0a0a] border border-white/10 hover:border-snake-green/40 transition-all flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
+            <div className="space-y-1.5 text-center md:text-left">
+              <div className="flex items-center justify-center md:justify-start gap-2">
+                <span className="w-2 h-2 rounded-full bg-snake-green animate-pulse" />
+                <span className="text-[10px] font-mono tracking-widest text-snake-green uppercase font-bold">
+                  PATRON FULFILLMENT RADAR
+                </span>
+              </div>
+              <h3 className="text-xl sm:text-2xl font-display font-bold uppercase text-white tracking-tight">
+                ALREADY SECURED YOUR FIRST DROP PIECE?
+              </h3>
+              <p className="text-xs font-mono text-neutral-400 max-w-xl">
+                Enter your Booking Reference ID (e.g. SS-PB-2026-XXXX) or email to track live atelier tailoring milestones, payment proof, and dispatch scheduling.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0 w-full sm:w-auto">
+              <Link
+                href="/track-order"
+                className="w-full sm:w-auto px-6 py-3.5 bg-white hover:bg-snake-green text-black font-mono font-bold uppercase text-xs tracking-wider rounded transition-all duration-300 flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(4,252,33,0.15)]"
+              >
+                <span>TRACK RESERVATION</span>
+                <ArrowRight size={13} />
+              </Link>
+              <Link
+                href="/account/pre-bookings"
+                className="w-full sm:w-auto px-6 py-3.5 border border-white/20 hover:border-white text-white font-mono font-bold uppercase text-xs tracking-wider rounded transition-colors text-center"
+              >
+                MY PRE-BOOKINGS
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ============================================================
           03 — THE SUPERSNAKE ATELIER MANIFESTO
           ============================================================ */}
       <section className="py-20 sm:py-28 border-t border-white/[0.08] bg-[#030303] relative overflow-hidden">

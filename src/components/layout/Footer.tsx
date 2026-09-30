@@ -36,6 +36,7 @@ export function Footer() {
       links: isPreLaunch
         ? [
             { label: 'PRE-BOOK COLLECTION', href: '/#pre-book-grid' },
+            { label: 'TRACK PRE-BOOKING', href: '/track-order' },
             { label: 'MY PRE-BOOKINGS', href: '/account/pre-bookings' },
             { label: 'ATELIER CRAFT', href: '/about' },
             { label: 'OFFICIAL DROP INTEL', href: '/#countdown' },
@@ -53,6 +54,7 @@ export function Footer() {
       number: '02',
       title: 'CUSTOMER CARE',
       links: [
+        { label: isPreLaunch ? 'TRACK PRE-BOOKING' : 'TRACK SHIPMENT', href: '/track-order' },
         { label: 'CONTACT US', href: '/contact' },
         { label: 'FAQ', href: '/faq' },
         { label: 'SHIPPING & DELIVERY', href: '/shipping' },

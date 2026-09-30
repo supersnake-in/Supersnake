@@ -247,6 +247,7 @@ export async function middleware(request: NextRequest) {
       pathname === '/api/create-order' ||
       pathname === '/api/verify-payment' ||
       pathname === '/api/newsletter' ||
+      pathname === '/track-order' ||
       pathname === '/login' ||
       pathname === '/signup' ||
       pathname === '/verify-email' ||

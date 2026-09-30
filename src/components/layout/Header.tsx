@@ -52,6 +52,7 @@ export function Header() {
     ? [
         { label: 'HOME', href: '/' },
         { label: 'THE FIRST DROP', href: '/#pre-book-grid' },
+        { label: 'TRACK PRE-BOOKING', href: '/track-order' },
         { label: 'ATELIER', href: '/about' },
         { label: 'CONTACT', href: '/contact' },
       ]
@@ -59,6 +60,7 @@ export function Header() {
         { label: 'SHOP', href: '/shop' },
         { label: 'MEN', href: '/men' },
         { label: 'WOMEN', href: '/women' },
+        { label: 'TRACK ORDER', href: '/track-order' },
         { label: 'NEW DROPS', href: '/new-drops' },
       ];
 
@@ -185,6 +187,14 @@ export function Header() {
                           className="flex items-center justify-between p-2 rounded hover:bg-white/5 text-neutral-300 hover:text-white transition-colors"
                         >
                           <span>MY ORDERS</span>
+                          <ArrowRight size={12} className="text-neutral-500" />
+                        </Link>
+                        <Link
+                          href="/track-order"
+                          onClick={() => setAccountMenuOpen(false)}
+                          className="flex items-center justify-between p-2 rounded hover:bg-white/5 text-neutral-300 hover:text-white transition-colors"
+                        >
+                          <span>{isPreLaunch ? 'TRACK PRE-BOOKING' : 'TRACK SHIPMENT'}</span>
                           <ArrowRight size={12} className="text-neutral-500" />
                         </Link>
                         <Link
@@ -365,6 +375,7 @@ export function Header() {
                 ? [
                     { label: 'HOME', href: '/' },
                     { label: 'THE FIRST DROP', href: '/#pre-book-grid' },
+                    { label: 'TRACK PRE-BOOKING', href: '/track-order' },
                     { label: 'MY PRE-BOOKINGS', href: '/account/pre-bookings' },
                     { label: 'ATELIER CRAFT', href: '/about' },
                     { label: 'CONTACT', href: '/contact' },
@@ -373,6 +384,7 @@ export function Header() {
                     { label: 'SHOP', href: '/shop' },
                     { label: 'MEN', href: '/men' },
                     { label: 'WOMEN', href: '/women' },
+                    { label: 'TRACK ORDER', href: '/track-order' },
                     { label: 'NEW DROPS', href: '/new-drops' },
                     { label: 'BESTSELLERS', href: '/bestsellers' },
                     { label: 'ABOUT', href: '/about' },

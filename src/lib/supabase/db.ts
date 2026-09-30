@@ -1446,6 +1446,8 @@ export async function updatePreBookingInSupabase(
     if (updates.paymentStatus) payload.payment_status = updates.paymentStatus;
     if (updates.adminNotes !== undefined) payload.admin_notes = updates.adminNotes;
     if (updates.shippingAddress) payload.shipping_address = updates.shippingAddress;
+    if (updates.carrierName !== undefined) payload.carrier_name = updates.carrierName;
+    if (updates.trackingNumber !== undefined) payload.tracking_number = updates.trackingNumber;
 
     const { error } = await supabase
       .from('pre_bookings')

@@ -15,6 +15,7 @@ import {
   ExternalLink,
   Package,
   Search,
+  Truck,
 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useAuth } from '@/lib/auth-context';
@@ -30,7 +31,28 @@ const STATUS_BADGES: Record<
     bg: 'bg-snake-green/15',
     text: 'text-snake-green',
     border: 'border-snake-green/40',
-    desc: 'Your exclusive garment is secured. Concierge will contact you prior to official launch.',
+    desc: 'Your exclusive garment is secured. Inaugural serial number locked in atelier register.',
+  },
+  PRODUCTION: {
+    label: 'IN PRODUCTION',
+    bg: 'bg-amber-500/15',
+    text: 'text-amber-400',
+    border: 'border-amber-500/40',
+    desc: 'Atelier tailoring underway with precision hand-finishing and quality audit.',
+  },
+  IN_TRANSIT: {
+    label: 'IN TRANSIT',
+    bg: 'bg-cyan-500/15',
+    text: 'text-cyan-400',
+    border: 'border-cyan-500/40',
+    desc: 'Dispatched via priority air express courier to your destination coordinates.',
+  },
+  DELIVERED: {
+    label: 'DELIVERED',
+    bg: 'bg-emerald-500/15',
+    text: 'text-emerald-400',
+    border: 'border-emerald-500/40',
+    desc: 'Handed over to patron. Your inaugural First Drop piece is now with you.',
   },
   CONTACTED: {
     label: 'CONCIERGE ENGAGED',
@@ -346,6 +368,14 @@ export default function CustomerPreBookingsPage() {
                   </div>
 
                   <div className="flex items-center gap-3">
+                    <Link
+                      href={`/track-order?ref=${encodeURIComponent(b.bookingNumber || b.referenceCode)}`}
+                      className="px-2.5 py-1 bg-snake-green/15 hover:bg-snake-green text-snake-green hover:text-black border border-snake-green/40 rounded uppercase font-bold flex items-center gap-1.5 transition-colors text-[10px]"
+                    >
+                      <Truck size={11} />
+                      <span>TRACK STATUS</span>
+                    </Link>
+
                     <Link
                       href={`/product/${b.productSlug}`}
                       className="text-neutral-300 hover:text-white uppercase font-bold flex items-center gap-1 transition-colors text-[10px]"
