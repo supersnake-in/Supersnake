@@ -1,22 +1,40 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import { OrderStatus, Order } from '@/lib/types';
 import { formatPrice } from '@/lib/design-tokens';
+import { fetchOrderByIdFromSupabase } from '@/lib/supabase/db';
 import { Search, Filter, CheckCircle2, Truck, Package, Clock, XCircle } from 'lucide-react';
 
 export default function AdminOrdersPage() {
-  const { orders, updateOrder } = useStore();
+  const { orders, updateOrder, refreshOrders } = useStore();
   const [ordersList, setOrdersList] = useState<Order[]>(orders);
   const [search, setSearch] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
+    refreshOrders();
+  }, [refreshOrders]);
+
+  useEffect(() => {
     setOrdersList(orders);
   }, [orders]);
+
+  const handleViewOrder = async (ord: Order) => {
+    setSelectedOrder(ord);
+    if (!ord.items || ord.items.length === 0) {
+      try {
+        const fullOrder = await fetchOrderByIdFromSupabase(ord.id || ord.orderNumber);
+        if (fullOrder && fullOrder.items && fullOrder.items.length > 0) {
+          setSelectedOrder(fullOrder);
+          setOrdersList((prev) => prev.map((o) => (o.id === ord.id ? fullOrder : o)));
+        }
+      } catch (e) {}
+    }
+  };
 
   const statuses: OrderStatus[] = [
     'Payment Pending',
@@ -205,7 +223,7 @@ export default function AdminOrdersPage() {
                   </td>
                   <td className="py-3 px-4 text-right">
                     <button
-                      onClick={() => setSelectedOrder(ord)}
+                      onClick={() => handleViewOrder(ord)}
                       className="px-2.5 py-1 bg-neutral-800 hover:bg-white hover:text-black rounded text-[10px] uppercase font-bold text-neutral-300 transition-colors"
                     >
                       VIEW

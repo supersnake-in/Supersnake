@@ -54,6 +54,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Module-level in-flight profile fetch deduplication map
+const inFlightProfileFetches: Record<string, Promise<any>> = {};
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -188,11 +191,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Asynchronously verify against public.profiles database
     try {
-      const { data: dbProfile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', currentUser.id)
-        .single();
+      if (!inFlightProfileFetches[currentUser.id]) {
+        inFlightProfileFetches[currentUser.id] = (async () => {
+          try {
+            const { data } = await supabase
+              .from('profiles')
+              .select('id, full_name, phone, avatar_url, phone_verified, phone_verified_at, phone_verification_method, last_login_at, is_email_verified')
+              .eq('id', currentUser.id)
+              .maybeSingle();
+            return data;
+          } finally {
+            delete inFlightProfileFetches[currentUser.id];
+          }
+        })();
+      }
+
+      const dbProfile = await inFlightProfileFetches[currentUser.id];
 
       if (dbProfile) {
         loadedProfile = {

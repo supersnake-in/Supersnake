@@ -95,11 +95,21 @@ export async function POST(req: NextRequest) {
 
     // 5. Check Maximum Pre-Bookings Limit if configured
     if (product.maxPreBookings && product.maxPreBookings > 0) {
-      const existingBookings = await fetchPreBookingsFromSupabase();
-      if (existingBookings) {
-        const productBookingsCount = existingBookings
-          .filter((b) => (b.productId === product.id || b.productSlug === product.slug) && b.bookingStatus !== 'CANCELLED')
-          .reduce((sum, b) => sum + b.quantity, 0);
+      try {
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(product.id);
+        let countQuery = supabase
+          .from('pre_bookings')
+          .select('quantity')
+          .neq('booking_status', 'CANCELLED');
+
+        if (isUuid) {
+          countQuery = countQuery.or(`product_id.eq.${product.id},product_slug.eq.${product.slug}`);
+        } else {
+          countQuery = countQuery.eq('product_slug', product.slug);
+        }
+
+        const { data: bookingRows } = await countQuery;
+        const productBookingsCount = (bookingRows || []).reduce((sum: number, b: any) => sum + (Number(b.quantity) || 1), 0);
 
         if (productBookingsCount + qty > product.maxPreBookings) {
           return NextResponse.json(
@@ -111,6 +121,8 @@ export async function POST(req: NextRequest) {
             { status: 400 }
           );
         }
+      } catch (capErr) {
+        console.warn('Could not verify max pre-bookings limit:', capErr);
       }
     }
 
@@ -276,49 +288,19 @@ export async function GET(req: NextRequest) {
     const phone = searchParams.get('phone');
     const query = searchParams.get('query') || searchParams.get('q');
 
-    const bookings = await fetchPreBookingsFromSupabase();
-    if (!bookings) {
-      return NextResponse.json({ bookings: [] });
-    }
+    const bookings = await fetchPreBookingsFromSupabase({
+      code: code ? code.trim() : undefined,
+      email: email ? email.trim() : undefined,
+      phone: phone ? phone.trim() : undefined,
+      search: query ? query.trim() : undefined,
+    });
 
-    let filtered = [...bookings];
-
-    if (code) {
-      const cleanCode = code.trim().toLowerCase();
-      filtered = filtered.filter(
-        (b) =>
-          b.bookingNumber?.toLowerCase() === cleanCode ||
-          b.referenceCode?.toLowerCase() === cleanCode ||
-          b.id?.toLowerCase() === cleanCode
-      );
-    } else if (query) {
-      const q = query.trim().toLowerCase();
-      filtered = filtered.filter(
-        (b) =>
-          b.bookingNumber?.toLowerCase().includes(q) ||
-          b.referenceCode?.toLowerCase().includes(q) ||
-          b.customerEmail?.toLowerCase().includes(q) ||
-          b.customerPhone?.replace(/\D/g, '').includes(q.replace(/\D/g, '')) ||
-          b.customerName?.toLowerCase().includes(q) ||
-          b.razorpayPaymentId?.toLowerCase().includes(q)
-      );
-    } else {
-      if (email) {
-        const cleanEmail = email.toLowerCase().trim();
-        filtered = filtered.filter((b) => b.customerEmail.toLowerCase().trim() === cleanEmail);
-      }
-      if (phone) {
-        const cleanPhone = phone.replace(/\D/g, '').slice(-10);
-        if (cleanPhone) {
-          filtered = filtered.filter((b) => b.customerPhone.replace(/\D/g, '').endsWith(cleanPhone));
-        }
-      }
-    }
+    const list = bookings || [];
 
     return NextResponse.json({
       success: true,
-      booking: filtered[0] || null,
-      bookings: filtered,
+      booking: list[0] || null,
+      bookings: list,
     });
   } catch (err: any) {
     return NextResponse.json({ error: 'Failed to retrieve pre-bookings', bookings: [] }, { status: 500 });

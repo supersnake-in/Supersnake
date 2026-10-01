@@ -58,15 +58,18 @@ export async function POST(req: Request) {
 
     // Attempt Supabase insert
     try {
-      await supabase.from('defect_reports').insert({
-        id: newReport.id,
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const isOrderUuid = Boolean(newReport.orderId && isUuid.test(newReport.orderId));
+      const isProdUuid = Boolean(newReport.productId && isUuid.test(newReport.productId));
+
+      const insertPayload: any = {
         report_number: newReport.reportNumber,
-        order_id: newReport.orderId,
+        order_id: isOrderUuid ? newReport.orderId : null,
         order_number: newReport.orderNumber,
         customer_name: newReport.customerName,
         customer_email: newReport.customerEmail,
         customer_phone: newReport.customerPhone,
-        product_id: newReport.productId || null,
+        product_id: isProdUuid ? newReport.productId : null,
         product_name: newReport.productName,
         product_color: newReport.productColor || null,
         product_size: newReport.productSize || null,
@@ -76,7 +79,13 @@ export async function POST(req: Request) {
         images: newReport.images,
         video_url: newReport.videoUrl,
         status: newReport.status,
-      });
+      };
+
+      if (newReport.id && isUuid.test(newReport.id)) {
+        insertPayload.id = newReport.id;
+      }
+
+      await supabase.from('defect_reports').insert(insertPayload);
     } catch (dbErr) {
       console.warn('Could not insert to Supabase defect_reports:', dbErr);
     }

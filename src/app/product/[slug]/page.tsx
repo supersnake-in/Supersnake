@@ -1,7 +1,8 @@
+import { cache } from 'react';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { PRODUCTS } from '@/lib/data/products';
-import { fetchProductsFromSupabase } from '@/lib/supabase/db';
+import { fetchProductBySlugFromSupabase } from '@/lib/supabase/db';
 import { Product } from '@/lib/types';
 import { ProductDetailClient } from '@/components/product/ProductDetailClient';
 import { JsonLd } from '@/components/seo/JsonLd';
@@ -10,16 +11,15 @@ interface Props {
   params: { slug: string };
 }
 
-async function getProductBySlug(slug: string): Promise<Product | null> {
+const getProductBySlug = cache(async (slug: string): Promise<Product | null> => {
   try {
-    const supaProducts = await fetchProductsFromSupabase();
-    const found = supaProducts?.find((p) => p.slug === slug);
-    if (found) return found;
+    const supaProduct = await fetchProductBySlugFromSupabase(slug);
+    if (supaProduct) return supaProduct;
   } catch (e) {
     console.warn('Supabase fetch failed in product page, falling back to local data:', e);
   }
   return PRODUCTS.find((p) => p.slug === slug) || null;
-}
+});
 
 export async function generateStaticParams() {
   return PRODUCTS.map((product) => ({

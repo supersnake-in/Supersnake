@@ -27,12 +27,11 @@ let cacheTimestamp = 0;
  */
 export async function GET() {
   const now = Date.now();
-  // Cache for 2 seconds to protect database under bursts
-  if (now - cacheTimestamp < 2000 && cacheTimestamp > 0) {
+  // Cache for 30 seconds to protect database under bursts
+  if (now - cacheTimestamp < 30000 && cacheTimestamp > 0) {
     return NextResponse.json(cachedConfig, {
       headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate',
-        Pragma: 'no-cache',
+        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
       },
     });
   }
@@ -45,8 +44,7 @@ export async function GET() {
 
   return NextResponse.json(cachedConfig, {
     headers: {
-      'Cache-Control': 'no-store, no-cache, must-revalidate',
-      Pragma: 'no-cache',
+      'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
     },
   });
 }

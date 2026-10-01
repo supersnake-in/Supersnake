@@ -39,7 +39,7 @@ function isPastLaunchDate(launchDate: string, launchTime: string): boolean {
 
 export async function GET() {
   const now = Date.now();
-  if (now - lastFetch > 2000 || lastFetch === 0) {
+  if (now - lastFetch > 30000 || lastFetch === 0) {
     try {
       const config = await fetchStorefrontConfigFromSupabase();
       if (config) {
@@ -67,8 +67,7 @@ export async function GET() {
     },
     {
       headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate',
-        Pragma: 'no-cache',
+        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
       },
     }
   );

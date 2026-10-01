@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Mail,
   Search,
@@ -16,11 +16,15 @@ import {
 import { useStore } from '@/lib/store';
 
 export default function AdminMembershipPage() {
-  const { subscribers, addSubscriber, deleteSubscriber } = useStore();
+  const { subscribers, addSubscriber, deleteSubscriber, refreshSubscribers } = useStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [addStatus, setAddStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+  useEffect(() => {
+    refreshSubscribers();
+  }, [refreshSubscribers]);
 
   // Filter subscribers based on search query
   const filteredSubscribers = useMemo(() => {

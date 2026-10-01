@@ -17,17 +17,193 @@ import {
   PreBookingStatus,
 } from '../types';
 
+// In-memory catalog cache (60s) to prevent repetitive PostgREST egress bursts
+let cachedProducts: Product[] | null = null;
+let productsCacheTime = 0;
+
 /**
- * FETCH PRODUCTS DYNAMICALLY FROM SUPABASE
+ * Maps a Supabase products row to the Product TypeScript interface
  */
-export async function fetchProductsFromSupabase(): Promise<Product[] | null> {
+export function mapProductRowToProduct(row: any): Product {
+  const sortedImages = (row.images || []).sort(
+    (a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0)
+  );
+
+  // Deduplicate images by URL to guarantee no repeated shots
+  const seenUrls = new Set<string>();
+  const deduplicatedImages = sortedImages.filter((img: any) => {
+    if (!img.url || seenUrls.has(img.url)) return false;
+    seenUrls.add(img.url);
+    return true;
+  });
+
+  const images: ProductImage[] = deduplicatedImages.map((img: any, idx: number) => ({
+    url: img.url,
+    alt: img.alt || `${row.name} view ${idx + 1}`,
+    angle: img.angle || (idx === 0 ? 'front' : idx === 1 ? 'model' : 'fabric'),
+    isPrimary: idx === 0,
+  }));
+
+  const variants: ProductVariant[] = (row.variants || []).map((v: any) => ({
+    id: v.id,
+    sku: v.sku,
+    colorName: v.color_name,
+    colorHex: v.color_hex,
+    size: v.size,
+    stock: v.stock,
+    price: Number(v.price || row.price),
+    mrp: Number(v.mrp || row.mrp),
+  }));
+
+  // Extract colors from row.colors if saved directly, otherwise derive from variants
+  const variantColors = Array.from(
+    new Map(variants.map((v) => [v.colorName, { name: v.colorName, hex: v.colorHex }])).values()
+  );
+  const colors = Array.isArray(row.colors) && row.colors.length > 0
+    ? row.colors
+    : variantColors.length > 0
+      ? variantColors
+      : [{ name: 'Obsidian Black', hex: '#0a0a0a' }];
+
+  // Extract sizes from row.sizes if saved directly, otherwise derive from variants
+  const variantSizes = Array.from(new Set(variants.map((v) => v.size)));
+  const sizes = Array.isArray(row.sizes) && row.sizes.length > 0
+    ? row.sizes
+    : variantSizes.length > 0
+      ? (variantSizes as any)
+      : ['S', 'M', 'L', 'XL'];
+
+  return {
+    id: row.id,
+    name: row.name,
+    slug: row.slug,
+    tagline: row.tagline || '',
+    description: row.description || '',
+    gender: row.gender,
+    fit: row.fit,
+    price: Number(row.price),
+    mrp: Number(row.mrp),
+    gsm: Number(row.gsm),
+    fabric: row.fabric,
+    weightText: row.weight_text || undefined,
+    careInstructions: row.care_instructions || [],
+    features: row.features || [],
+    shippingPolicy: row.shipping_policy || undefined,
+    images: images.length > 0 ? images : [],
+    colors,
+    sizes,
+    variants,
+    isNew: row.is_new,
+    isBestseller: row.is_bestseller,
+    isSpotlight: row.is_spotlight,
+    isSignature: Boolean(row.is_signature),
+    preLaunchEnabled: Boolean(row.pre_launch_enabled),
+    maxPreBookings: row.max_pre_bookings ? Number(row.max_pre_bookings) : undefined,
+    rating: Number(row.rating || 5.0),
+    reviewsCount: Number(row.reviews_count || 0),
+    createdAt: row.created_at || new Date().toISOString(),
+  };
+}
+
+/**
+ * FETCH SINGLE PRODUCT BY SLUG DYNAMICALLY FROM SUPABASE
+ * Downloads ONLY the single requested product with its images and variants,
+ * eliminating the need to download the entire catalog on product pages.
+ */
+export async function fetchProductBySlugFromSupabase(slug: string): Promise<Product | null> {
+  if (!slug) return null;
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select(`
+        id,
+        name,
+        slug,
+        tagline,
+        description,
+        gender,
+        fit,
+        price,
+        mrp,
+        gsm,
+        fabric,
+        weight_text,
+        care_instructions,
+        features,
+        shipping_policy,
+        colors,
+        sizes,
+        is_signature,
+        is_spotlight,
+        is_bestseller,
+        is_new,
+        pre_launch_enabled,
+        max_pre_bookings,
+        rating,
+        reviews_count,
+        created_at,
+        images:product_images(id, url, alt, angle, display_order),
+        variants:product_variants(id, sku, color_name, color_hex, size, stock, price, mrp)
+      `)
+      .eq('slug', slug)
+      .maybeSingle();
+
+    if (error) {
+      console.warn('Error fetching product by slug from Supabase:', error.message);
+      return null;
+    }
+
+    if (!data) return null;
+    return mapProductRowToProduct(data);
+  } catch (err) {
+    console.warn('Exception fetching product by slug:', err);
+    return null;
+  }
+}
+
+/**
+ * FETCH PRODUCTS DYNAMICALLY FROM SUPABASE FOR LISTINGS
+ * Selects only explicit required fields, caches in memory for 60s,
+ * and eliminates the client-side delete/insert loop.
+ */
+export async function fetchProductsFromSupabase(forceRefresh: boolean = false): Promise<Product[] | null> {
+  const now = Date.now();
+  if (!forceRefresh && cachedProducts && now - productsCacheTime < 60000) {
+    return cachedProducts;
+  }
+
   try {
     const { data: productsData, error: productsError } = await supabase
       .from('products')
       .select(`
-        *,
-        images:product_images(*),
-        variants:product_variants(*)
+        id,
+        name,
+        slug,
+        tagline,
+        description,
+        gender,
+        fit,
+        price,
+        mrp,
+        gsm,
+        fabric,
+        weight_text,
+        care_instructions,
+        features,
+        shipping_policy,
+        colors,
+        sizes,
+        is_signature,
+        is_spotlight,
+        is_bestseller,
+        is_new,
+        pre_launch_enabled,
+        max_pre_bookings,
+        rating,
+        reviews_count,
+        created_at,
+        images:product_images(id, url, alt, angle, display_order),
+        variants:product_variants(id, sku, color_name, color_hex, size, stock, price, mrp)
       `)
       .order('created_at', { ascending: false });
 
@@ -41,107 +217,9 @@ export async function fetchProductsFromSupabase(): Promise<Product[] | null> {
     }
 
     // Map Supabase rows to Product TypeScript interface
-    return productsData.map((row: any): Product => {
-      const sortedImages = (row.images || []).sort(
-        (a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0)
-      );
-
-      // Deduplicate images by URL to guarantee no repeated shots
-      const seenUrls = new Set<string>();
-      const deduplicatedImages = sortedImages.filter((img: any) => {
-        if (!img.url || seenUrls.has(img.url)) return false;
-        seenUrls.add(img.url);
-        return true;
-      });
-
-      // Self-heal Supabase if duplicate rows exist in product_images
-      if (sortedImages.length > deduplicatedImages.length && row.id) {
-        (async () => {
-          try {
-            await supabase.from('product_images').delete().eq('product_id', row.id);
-            const cleanedRows = deduplicatedImages.map((img: any, idx: number) => ({
-              product_id: row.id,
-              url: img.url,
-              alt: img.alt || `${row.name} view ${idx + 1}`,
-              angle: img.angle || 'front',
-              display_order: idx,
-            }));
-            for (const cRow of cleanedRows) {
-              await supabase.from('product_images').insert(cRow);
-            }
-          } catch (e) {
-            console.warn('Could not auto-clean duplicate product images:', e);
-          }
-        })();
-      }
-
-      const images: ProductImage[] = deduplicatedImages.map((img: any, idx: number) => ({
-        url: img.url,
-        alt: img.alt || `${row.name} view ${idx + 1}`,
-        angle: img.angle || (idx === 0 ? 'front' : idx === 1 ? 'model' : 'fabric'),
-        isPrimary: idx === 0,
-      }));
-
-      const variants: ProductVariant[] = (row.variants || []).map((v: any) => ({
-        id: v.id,
-        sku: v.sku,
-        colorName: v.color_name,
-        colorHex: v.color_hex,
-        size: v.size,
-        stock: v.stock,
-        price: Number(v.price || row.price),
-        mrp: Number(v.mrp || row.mrp),
-      }));
-
-      // Extract colors from row.colors if saved directly, otherwise derive from variants
-      const variantColors = Array.from(
-        new Map(variants.map((v) => [v.colorName, { name: v.colorName, hex: v.colorHex }])).values()
-      );
-      const colors = Array.isArray(row.colors) && row.colors.length > 0
-        ? row.colors
-        : variantColors.length > 0
-          ? variantColors
-          : [{ name: 'Obsidian Black', hex: '#0a0a0a' }];
-
-      // Extract sizes from row.sizes if saved directly, otherwise derive from variants
-      const variantSizes = Array.from(new Set(variants.map((v) => v.size)));
-      const sizes = Array.isArray(row.sizes) && row.sizes.length > 0
-        ? row.sizes
-        : variantSizes.length > 0
-          ? (variantSizes as any)
-          : ['S', 'M', 'L', 'XL'];
-
-      return {
-        id: row.id,
-        name: row.name,
-        slug: row.slug,
-        tagline: row.tagline || '',
-        description: row.description || '',
-        gender: row.gender,
-        fit: row.fit,
-        price: Number(row.price),
-        mrp: Number(row.mrp),
-        gsm: Number(row.gsm),
-        fabric: row.fabric,
-        weightText: row.weight_text || undefined,
-        careInstructions: row.care_instructions || [],
-        features: row.features || [],
-        shippingPolicy: row.shipping_policy || undefined,
-        images: images.length > 0 ? images : [],
-        colors,
-        sizes,
-        variants,
-        isNew: row.is_new,
-        isBestseller: row.is_bestseller,
-        isSpotlight: row.is_spotlight,
-        isSignature: Boolean(row.is_signature),
-        preLaunchEnabled: Boolean(row.pre_launch_enabled),
-        maxPreBookings: row.max_pre_bookings ? Number(row.max_pre_bookings) : undefined,
-        rating: Number(row.rating || 5.0),
-        reviewsCount: Number(row.reviews_count || 0),
-        createdAt: row.created_at || new Date().toISOString(),
-      };
-    });
+    cachedProducts = productsData.map(mapProductRowToProduct);
+    productsCacheTime = now;
+    return cachedProducts;
   } catch (err) {
     console.warn('Supabase products fetch failed, using local store:', err);
     return null;
@@ -439,6 +517,48 @@ export async function updateProductInSupabase(product: Product): Promise<boolean
 }
 
 /**
+ * Maps a Supabase order row to the Order TypeScript interface
+ */
+export function mapOrderRowToOrder(row: any): Order {
+  return {
+    id: row.id,
+    orderNumber: row.order_number,
+    createdAt: row.created_at,
+    status: row.status,
+    phoneVerified: Boolean(row.phone_verified),
+    items: Array.isArray(row.items)
+      ? row.items.map((it: any) => ({
+          productId: it.product_id || '',
+          productName: it.product_name,
+          color: it.color,
+          size: it.size,
+          quantity: it.quantity,
+          price: Number(it.price),
+          imageUrl: it.image_url || '',
+        }))
+      : [],
+    subtotal: Number(row.subtotal),
+    discount: Number(row.discount || 0),
+    shipping: Number(row.shipping || 0),
+    tax: Number(row.tax || 0),
+    total: Number(row.total),
+    customer: {
+      name: row.customer_name || 'Customer',
+      email: row.customer_email || '',
+      phone: row.customer_phone || '',
+    },
+    shippingAddress: row.shipping_address || {},
+    payment: {
+      method: row.payment_method || 'card',
+      transactionId: row.transaction_id || '',
+      status: row.payment_status || 'paid',
+      paidAt: row.created_at,
+    },
+    tracking: row.tracking_info,
+  };
+}
+
+/**
  * CREATE ORDER IN SUPABASE
  */
 export async function createOrderInSupabase(order: Order): Promise<boolean> {
@@ -462,7 +582,7 @@ export async function createOrderInSupabase(order: Order): Promise<boolean> {
         transaction_id: order.payment.transactionId,
         tracking_info: order.tracking,
       })
-      .select()
+      .select('id, order_number')
       .single();
 
     if (orderError || !insertedOrder) {
@@ -491,55 +611,156 @@ export async function createOrderInSupabase(order: Order): Promise<boolean> {
 }
 
 /**
- * FETCH ORDERS DYNAMICALLY FROM SUPABASE
+ * FETCH SINGLE ORDER BY ID OR ORDER NUMBER FROM SUPABASE
+ * Downloads order details and order items ONLY for this specific order.
  */
-export async function fetchOrdersFromSupabase(): Promise<Order[] | null> {
+export async function fetchOrderByIdFromSupabase(idOrNumber: string): Promise<Order | null> {
+  if (!idOrNumber) return null;
   try {
-    const { data: ordersData, error: ordersError } = await supabase
+    const clean = idOrNumber.trim();
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(clean);
+
+    let query = supabase
       .from('orders')
       .select(`
-        *,
-        items:order_items(*)
+        id,
+        order_number,
+        status,
+        subtotal,
+        discount,
+        shipping,
+        tax,
+        total,
+        customer_name,
+        customer_email,
+        customer_phone,
+        phone_verified,
+        shipping_address,
+        payment_method,
+        payment_status,
+        transaction_id,
+        tracking_info,
+        created_at,
+        items:order_items(id, product_id, product_name, color, size, quantity, price, image_url)
+      `);
+
+    if (isUuid) {
+      query = query.eq('id', clean);
+    } else if (clean.toUpperCase().startsWith('SS-')) {
+      query = query.eq('order_number', clean);
+    } else {
+      query = query.ilike('order_number', `%${clean}%`);
+    }
+
+    const { data, error } = await query.maybeSingle();
+    if (error || !data) return null;
+    return mapOrderRowToOrder(data);
+  } catch (err) {
+    console.warn('Error fetching order by ID from Supabase:', err);
+    return null;
+  }
+}
+
+/**
+ * FETCH ORDER ITEMS ON-DEMAND FOR AN ORDER
+ */
+export async function fetchOrderItemsFromSupabase(orderIdOrNumber: string): Promise<any[]> {
+  if (!orderIdOrNumber) return [];
+  try {
+    const clean = orderIdOrNumber.trim();
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(clean);
+    let orderUuid = clean;
+
+    if (!isUuid) {
+      const { data: ord } = await supabase
+        .from('orders')
+        .select('id')
+        .eq('order_number', clean)
+        .maybeSingle();
+      if (!ord?.id) return [];
+      orderUuid = ord.id;
+    }
+
+    const { data, error } = await supabase
+      .from('order_items')
+      .select('id, product_id, product_name, color, size, quantity, price, image_url')
+      .eq('order_id', orderUuid);
+
+    if (error || !data) return [];
+    return data.map((it: any) => ({
+      productId: it.product_id || '',
+      productName: it.product_name,
+      color: it.color,
+      size: it.size,
+      quantity: it.quantity,
+      price: Number(it.price),
+      imageUrl: it.image_url || '',
+    }));
+  } catch (err) {
+    return [];
+  }
+}
+
+/**
+ * FETCH ORDERS DYNAMICALLY FROM SUPABASE
+ * Does NOT download all historical order items in bulk.
+ * Supports pagination and optional filtering by customer email or status.
+ */
+export async function fetchOrdersFromSupabase(options?: {
+  page?: number;
+  pageSize?: number;
+  status?: string;
+  customerEmail?: string;
+}): Promise<Order[] | null> {
+  try {
+    let query = supabase
+      .from('orders')
+      .select(`
+        id,
+        order_number,
+        status,
+        subtotal,
+        discount,
+        shipping,
+        tax,
+        total,
+        customer_name,
+        customer_email,
+        customer_phone,
+        phone_verified,
+        shipping_address,
+        payment_method,
+        payment_status,
+        transaction_id,
+        tracking_info,
+        created_at
       `)
       .order('created_at', { ascending: false });
+
+    if (options?.customerEmail) {
+      query = query.eq('customer_email', options.customerEmail.trim().toLowerCase());
+    }
+
+    if (options?.status && options.status !== 'all') {
+      query = query.eq('status', options.status);
+    }
+
+    if (options?.page !== undefined) {
+      const pageSize = options.pageSize || 25;
+      const offset = options.page * pageSize;
+      query = query.range(offset, offset + pageSize - 1);
+    } else if (!options?.customerEmail) {
+      // Default to 50 for unrestricted list
+      query = query.limit(50);
+    }
+
+    const { data: ordersData, error: ordersError } = await query;
 
     if (ordersError || !ordersData || ordersData.length === 0) {
       return null;
     }
 
-    return ordersData.map((row: any): Order => ({
-      id: row.id,
-      orderNumber: row.order_number,
-      createdAt: row.created_at,
-      status: row.status,
-      items: (row.items || []).map((it: any) => ({
-        productId: it.product_id || '',
-        productName: it.product_name,
-        color: it.color,
-        size: it.size,
-        quantity: it.quantity,
-        price: Number(it.price),
-        imageUrl: it.image_url || '',
-      })),
-      subtotal: Number(row.subtotal),
-      discount: Number(row.discount || 0),
-      shipping: Number(row.shipping || 0),
-      tax: Number(row.tax || 0),
-      total: Number(row.total),
-      customer: {
-        name: row.customer_name,
-        email: row.customer_email,
-        phone: row.customer_phone,
-      },
-      shippingAddress: row.shipping_address || {},
-      payment: {
-        method: row.payment_method || 'card',
-        transactionId: row.transaction_id || '',
-        status: row.payment_status || 'paid',
-        paidAt: row.created_at,
-      },
-      tracking: row.tracking_info,
-    }));
+    return ordersData.map(mapOrderRowToOrder);
   } catch (err) {
     console.warn('Error fetching orders from Supabase:', err);
     return null;
@@ -560,6 +781,7 @@ export async function updateOrderInSupabase(
     if (updates.status) payload.status = updates.status;
     if (updates.tracking) payload.tracking_info = updates.tracking;
     if (updates.payment?.status) payload.payment_status = updates.payment.status;
+    if (updates.phoneVerified !== undefined) payload.phone_verified = updates.phoneVerified;
 
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderIdOrNumber);
 
@@ -584,34 +806,72 @@ export async function updateOrderInSupabase(
 
 /**
  * SUBSCRIBE NEWSLETTER IN SUPABASE
+ * Upserts email with ignoreDuplicates to avoid HTTP 400/409 errors on duplicate submissions.
  */
 export async function subscribeNewsletterInSupabase(email: string): Promise<boolean> {
   try {
     const { error } = await supabase
       .from('newsletter_subscribers')
-      .insert({ email });
+      .upsert({ email: email.trim().toLowerCase() }, { onConflict: 'email', ignoreDuplicates: true });
     return !error;
   } catch (err) {
     return false;
   }
 }
 
+// In-memory cache for homepage configuration (5 minutes)
+let cachedHomepageConfig: HomepageConfig | null = null;
+let homepageConfigCacheTime = 0;
+
 /**
  * FETCH HOMEPAGE CONFIG FROM SUPABASE
+ * Explicit columns and 5-minute in-memory caching to eliminate redundant PostgREST egress.
  */
-export async function fetchHomepageConfigFromSupabase(): Promise<HomepageConfig | null> {
+export async function fetchHomepageConfigFromSupabase(forceRefresh: boolean = false): Promise<HomepageConfig | null> {
+  const now = Date.now();
+  if (!forceRefresh && cachedHomepageConfig && now - homepageConfigCacheTime < 300000) {
+    return cachedHomepageConfig;
+  }
+
   try {
     const { data, error } = await supabase
       .from('homepage_config')
-      .select('*')
+      .select(`
+        hero_images,
+        hero_interval_seconds,
+        hero_headline,
+        hero_supporting_copy,
+        spotlight_product_id,
+        brand_statement,
+        men_collection_image,
+        women_collection_image,
+        supersnake_tee_image,
+        signature_tee_image,
+        pillar1_image,
+        pillar2_image,
+        pillar3_image,
+        hero_object_eyebrow,
+        hero_object_title,
+        hero_object_quote,
+        hero_object_badge,
+        hero_object_spec1_eyebrow,
+        hero_object_spec1_title,
+        hero_object_spec1_desc,
+        hero_object_spec2_eyebrow,
+        hero_object_spec2_title,
+        hero_object_spec2_desc,
+        hero_object_spec3_eyebrow,
+        hero_object_spec3_title,
+        hero_object_spec3_desc
+      `)
       .eq('id', 'default')
-      .single();
+      .maybeSingle();
 
     if (error || !data) {
       return null;
     }
 
-    return {
+    cachedHomepageConfig = {
       heroImages: Array.isArray(data.hero_images) && data.hero_images.length > 0 ? data.hero_images : [],
       heroIntervalSeconds: Number(data.hero_interval_seconds || 3),
       heroHeadline: data.hero_headline || '',
@@ -639,6 +899,8 @@ export async function fetchHomepageConfigFromSupabase(): Promise<HomepageConfig 
       heroObjectSpec3Title: data.hero_object_spec3_title || undefined,
       heroObjectSpec3Desc: data.hero_object_spec3_desc || undefined,
     };
+    homepageConfigCacheTime = now;
+    return cachedHomepageConfig;
   } catch (err) {
     console.warn('Supabase homepage config fetch failed:', err);
     return null;
@@ -649,6 +911,7 @@ export async function fetchHomepageConfigFromSupabase(): Promise<HomepageConfig 
  * SAVE HOMEPAGE CONFIG TO SUPABASE
  */
 export async function saveHomepageConfigToSupabase(config: HomepageConfig): Promise<boolean> {
+  cachedHomepageConfig = null;
   try {
     const { error } = await supabase
       .from('homepage_config')
@@ -699,13 +962,15 @@ export async function saveHomepageConfigToSupabase(config: HomepageConfig): Prom
 
 /**
  * FETCH NEWSLETTER SUBSCRIBERS FROM SUPABASE
+ * Explicit columns and capped query to prevent unbounded list downloads.
  */
-export async function fetchSubscribersFromSupabase(): Promise<NewsletterSubscriber[] | null> {
+export async function fetchSubscribersFromSupabase(limit: number = 50): Promise<NewsletterSubscriber[] | null> {
   try {
     const { data, error } = await supabase
       .from('newsletter_subscribers')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .select('id, email, source, created_at')
+      .order('created_at', { ascending: false })
+      .limit(limit);
 
     if (error || !data) {
       return null;
@@ -739,22 +1004,32 @@ export async function deleteSubscriberFromSupabase(idOrEmail: string): Promise<b
   }
 }
 
+// In-memory cache for social configuration (5 minutes)
+let cachedSocialConfig: SocialConfig | null = null;
+let socialConfigCacheTime = 0;
+
 /**
  * FETCH SOCIAL CONFIG FROM SUPABASE
+ * Explicit columns and 5-minute in-memory caching to eliminate redundant PostgREST egress.
  */
-export async function fetchSocialConfigFromSupabase(): Promise<SocialConfig | null> {
+export async function fetchSocialConfigFromSupabase(forceRefresh: boolean = false): Promise<SocialConfig | null> {
+  const now = Date.now();
+  if (!forceRefresh && cachedSocialConfig && now - socialConfigCacheTime < 300000) {
+    return cachedSocialConfig;
+  }
+
   try {
     const { data, error } = await supabase
       .from('social_config')
-      .select('*')
+      .select('community_images, instagram, x, youtube, threads, linkedin, contact_phone')
       .eq('id', 'default')
-      .single();
+      .maybeSingle();
 
     if (error || !data) {
       return null;
     }
 
-    return {
+    cachedSocialConfig = {
       communityImages: Array.isArray(data.community_images) && data.community_images.length > 0 ? data.community_images : [],
       instagram: data.instagram || '',
       x: data.x || '',
@@ -763,6 +1038,8 @@ export async function fetchSocialConfigFromSupabase(): Promise<SocialConfig | nu
       linkedin: data.linkedin || '',
       contactPhone: data.contact_phone || '',
     };
+    socialConfigCacheTime = now;
+    return cachedSocialConfig;
   } catch (err) {
     return null;
   }
@@ -772,6 +1049,7 @@ export async function fetchSocialConfigFromSupabase(): Promise<SocialConfig | nu
  * SAVE SOCIAL CONFIG TO SUPABASE
  */
 export async function saveSocialConfigToSupabase(config: SocialConfig): Promise<boolean> {
+  cachedSocialConfig = null;
   try {
     const { error } = await supabase
       .from('social_config')
@@ -823,29 +1101,19 @@ export async function createDefectReportInSupabase(report: DefectReport): Promis
       updated_at: new Date().toISOString(),
     };
 
-    // Attempt insert with the client-generated ID
+    // Safe UUID check: only provide id if it matches standard UUID format
+    const isUuid = report.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(report.id);
+    const insertPayload: any = { ...payload };
+    if (isUuid) {
+      insertPayload.id = report.id;
+    }
+
     const { error } = await supabase
       .from('defect_reports')
-      .insert({
-        id: report.id,
-        ...payload,
-      });
+      .insert(insertPayload);
 
     if (!error) {
       return true;
-    }
-
-    // If it failed because the id column is UUID type in PostgreSQL, retry without explicit id so Postgres generates default UUID
-    if (error.message && (error.message.includes('uuid') || error.message.includes('type'))) {
-      const { error: retryError } = await supabase
-        .from('defect_reports')
-        .insert(payload);
-
-      if (!retryError) {
-        return true;
-      }
-      console.warn('Defect report retry insert error in Supabase:', retryError.message);
-      return false;
     }
 
     console.warn('Defect report insert error in Supabase:', error.message);
@@ -858,13 +1126,51 @@ export async function createDefectReportInSupabase(report: DefectReport): Promis
 
 /**
  * FETCH DEFECT REPORTS FROM SUPABASE
+ * Explicit columns and pagination to avoid transferring heavy media payloads for entire tables.
  */
-export async function fetchDefectReportsFromSupabase(): Promise<DefectReport[] | null> {
+export async function fetchDefectReportsFromSupabase(options?: {
+  page?: number;
+  pageSize?: number;
+  status?: string;
+}): Promise<DefectReport[] | null> {
   try {
-    const { data, error } = await supabase
+    const pageSize = options?.pageSize || 25;
+    const page = options?.page || 0;
+    const offset = page * pageSize;
+
+    let query = supabase
       .from('defect_reports')
-      .select('*')
+      .select(`
+        id,
+        report_number,
+        order_id,
+        order_number,
+        customer_name,
+        customer_email,
+        customer_phone,
+        product_id,
+        product_name,
+        product_color,
+        product_size,
+        product_image,
+        defect_type,
+        description,
+        images,
+        video_url,
+        status,
+        admin_notes,
+        created_at,
+        updated_at
+      `)
       .order('created_at', { ascending: false });
+
+    if (options?.status && options.status !== 'all') {
+      query = query.eq('status', options.status);
+    }
+
+    query = query.range(offset, offset + pageSize - 1);
+
+    const { data, error } = await query;
 
     if (error || !data) {
       return null;
@@ -936,13 +1242,30 @@ export async function updateDefectReportInSupabase(
 
 /**
  * FETCH ABANDONED & ACTIVE CARTS FROM SUPABASE
+ * Explicit columns and pagination to prevent unbounded list downloads.
  */
-export async function fetchAbandonedCartsFromSupabase(): Promise<AbandonedCart[] | null> {
+export async function fetchAbandonedCartsFromSupabase(options?: {
+  page?: number;
+  pageSize?: number;
+  status?: string;
+}): Promise<AbandonedCart[] | null> {
   try {
-    const { data, error } = await supabase
+    const pageSize = options?.pageSize || 25;
+    const page = options?.page || 0;
+    const offset = page * pageSize;
+
+    let query = supabase
       .from('abandoned_carts')
-      .select('*')
+      .select('id, user_id, customer_name, customer_email, customer_phone, items, subtotal, item_count, status, notes, discount_offered, last_active_at, created_at, updated_at')
       .order('last_active_at', { ascending: false });
+
+    if (options?.status && options.status !== 'all') {
+      query = query.eq('status', options.status);
+    }
+
+    query = query.range(offset, offset + pageSize - 1);
+
+    const { data, error } = await query;
 
     if (error || !data) {
       return null;
@@ -1095,14 +1418,24 @@ export async function markCartAsRecoveredInSupabase(customerEmail: string): Prom
   }
 }
 
+// In-memory cache for maintenance configuration (30s)
+let cachedMaintenanceConfig: MaintenanceConfig | null = null;
+let maintenanceConfigCacheTime = 0;
+
 /**
  * FETCH MAINTENANCE CONFIG FROM SUPABASE
+ * Explicit columns and 30-second cache to prevent middleware / store load storms.
  */
-export async function fetchMaintenanceConfigFromSupabase(): Promise<MaintenanceConfig | null> {
+export async function fetchMaintenanceConfigFromSupabase(forceRefresh: boolean = false): Promise<MaintenanceConfig | null> {
+  const now = Date.now();
+  if (!forceRefresh && cachedMaintenanceConfig && now - maintenanceConfigCacheTime < 30000) {
+    return cachedMaintenanceConfig;
+  }
+
   try {
     const { data, error } = await supabase
       .from('maintenance_config')
-      .select('*')
+      .select('id, maintenance_mode, maintenance_message, estimated_restore_time, updated_at, updated_by')
       .eq('id', 'default')
       .maybeSingle();
 
@@ -1110,7 +1443,7 @@ export async function fetchMaintenanceConfigFromSupabase(): Promise<MaintenanceC
       return null;
     }
 
-    return {
+    cachedMaintenanceConfig = {
       maintenanceMode: Boolean(data.maintenance_mode),
       maintenanceMessage:
         data.maintenance_message ||
@@ -1119,6 +1452,8 @@ export async function fetchMaintenanceConfigFromSupabase(): Promise<MaintenanceC
       updatedAt: data.updated_at || new Date().toISOString(),
       updatedBy: data.updated_by || 'system',
     };
+    maintenanceConfigCacheTime = now;
+    return cachedMaintenanceConfig;
   } catch (err) {
     console.warn('Error fetching maintenance config from Supabase:', err);
     return null;
@@ -1132,6 +1467,7 @@ export async function updateMaintenanceConfigInSupabase(
   config: Partial<MaintenanceConfig>,
   adminEmail: string = 'system'
 ): Promise<boolean> {
+  cachedMaintenanceConfig = null;
   try {
     const now = new Date().toISOString();
     const payload: any = {
@@ -1150,7 +1486,7 @@ export async function updateMaintenanceConfigInSupabase(
     }
 
     // Try updating existing row
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('maintenance_config')
       .upsert(
         {
@@ -1158,9 +1494,7 @@ export async function updateMaintenanceConfigInSupabase(
           ...payload,
         },
         { onConflict: 'id' }
-      )
-      .select('id')
-      .single();
+      );
 
     if (error) {
       console.warn('Error updating maintenance config in Supabase:', error.message);
@@ -1174,19 +1508,29 @@ export async function updateMaintenanceConfigInSupabase(
   }
 }
 
+// In-memory cache for storefront configuration (30s)
+let cachedStorefrontConfig: StorefrontConfig | null = null;
+let storefrontConfigCacheTime = 0;
+
 /**
  * FETCH STOREFRONT CONFIG FROM SUPABASE
+ * Explicit columns and 30-second cache to protect PostgREST from request storms.
  */
-export async function fetchStorefrontConfigFromSupabase(): Promise<StorefrontConfig | null> {
+export async function fetchStorefrontConfigFromSupabase(forceRefresh: boolean = false): Promise<StorefrontConfig | null> {
+  const now = Date.now();
+  if (!forceRefresh && cachedStorefrontConfig && now - storefrontConfigCacheTime < 30000) {
+    return cachedStorefrontConfig;
+  }
+
   try {
     const { data, error } = await supabase
       .from('storefront_config')
-      .select('*')
+      .select('id, storefront_mode, launch_date, launch_time, launch_timezone, automatic_launch, pre_launch_product_limit, maintenance_message, estimated_restore_time, updated_at, updated_by')
       .eq('id', 'default')
       .maybeSingle();
 
     if (!error && data) {
-      return {
+      cachedStorefrontConfig = {
         id: data.id || 'default',
         storefrontMode: (data.storefront_mode as any) || 'PRE_LAUNCH',
         launchDate: data.launch_date || '2026-10-14',
@@ -1199,6 +1543,8 @@ export async function fetchStorefrontConfigFromSupabase(): Promise<StorefrontCon
         updatedAt: data.updated_at || new Date().toISOString(),
         updatedBy: data.updated_by || 'system',
       };
+      storefrontConfigCacheTime = now;
+      return cachedStorefrontConfig;
     }
   } catch (err) {}
 
@@ -1206,25 +1552,27 @@ export async function fetchStorefrontConfigFromSupabase(): Promise<StorefrontCon
   try {
     const { data: mData } = await supabase
       .from('maintenance_config')
-      .select('*')
+      .select('id, maintenance_mode, maintenance_message, estimated_restore_time, updated_at, updated_by')
       .eq('id', 'default')
       .maybeSingle();
 
     if (mData) {
       const isMaint = Boolean(mData.maintenance_mode);
-      return {
+      cachedStorefrontConfig = {
         id: 'default',
-        storefrontMode: isMaint ? 'MAINTENANCE' : ((mData.storefront_mode as any) || 'PRE_LAUNCH'),
-        launchDate: mData.launch_date || '2026-10-14',
-        launchTime: mData.launch_time || '10:00',
-        launchTimezone: mData.launch_timezone || 'IST',
-        automaticLaunch: Boolean(mData.automatic_launch),
-        preLaunchProductLimit: Number(mData.pre_launch_product_limit || 6),
+        storefrontMode: isMaint ? 'MAINTENANCE' : (((mData as any).storefront_mode as any) || 'PRE_LAUNCH'),
+        launchDate: (mData as any).launch_date || '2026-10-14',
+        launchTime: (mData as any).launch_time || '10:00',
+        launchTimezone: (mData as any).launch_timezone || 'IST',
+        automaticLaunch: Boolean((mData as any).automatic_launch),
+        preLaunchProductLimit: Number((mData as any).pre_launch_product_limit || 6),
         maintenanceMessage: mData.maintenance_message || '',
         estimatedRestoreTime: mData.estimated_restore_time || null,
         updatedAt: mData.updated_at || new Date().toISOString(),
         updatedBy: mData.updated_by || 'system',
       };
+      storefrontConfigCacheTime = now;
+      return cachedStorefrontConfig;
     }
   } catch (err) {}
 
@@ -1238,6 +1586,8 @@ export async function updateStorefrontConfigInSupabase(
   config: Partial<StorefrontConfig>,
   adminEmail: string = 'system'
 ): Promise<boolean> {
+  cachedStorefrontConfig = null;
+  cachedMaintenanceConfig = null;
   try {
     const now = new Date().toISOString();
     const payload: any = {
@@ -1288,6 +1638,7 @@ export async function toggleProductPreLaunchInSupabase(
   productId: string,
   preLaunchEnabled: boolean
 ): Promise<boolean> {
+  cachedProducts = null;
   try {
     const { error } = await supabase
       .from('products')
@@ -1303,13 +1654,83 @@ export async function toggleProductPreLaunchInSupabase(
 
 /**
  * FETCH PRE-BOOKINGS FROM SUPABASE
+ * Explicit columns, SQL-level filtering by code/email/phone, and pagination
+ * to prevent downloading the entire table into client memory.
  */
-export async function fetchPreBookingsFromSupabase(): Promise<PreBooking[] | null> {
+export async function fetchPreBookingsFromSupabase(options?: {
+  code?: string;
+  email?: string;
+  phone?: string;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<PreBooking[] | null> {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('pre_bookings')
-      .select('*')
+      .select(`
+        id,
+        booking_number,
+        product_id,
+        product_name,
+        product_slug,
+        product_image,
+        color_name,
+        color_hex,
+        size,
+        quantity,
+        unit_price,
+        total_amount,
+        customer_id,
+        customer_name,
+        customer_email,
+        customer_phone,
+        shipping_address,
+        payment_status,
+        payment_method,
+        razorpay_payment_id,
+        razorpay_order_id,
+        paid_at,
+        booking_status,
+        admin_notes,
+        created_at,
+        updated_at
+      `)
       .order('created_at', { ascending: false });
+
+    if (options?.code) {
+      const cleanCode = options.code.trim();
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanCode);
+      if (isUuid) {
+        query = query.eq('id', cleanCode);
+      } else {
+        query = query.eq('booking_number', cleanCode);
+      }
+    } else if (options?.search) {
+      const q = options.search.trim();
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(q);
+      if (isUuid) {
+        query = query.eq('id', q);
+      } else {
+        query = query.or(`booking_number.ilike.%${q}%,customer_email.ilike.%${q}%,customer_name.ilike.%${q}%`);
+      }
+    } else if (options?.email) {
+      query = query.eq('customer_email', options.email.trim().toLowerCase());
+    } else if (options?.phone) {
+      const cleanPhone = options.phone.replace(/\D/g, '').slice(-10);
+      if (cleanPhone) {
+        query = query.ilike('customer_phone', `%${cleanPhone}`);
+      }
+    }
+
+    if (options?.limit) {
+      const off = options.offset || 0;
+      query = query.range(off, off + options.limit - 1);
+    } else if (!options?.code && !options?.email && !options?.phone) {
+      query = query.limit(50);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.warn('Error fetching pre_bookings from Supabase:', error.message);

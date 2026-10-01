@@ -310,6 +310,7 @@ interface StoreContextType {
   createOrder: (order: Omit<Order, 'id' | 'orderNumber' | 'createdAt'>) => Order;
   getOrderById: (orderId: string) => Order | undefined;
   updateOrder: (orderId: string, updates: Partial<Order>) => Promise<boolean>;
+  refreshOrders: (options?: { page?: number; pageSize?: number; status?: string; customerEmail?: string }) => Promise<Order[]>;
 
   // Products Catalog (Admin & Storefront synchronized)
   products: Product[];
@@ -331,6 +332,7 @@ interface StoreContextType {
   subscribers: NewsletterSubscriber[];
   addSubscriber: (email: string) => Promise<boolean>;
   deleteSubscriber: (id: string) => Promise<boolean>;
+  refreshSubscribers: (limit?: number) => Promise<NewsletterSubscriber[]>;
 
   // Store Settings & Logistics
   freeShippingThreshold: number;
@@ -621,35 +623,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         console.warn('Supabase fetch failed:', err);
       });
 
-    // Fetch dynamic orders from Supabase (Single Source of Truth)
-    fetchOrdersFromSupabase()
-      .then((supabaseOrders) => {
-        if (supabaseOrders !== null) {
-          setOrders((prev) => {
-            const map = new Map<string, Order>();
-            // Add Supabase orders
-            supabaseOrders.forEach((o) => {
-              map.set(o.orderNumber, o);
-            });
-            // Keep locally created orders that aren't in Supabase yet
-            prev.forEach((o) => {
-              if (!map.has(o.orderNumber)) {
-                map.set(o.orderNumber, o);
-              }
-            });
-            const merged = Array.from(map.values());
-            try {
-              localStorage.setItem('supersnake_orders', JSON.stringify(merged));
-            } catch (e) {}
-            return merged;
-          });
-        }
-      })
-      .catch((err) => {
-        console.warn('Supabase orders fetch failed:', err);
-      });
-
-    // Fetch dynamic homepage config from Supabase
+    // Fetch dynamic homepage config from Supabase (5m cached)
     fetchHomepageConfigFromSupabase()
       .then((supabaseHomepage) => {
         if (supabaseHomepage !== null) {
@@ -671,10 +645,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         }
       })
       .catch((err) => {
-        console.warn('Supabase homepage config fetch failed:', err);
+        console.warn('Supabase homepage config fetch notice:', err);
       });
 
-    // Fetch dynamic social config from Supabase
+    // Fetch dynamic social config from Supabase (5m cached)
     fetchSocialConfigFromSupabase()
       .then((supabaseSocial) => {
         if (supabaseSocial !== null) {
@@ -692,94 +666,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       })
       .catch(() => {});
 
-    // Fetch dynamic subscribers from Supabase
-    fetchSubscribersFromSupabase()
-      .then((supabaseSubscribers) => {
-        if (supabaseSubscribers !== null) {
-          setSubscribers(supabaseSubscribers);
-          try {
-            localStorage.setItem('supersnake_newsletter_subscribers', JSON.stringify(supabaseSubscribers));
-          } catch (e) {}
-        }
-      })
-      .catch(() => {});
-
-    // Fetch dynamic defect reports from Supabase
-    fetchDefectReportsFromSupabase()
-      .then((supabaseDefects) => {
-        if (supabaseDefects && supabaseDefects.length > 0) {
-          setDefectReports((prev) => {
-            const map = new Map<string, DefectReport>();
-            supabaseDefects.forEach((d) => map.set(d.id, d));
-            prev.forEach((d) => {
-              if (!map.has(d.id) && !map.has(d.reportNumber)) {
-                map.set(d.id, d);
-              }
-            });
-            const merged = Array.from(map.values());
-            saveDefectReportsToStorage(merged);
-            return merged;
-          });
-        }
-      })
-      .catch(() => {});
-
-    // Fetch dynamic abandoned carts from Supabase
-    fetchAbandonedCartsFromSupabase()
-      .then((supabaseCarts) => {
-        if (supabaseCarts && supabaseCarts.length > 0) {
-          setAbandonedCarts((prev) => {
-            const map = new Map<string, AbandonedCart>();
-            supabaseCarts.forEach((c) => map.set(c.id, c));
-            prev.forEach((c) => {
-              if (!map.has(c.id)) {
-                map.set(c.id, c);
-              }
-            });
-            const merged = Array.from(map.values());
-            saveAbandonedCartsToStorage(merged);
-            return merged;
-          });
-        }
-      })
-      .catch(() => {});
-
-    // Fetch dynamic maintenance config from API (or fallback to Supabase)
-    fetch('/api/admin/maintenance')
-      .then(async (res) => {
-        if (res.ok) {
-          const data = await res.json();
-          const cfg = data.config || data;
-          if (cfg && typeof cfg.maintenanceMode === 'boolean') {
-            setMaintenanceConfig(cfg);
-            try {
-              localStorage.setItem('supersnake_maintenance_config', JSON.stringify(cfg));
-            } catch (e) {}
-            return;
-          }
-        }
-        throw new Error('API maintenance fallback');
-      })
-      .catch(() => {
-        fetchMaintenanceConfigFromSupabase()
-          .then((dbConfig) => {
-            if (dbConfig) {
-              setMaintenanceConfig(dbConfig);
-              try {
-                localStorage.setItem('supersnake_maintenance_config', JSON.stringify(dbConfig));
-              } catch (e) {}
-            }
-          })
-          .catch(() => {});
-      });
-
-    // Fetch dynamic storefront configuration from API (or fallback to Supabase)
+    // Fetch consolidated storefront and maintenance configuration (30s edge cached)
     fetch('/api/storefront-mode')
       .then(async (res) => {
         if (res.ok) {
           const cfg = await res.json();
           if (cfg && cfg.storefrontMode) {
             setStorefrontConfig(cfg);
+            setMaintenanceConfig((prev) => ({
+              ...prev,
+              maintenanceMode: cfg.storefrontMode === 'MAINTENANCE',
+              maintenanceMessage: cfg.maintenanceMessage || prev.maintenanceMessage,
+              estimatedRestoreTime: cfg.estimatedRestoreTime || prev.estimatedRestoreTime,
+            }));
             try {
               localStorage.setItem('supersnake_storefront_config', JSON.stringify(cfg));
             } catch (e) {}
@@ -793,6 +692,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           .then((dbConfig) => {
             if (dbConfig) {
               setStorefrontConfig(dbConfig);
+              setMaintenanceConfig((prev) => ({
+                ...prev,
+                maintenanceMode: dbConfig.storefrontMode === 'MAINTENANCE',
+                maintenanceMessage: dbConfig.maintenanceMessage || prev.maintenanceMessage,
+                estimatedRestoreTime: dbConfig.estimatedRestoreTime || prev.estimatedRestoreTime,
+              }));
               try {
                 localStorage.setItem('supersnake_storefront_config', JSON.stringify(dbConfig));
               } catch (e) {}
@@ -800,18 +705,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           })
           .catch(() => {});
       });
-
-    // Fetch dynamic pre-bookings from Supabase
-    fetchPreBookingsFromSupabase()
-      .then((bookings) => {
-        if (bookings && bookings.length > 0) {
-          setPreBookings(bookings);
-          try {
-            localStorage.setItem('supersnake_pre_bookings', JSON.stringify(bookings));
-          } catch (e) {}
-        }
-      })
-      .catch(() => {});
 
     // Free shipping threshold sync from localStorage
     try {
@@ -1233,6 +1126,33 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
+  const refreshOrders = useCallback(
+    async (options?: { page?: number; pageSize?: number; status?: string; customerEmail?: string }): Promise<Order[]> => {
+      try {
+        const supabaseOrders = await fetchOrdersFromSupabase(options);
+        if (supabaseOrders !== null) {
+          setOrders((prev) => {
+            const map = new Map<string, Order>();
+            supabaseOrders.forEach((o) => map.set(o.orderNumber, o));
+            prev.forEach((o) => {
+              if (!map.has(o.orderNumber)) map.set(o.orderNumber, o);
+            });
+            const merged = Array.from(map.values());
+            try {
+              localStorage.setItem('supersnake_orders', JSON.stringify(merged));
+            } catch (e) {}
+            return merged;
+          });
+          return supabaseOrders;
+        }
+      } catch (err) {
+        console.warn('Supabase orders refresh notice:', err);
+      }
+      return orders;
+    },
+    [orders]
+  );
+
   // Product actions
   const saveProductsToLocalStorage = (productList: Product[]) => {
     try {
@@ -1456,6 +1376,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     return true;
   };
+
+  const refreshSubscribers = useCallback(
+    async (limit: number = 50): Promise<NewsletterSubscriber[]> => {
+      try {
+        const supabaseSubscribers = await fetchSubscribersFromSupabase(limit);
+        if (supabaseSubscribers !== null) {
+          setSubscribers(supabaseSubscribers);
+          try {
+            localStorage.setItem('supersnake_newsletter_subscribers', JSON.stringify(supabaseSubscribers));
+          } catch (e) {}
+          return supabaseSubscribers;
+        }
+      } catch (e) {}
+      return subscribers;
+    },
+    [subscribers]
+  );
 
   const refreshDefectReports = async (): Promise<DefectReport[]> => {
     try {
@@ -2047,6 +1984,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         subscribers,
         addSubscriber,
         deleteSubscriber,
+        refreshSubscribers,
         cart,
         isCartOpen,
         openCart,
@@ -2073,6 +2011,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         createOrder,
         getOrderById,
         updateOrder,
+        refreshOrders,
         freeShippingThreshold,
         updateFreeShippingThreshold,
         defectReports,

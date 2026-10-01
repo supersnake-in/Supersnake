@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft, Printer, Download, Package } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { Order } from '@/lib/types';
-import { supabase } from '@/lib/supabase/client';
+import { fetchOrderByIdFromSupabase } from '@/lib/supabase/db';
 import OrderInvoice from '@/components/invoice/OrderInvoice';
 
 export default function DedicatedInvoicePage() {
@@ -43,63 +43,8 @@ export default function DedicatedInvoicePage() {
       }
 
       try {
-        const clean = orderId.trim();
-        const numOnly = clean.replace(/[^0-9]/g, '');
-
-        let query = supabase
-          .from('orders')
-          .select(`
-            *,
-            items:order_items(*)
-          `);
-
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(clean);
-        if (isUuid) {
-          query = query.eq('id', clean);
-        } else if (clean.startsWith('SS-')) {
-          query = query.eq('order_number', clean);
-        } else if (numOnly) {
-          query = query.ilike('order_number', `%${numOnly}%`);
-        } else {
-          query = query.or(`order_number.ilike.%${clean}%,id.eq.${clean}`);
-        }
-
-        const { data } = await query.maybeSingle();
-
-        if (data && isMounted) {
-          const mappedOrder: Order = {
-            id: data.id,
-            orderNumber: data.order_number,
-            createdAt: data.created_at,
-            status: data.status,
-            items: (data.items || []).map((it: any) => ({
-              productId: it.product_id || '',
-              productName: it.product_name,
-              color: it.color,
-              size: it.size,
-              quantity: it.quantity,
-              price: Number(it.price),
-              imageUrl: it.image_url || '',
-            })),
-            subtotal: Number(data.subtotal),
-            discount: Number(data.discount || 0),
-            shipping: Number(data.shipping || 0),
-            tax: Number(data.tax || 0),
-            total: Number(data.total),
-            customer: {
-              name: data.customer_name,
-              email: data.customer_email,
-              phone: data.customer_phone,
-            },
-            shippingAddress: data.shipping_address || {},
-            payment: {
-              method: data.payment_method || 'razorpay',
-              transactionId: data.transaction_id || '',
-              status: data.payment_status || 'paid',
-              paidAt: data.created_at,
-            },
-            tracking: data.tracking_info,
-          };
+        const mappedOrder = await fetchOrderByIdFromSupabase(orderId);
+        if (mappedOrder && isMounted) {
           setAsyncOrder(mappedOrder);
         }
       } catch (err) {

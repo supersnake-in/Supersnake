@@ -27,23 +27,59 @@ import {
 import { SuperSnakeLogo } from '@/components/brand/SuperSnakeLogo';
 import { useAuth } from '@/lib/auth-context';
 import { useStore } from '@/lib/store';
+import { supabase } from '@/lib/supabase/client';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, profile, isLoading, isAdmin } = useAuth();
   const { defectReports, abandonedCarts, maintenanceConfig, preBookings } = useStore();
+  const [badgeCounts, setBadgeCounts] = React.useState({
+    pendingDefects: 0,
+    openCarts: 0,
+    activePreBookings: 0,
+  });
 
-  const pendingDefectsCount = defectReports.filter(
-    (d) => d.status === 'Pending Review'
-  ).length;
+  React.useEffect(() => {
+    if (!isAdmin) return;
+    let isMounted = true;
 
-  const openCartsCount = abandonedCarts.filter(
-    (c) => c.status === 'Active' || c.status === 'Abandoned'
-  ).length;
+    async function loadBadgeCounts() {
+      try {
+        const [defectsRes, cartsRes, preBookingsRes] = await Promise.all([
+          supabase.from('defect_reports').select('id', { count: 'exact', head: true }).eq('status', 'Pending Review'),
+          supabase.from('abandoned_carts').select('id', { count: 'exact', head: true }).in('status', ['Active', 'Abandoned']),
+          supabase.from('pre_bookings').select('id', { count: 'exact', head: true }).in('booking_status', ['CONFIRMED', 'CONTACTED']),
+        ]);
 
-  const activePreBookingsCount = preBookings.filter(
-    (b) => b.status === 'CONFIRMED' || b.status === 'CONTACTED'
-  ).length;
+        if (isMounted) {
+          setBadgeCounts({
+            pendingDefects: defectsRes.count ?? 0,
+            openCarts: cartsRes.count ?? 0,
+            activePreBookings: preBookingsRes.count ?? 0,
+          });
+        }
+      } catch (err) {
+        // Fallback to in-memory store counts
+      }
+    }
+
+    loadBadgeCounts();
+    return () => {
+      isMounted = false;
+    };
+  }, [isAdmin]);
+
+  const pendingDefectsCount =
+    badgeCounts.pendingDefects ||
+    defectReports.filter((d) => d.status === 'Pending Review').length;
+
+  const openCartsCount =
+    badgeCounts.openCarts ||
+    abandonedCarts.filter((c) => c.status === 'Active' || c.status === 'Abandoned').length;
+
+  const activePreBookingsCount =
+    badgeCounts.activePreBookings ||
+    preBookings.filter((b) => b.status === 'CONFIRMED' || b.status === 'CONTACTED').length;
 
   const navItems = [
     { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },

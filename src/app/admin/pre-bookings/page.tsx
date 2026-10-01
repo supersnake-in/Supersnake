@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -85,6 +85,10 @@ export default function AdminPreBookingsPage() {
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
+
+  useEffect(() => {
+    refreshPreBookings();
+  }, [refreshPreBookings]);
 
   // Filtered Pre-Bookings
   const filteredBookings = useMemo(() => {

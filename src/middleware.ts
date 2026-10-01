@@ -32,11 +32,11 @@ function isPastLaunch(launchDate: string, launchTime: string): boolean {
 }
 
 /**
- * Fetch storefront mode from Supabase with 2-second in-memory Edge caching
+ * Fetch storefront mode from Supabase with 30-second in-memory Edge caching
  */
 async function getStorefrontStatus(): Promise<typeof edgeStorefrontState> {
   const now = Date.now();
-  if (now - lastFetchTime < 2000 && lastFetchTime > 0) {
+  if (now - lastFetchTime < 30000 && lastFetchTime > 0) {
     return edgeStorefrontState;
   }
 
@@ -311,7 +311,9 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * - robots.txt, sitemap.xml
+     * - static assets with file extensions
      */
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:ico|png|jpg|jpeg|svg|webp|gif|woff|woff2|ttf|css|js)).*)',
   ],
 };

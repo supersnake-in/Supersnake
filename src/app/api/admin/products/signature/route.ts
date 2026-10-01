@@ -41,7 +41,7 @@ export async function POST(request: Request) {
       const { data: prod } = await supabase
         .from('products')
         .select('id')
-        .or(`id.eq.${productId},slug.eq.${productId}`)
+        .eq('slug', productId)
         .maybeSingle();
 
       if (prod) {
