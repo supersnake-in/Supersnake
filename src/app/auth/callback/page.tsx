@@ -39,6 +39,16 @@ function AuthCallbackContent() {
         const { data: { session } } = await supabase.auth.getSession();
         if (session && active) {
           setStatusMessage('ACCESS GRANTED. ENTERING ATELIER...');
+          try {
+            await fetch('/api/auth/session/touch', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${session.access_token}`,
+              },
+              body: JSON.stringify({ userId: session.user.id }),
+            });
+          } catch (e) {}
         }
 
         if (active) {

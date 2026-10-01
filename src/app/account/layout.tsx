@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { useStore } from '@/lib/store';
+import { PasskeyPromptModal } from '@/components/auth/PasskeyPromptModal';
 
 const ACCOUNT_NAV = [
   { href: '/account', label: 'OVERVIEW', icon: LayoutDashboard, exact: true },
@@ -301,6 +302,7 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
           </main>
         </div>
       </div>
+      <PasskeyPromptModal />
     </div>
   );
 }

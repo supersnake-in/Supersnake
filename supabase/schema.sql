@@ -10,6 +10,11 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   full_name TEXT,
   email TEXT UNIQUE NOT NULL,
   phone TEXT,
+  avatar_url TEXT,
+  phone_verified BOOLEAN DEFAULT FALSE,
+  phone_verified_at TIMESTAMPTZ,
+  phone_verification_method TEXT,
+  last_login_at TIMESTAMPTZ,
   role TEXT DEFAULT 'customer' CHECK (role IN ('customer', 'admin', 'staff')),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -128,6 +133,7 @@ CREATE TABLE IF NOT EXISTS public.orders (
   customer_name TEXT NOT NULL,
   customer_email TEXT NOT NULL,
   customer_phone TEXT NOT NULL,
+  phone_verified BOOLEAN DEFAULT FALSE,
   shipping_address JSONB NOT NULL,
   payment_method TEXT NOT NULL,
   payment_status TEXT DEFAULT 'pending' CHECK (payment_status IN ('pending', 'paid', 'failed', 'refunded')),
@@ -182,6 +188,18 @@ CREATE TABLE IF NOT EXISTS public.newsletter_subscribers (
   subscribed_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 11. User Passkeys Table (Patron UI Metadata only; credentials handled by Supabase Auth)
+CREATE TABLE IF NOT EXISTS public.user_passkeys (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  credential_id TEXT NOT NULL,
+  friendly_name TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  last_used_at TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_passkeys_user_id ON public.user_passkeys(user_id);
+
 -- ============================================================
 -- AUTOMATED AUTH TRIGGER: SYNC auth.users TO public.profiles
 -- ============================================================
@@ -190,13 +208,33 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 DECLARE
   assigned_role TEXT := 'customer';
+  extracted_avatar TEXT := NULL;
+  extracted_phone TEXT := NULL;
 BEGIN
   -- Automatically grant admin role to designated executive emails
   IF NEW.email IN ('jdhanush213@gmail.com', 'supersnake.in@gmail.com') THEN
     assigned_role := 'admin';
   END IF;
 
-  INSERT INTO public.profiles (id, full_name, email, phone, role)
+  extracted_avatar := COALESCE(
+    NEW.raw_user_meta_data->>'avatar_url',
+    NEW.raw_user_meta_data->>'picture',
+    NULL
+  );
+
+  extracted_phone := NEW.raw_user_meta_data->>'phone';
+
+  INSERT INTO public.profiles (
+    id,
+    full_name,
+    email,
+    phone,
+    avatar_url,
+    phone_verified,
+    phone_verified_at,
+    phone_verification_method,
+    role
+  )
   VALUES (
     NEW.id,
     COALESCE(
@@ -205,13 +243,18 @@ BEGIN
       split_part(NEW.email, '@', 1)
     ),
     NEW.email,
-    NEW.raw_user_meta_data->>'phone',
+    extracted_phone,
+    extracted_avatar,
+    FALSE,
+    NULL,
+    NULL,
     assigned_role
   )
   ON CONFLICT (id) DO UPDATE
   SET
-    full_name = EXCLUDED.full_name,
-    phone = COALESCE(EXCLUDED.phone, public.profiles.phone),
+    full_name = COALESCE(public.profiles.full_name, EXCLUDED.full_name),
+    avatar_url = COALESCE(public.profiles.avatar_url, EXCLUDED.avatar_url),
+    phone = COALESCE(public.profiles.phone, EXCLUDED.phone),
     role = assigned_role,
     updated_at = NOW();
 

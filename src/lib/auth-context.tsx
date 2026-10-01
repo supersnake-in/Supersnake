@@ -5,6 +5,11 @@ import { supabase } from './supabase/client';
 import { User, Session } from '@supabase/supabase-js';
 import { isAuthorizedAdmin } from './security';
 import { FitType } from './types';
+import {
+  isPasskeySupported,
+  signInWithPasskey as doPasskeySignIn,
+  registerPasskey as doPasskeyRegister,
+} from './passkey';
 
 export interface UserProfile {
   id: string;
@@ -18,6 +23,9 @@ export interface UserProfile {
   genderInterest?: 'men' | 'women' | 'all';
   isEmailVerified?: boolean;
   phoneVerified?: boolean;
+  phoneVerifiedAt?: string;
+  phoneVerificationMethod?: string;
+  lastLoginAt?: string;
 }
 
 interface AuthContextType {
@@ -26,12 +34,17 @@ interface AuthContextType {
   session: Session | null;
   isLoading: boolean;
   isAdmin: boolean;
+  isPasskeyAvailable: boolean;
   signIn: (email: string, password?: string) => Promise<{ error?: string }>;
   signUp: (email: string, password?: string, fullName?: string, phone?: string) => Promise<{ error?: string; requireVerification?: boolean }>;
   signInWithGoogle: (redirectTo?: string) => Promise<{ error?: string }>;
+  signInWithPasskey: () => Promise<{ error?: string }>;
+  registerPasskey: (friendlyName?: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error?: string }>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<{ error?: string }>;
+  sendPhoneOtp: (targetPhone?: string) => Promise<{ success: boolean; cooldown?: number; error?: string }>;
+  verifyPhoneOtp: (code: string, targetPhone?: string) => Promise<{ success: boolean; error?: string }>;
   checkEmailExists: (email: string) => Promise<{ exists: boolean; error?: string }>;
   sendEmailOtp: (email: string) => Promise<{ success: boolean; error?: string }>;
   verifyEmailOtp: (email: string, token: string) => Promise<{ success: boolean; error?: string }>;
@@ -46,6 +59,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPasskeyAvailable, setIsPasskeyAvailable] = useState(false);
+
+  // Check hardware/browser WebAuthn support on mount
+  useEffect(() => {
+    isPasskeySupported().then((supported) => {
+      setIsPasskeyAvailable(supported);
+    });
+  }, []);
+
+  // Record login timestamp authoritatively server-side
+  const touchSession = async (userId?: string) => {
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      await fetch('/api/auth/session/touch', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ userId: userId || sessionData?.session?.user?.id }),
+      });
+    } catch (e) {
+      // Non-blocking
+    }
+  };
 
   // Initialize session from Supabase and sync local storage fallback
   useEffect(() => {
@@ -89,12 +128,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initAuth();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       if (!mounted) return;
       setSession(newSession);
       setUser(newSession?.user ?? null);
       if (newSession?.user) {
         loadUserProfile(newSession.user);
+        if (event === 'SIGNED_IN') {
+          touchSession(newSession.user.id);
+        }
       } else {
         setProfile(null);
       }
@@ -144,7 +186,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       window.dispatchEvent(new Event('supersnake_customer_identified'));
     } catch (e) {}
 
-    // Asynchronously verify against public.profiles if available
+    // Asynchronously verify against public.profiles database
     try {
       const { data: dbProfile } = await supabase
         .from('profiles')
@@ -157,8 +199,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           ...loadedProfile,
           fullName: dbProfile.full_name || loadedProfile.fullName,
           phone: dbProfile.phone || loadedProfile.phone,
+          avatarUrl: dbProfile.avatar_url || loadedProfile.avatarUrl,
+          phoneVerified: dbProfile.phone_verified !== undefined ? Boolean(dbProfile.phone_verified) : loadedProfile.phoneVerified,
+          phoneVerifiedAt: dbProfile.phone_verified_at,
+          phoneVerificationMethod: dbProfile.phone_verification_method,
+          lastLoginAt: dbProfile.last_login_at,
           isEmailVerified: dbProfile.is_email_verified !== undefined ? dbProfile.is_email_verified : loadedProfile.isEmailVerified,
-          phoneVerified: dbProfile.phone_verified !== undefined ? dbProfile.phone_verified : loadedProfile.phoneVerified,
         };
         setProfile(loadedProfile);
         try {
@@ -192,6 +238,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (data.user) {
           setUser(data.user);
           loadUserProfile(data.user);
+          touchSession(data.user.id);
         }
         return {};
       } else {
@@ -208,6 +255,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (err: any) {
       return { error: err.message || 'Authentication failed' };
     }
+  };
+
+  const signInWithPasskey = async (): Promise<{ error?: string }> => {
+    const res = await doPasskeySignIn();
+    if (!res.success) {
+      return { error: res.error };
+    }
+    if (res.user) {
+      setUser(res.user);
+      setSession(res.session);
+      await loadUserProfile(res.user);
+      touchSession(res.user.id);
+    }
+    return {};
+  };
+
+  const registerPasskey = async (friendlyName?: string): Promise<{ success: boolean; error?: string }> => {
+    return await doPasskeyRegister(friendlyName);
   };
 
   const signUp = async (
@@ -227,6 +292,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             data: {
               full_name: fullName,
               phone,
+              phone_verified: false,
             },
             emailRedirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback`,
           },
@@ -238,7 +304,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const fallbackUser: any = {
               id: 'local-patron-' + Date.now(),
               email: cleanEmail,
-              user_metadata: { full_name: fullName || cleanEmail.split('@')[0], phone },
+              user_metadata: { full_name: fullName || cleanEmail.split('@')[0], phone, phone_verified: false },
               created_at: new Date().toISOString(),
             };
             setUser(fallbackUser);
@@ -249,12 +315,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (data.user && !data.session) {
+          // Email confirmation is enabled on Supabase project
           return { requireVerification: true };
         }
 
         if (data.user) {
           setUser(data.user);
           loadUserProfile(data.user);
+          touchSession(data.user.id);
         }
 
         return {};
@@ -268,6 +336,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             data: {
               full_name: fullName,
               phone,
+              phone_verified: false,
             },
           },
         });
@@ -351,7 +420,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const updateProfile = async (updates: Partial<UserProfile>): Promise<{ error?: string }> => {
     try {
-      const newProfile = { ...profile, ...updates } as UserProfile;
+      const isPhoneChanged = updates.phone !== undefined && updates.phone !== profile?.phone;
+
+      const newProfile = {
+        ...profile,
+        ...updates,
+        // Immediately reset verification if phone number was modified
+        ...(isPhoneChanged
+          ? {
+              phoneVerified: false,
+              phoneVerifiedAt: undefined,
+              phoneVerificationMethod: undefined,
+            }
+          : {}),
+      } as UserProfile;
+
       setProfile(newProfile);
       localStorage.setItem('supersnake_user_profile', JSON.stringify(newProfile));
 
@@ -360,6 +443,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           data: {
             full_name: updates.fullName,
             phone: updates.phone,
+            ...(isPhoneChanged ? { phone_verified: false } : {}),
             preferred_fit: updates.preferredFit,
             preferred_size: updates.preferredSize,
             gender_interest: updates.genderInterest,
@@ -368,13 +452,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // Also update public.profiles table
         try {
+          const dbUpdates: any = {
+            full_name: updates.fullName,
+            phone: updates.phone,
+            updated_at: new Date().toISOString(),
+          };
+
+          if (isPhoneChanged) {
+            dbUpdates.phone_verified = false;
+            dbUpdates.phone_verified_at = null;
+            dbUpdates.phone_verification_method = null;
+          }
+
           await supabase
             .from('profiles')
-            .update({
-              full_name: updates.fullName,
-              phone: updates.phone,
-              updated_at: new Date().toISOString(),
-            })
+            .update(dbUpdates)
             .eq('id', user.id);
         } catch (e) {
           // Graceful fallback
@@ -383,6 +475,93 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return {};
     } catch (err: any) {
       return { error: err.message || 'Could not update profile' };
+    }
+  };
+
+  const sendPhoneOtp = async (
+    targetPhone?: string
+  ): Promise<{ success: boolean; cooldown?: number; error?: string }> => {
+    try {
+      const phoneToSend = targetPhone || profile?.phone;
+      if (!phoneToSend) {
+        return { success: false, error: 'Mobile number is required for verification.' };
+      }
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+
+      const res = await fetch('/api/auth/phone/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          phone: phoneToSend,
+          userId: user?.id || profile?.id,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        return {
+          success: false,
+          cooldown: data.cooldown,
+          error: data.error || 'Failed to dispatch verification code.',
+        };
+      }
+
+      return { success: true, cooldown: data.cooldown || 60 };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Verification service unreachable.' };
+    }
+  };
+
+  const verifyPhoneOtp = async (
+    code: string,
+    targetPhone?: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const phoneToVerify = targetPhone || profile?.phone;
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+
+      const res = await fetch('/api/auth/phone/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          code: code.trim(),
+          phone: phoneToVerify,
+          userId: user?.id || profile?.id,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        return { success: false, error: data.error || 'Invalid verification code.' };
+      }
+
+      // Update local profile state with legitimate verified status
+      if (profile) {
+        const updated: UserProfile = {
+          ...profile,
+          phone: data.phone || profile.phone,
+          phoneVerified: true,
+          phoneVerifiedAt: data.phoneVerifiedAt || new Date().toISOString(),
+          phoneVerificationMethod: 'sms_otp',
+        };
+        setProfile(updated);
+        try {
+          localStorage.setItem('supersnake_user_profile', JSON.stringify(updated));
+        } catch (e) {}
+      }
+
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Verification failed.' };
     }
   };
 
@@ -424,7 +603,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const cleanEmail = email.trim().toLowerCase();
     const cleanToken = token.trim();
     try {
-      // 1. Try Supabase verifyOtp first
       const { data, error } = await supabase.auth.verifyOtp({
         email: cleanEmail,
         token: cleanToken,
@@ -434,10 +612,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(data.session);
         setUser(data.user);
         loadUserProfile(data.user);
+        touchSession(data.user.id);
         return { success: true };
       }
 
-      // 2. Call server /api/auth/verify-otp
       const res = await fetch('/api/auth/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -472,7 +650,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const cleanEmail = email.trim().toLowerCase();
     const cleanToken = token.trim();
     try {
-      // 1. Try Supabase verifyOtp first
       const { data, error } = await supabase.auth.verifyOtp({
         email: cleanEmail,
         token: cleanToken,
@@ -489,10 +666,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           };
         }
         await loadUserProfile(data.user);
+        touchSession(data.user.id);
         return { success: true };
       }
 
-      // 2. Call server /api/auth/verify-otp
       const res = await fetch('/api/auth/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -513,6 +690,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
         setUser(verifiedUser);
         await loadUserProfile(verifiedUser);
+        touchSession(verifiedUser.id);
         return { success: true };
       }
 
@@ -543,12 +721,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         session,
         isLoading,
         isAdmin,
+        isPasskeyAvailable,
         signIn,
         signUp,
         signInWithGoogle,
+        signInWithPasskey,
+        registerPasskey,
         signOut,
         resetPassword,
         updateProfile,
+        sendPhoneOtp,
+        verifyPhoneOtp,
         checkEmailExists,
         sendEmailOtp,
         verifyEmailOtp,

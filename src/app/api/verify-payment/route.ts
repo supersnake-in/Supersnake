@@ -57,6 +57,7 @@ export async function POST(request: Request) {
     // Idempotent Order Creation in Supabase
     let confirmedOrderId = orderData?.id || `ord_${Date.now()}`;
     let orderNumber = orderData?.orderNumber || `SS-${Date.now().toString().slice(-6)}`;
+    let isCustomerPhoneVerified = false;
 
     if (orderData) {
       try {
@@ -77,6 +78,20 @@ export async function POST(request: Request) {
           });
         }
 
+        // Authoritatively check customer phone verification status from database
+        if (orderData.customer?.email) {
+          try {
+            const { data: patronRow } = await supabase
+              .from('profiles')
+              .select('phone_verified')
+              .eq('email', orderData.customer.email.trim().toLowerCase())
+              .maybeSingle();
+            if (patronRow?.phone_verified) {
+              isCustomerPhoneVerified = true;
+            }
+          } catch (e) {}
+        }
+
         // Insert confirmed order with Verification Pending status
         const { data: inserted, error: insertErr } = await supabase
           .from('orders')
@@ -91,6 +106,7 @@ export async function POST(request: Request) {
             customer_name: orderData.customer?.name,
             customer_email: orderData.customer?.email,
             customer_phone: orderData.customer?.phone,
+            phone_verified: isCustomerPhoneVerified,
             shipping_address: orderData.shippingAddress,
             payment_method: 'razorpay',
             payment_status: 'paid',
@@ -148,6 +164,7 @@ export async function POST(request: Request) {
       paymentId: razorpay_payment_id,
       orderId: confirmedOrderId,
       orderNumber,
+      phone_verified: isCustomerPhoneVerified,
     });
   } catch (error: any) {
     console.error('Razorpay signature verification error:', error);

@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
+import { supabase } from '@/lib/supabase/client';
+import { requiresPhoneVerification } from '@/lib/order-verification';
 
 export async function POST(request: Request) {
   try {
@@ -20,6 +22,22 @@ export async function POST(request: Request) {
         { error: 'A valid 10-digit mobile phone number is required for delivery.' },
         { status: 400 }
       );
+    }
+
+    // Server-side authoritative verification status lookup from public.profiles
+    let isPhoneVerifiedInDb = false;
+    try {
+      const { data: dbProfile } = await supabase
+        .from('profiles')
+        .select('phone_verified, phone')
+        .eq('email', customer.email.trim().toLowerCase())
+        .maybeSingle();
+
+      if (dbProfile) {
+        isPhoneVerifiedInDb = Boolean(dbProfile.phone_verified);
+      }
+    } catch (e) {
+      console.warn('Profile phone status lookup notice:', e);
     }
 
     // 2. Validate Delivery Address
@@ -55,6 +73,31 @@ export async function POST(request: Request) {
       );
     }
 
+    // 4. Risk-based phone verification check
+    const riskCheck = requiresPhoneVerification(
+      {
+        total: calculatedAmount / 100,
+        isPreBooking,
+        paymentMethod: 'razorpay',
+        itemCount: Array.isArray(items) ? items.length : 1,
+      },
+      {
+        phone: cleanPhone,
+        phoneVerified: isPhoneVerifiedInDb,
+        email: customer.email,
+      }
+    );
+
+    if (riskCheck.required) {
+      return NextResponse.json(
+        {
+          error: riskCheck.reason || 'Phone verification required before proceeding with this order.',
+          requiresPhoneVerification: true,
+        },
+        { status: 403 }
+      );
+    }
+
     const key_id = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TeKVwwxJXp1r5I';
     const key_secret = process.env.RAZORPAY_KEY_SECRET || 'i01HJRIICmZZ77L9GReP0ZHG';
 
@@ -73,6 +116,7 @@ export async function POST(request: Request) {
         customerName: customer?.name || '',
         customerEmail: customer?.email || '',
         customerPhone: cleanPhone,
+        phoneVerified: isPhoneVerifiedInDb ? 'true' : 'false',
         couponCode: couponCode || '',
       },
     });
@@ -84,6 +128,7 @@ export async function POST(request: Request) {
       amount: order.amount,
       currency: order.currency,
       key: key_id,
+      phoneVerified: isPhoneVerifiedInDb,
     });
   } catch (error: any) {
     console.error('Razorpay order creation error:', error);

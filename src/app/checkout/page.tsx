@@ -393,7 +393,7 @@ function CheckoutContent() {
           paidAt: '',
         },
         verificationStatus: 'Pending',
-        phoneVerified: false,
+        phoneVerified: Boolean(profile?.phoneVerified && profile?.phone?.replace(/\D/g, '').endsWith(cleanPhone)),
         customerId: user?.id,
       });
 
@@ -496,7 +496,7 @@ function CheckoutContent() {
               updateOrder(newOrder.id, {
                 status: 'Verification Pending',
                 verificationStatus: 'Pending',
-                phoneVerified: false,
+                phoneVerified: Boolean(verifyData.phone_verified ?? (profile?.phoneVerified && profile?.phone?.replace(/\D/g, '').endsWith(cleanPhone))),
                 payment: {
                   method: 'razorpay',
                   transactionId: response.razorpay_payment_id,
@@ -850,10 +850,21 @@ function CheckoutContent() {
                     </div>
 
                     <div className="space-y-1.5 text-xs font-mono">
-                      <label className="text-neutral-400 uppercase flex items-center justify-between">
-                        <span>DELIVERY CONTACT NUMBER *</span>
-                        <span className="text-[10px] text-neutral-500 font-mono">10 DIGITS (SMS UPDATES)</span>
-                      </label>
+                      <div className="flex items-center justify-between">
+                        <label className="text-neutral-400 uppercase">
+                          DELIVERY CONTACT NUMBER *
+                        </label>
+                        {profile?.phoneVerified && formData.phone && profile.phone?.replace(/\D/g, '').endsWith(formData.phone.replace(/\D/g, '').slice(-10)) ? (
+                          <span className="inline-flex items-center gap-1 text-[9px] font-mono px-2 py-0.5 bg-snake-green/10 text-snake-green border border-snake-green/30 uppercase tracking-widest rounded">
+                            <CheckCircle2 size={10} />
+                            <span>VERIFIED</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[9px] font-mono px-2 py-0.5 bg-white/5 text-neutral-400 border border-white/10 uppercase tracking-widest rounded">
+                            <span>UNVERIFIED</span>
+                          </span>
+                        )}
+                      </div>
                       <input
                         type="tel"
                         name="phone"
@@ -867,7 +878,7 @@ function CheckoutContent() {
                         className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green font-mono"
                       />
                       <p className="text-[10px] font-mono text-neutral-500">
-                        Mandatory for courier tracking. No phone OTP required before prepaid order.
+                        Mandatory for courier tracking. Zero OTP required before prepaid order.
                       </p>
                     </div>
 
@@ -1155,10 +1166,21 @@ function CheckoutContent() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-neutral-400 uppercase flex items-center justify-between">
-                      <span>DELIVERY CONTACT NUMBER *</span>
-                      <span className="text-[10px] text-neutral-500 font-mono">10 DIGITS (SMS UPDATES)</span>
-                    </label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-neutral-400 uppercase text-xs">
+                        DELIVERY CONTACT NUMBER *
+                      </label>
+                      {profile?.phoneVerified && formData.phone && profile.phone?.replace(/\D/g, '').endsWith(formData.phone.replace(/\D/g, '').slice(-10)) ? (
+                        <span className="inline-flex items-center gap-1 text-[9px] font-mono px-2 py-0.5 bg-snake-green/10 text-snake-green border border-snake-green/30 uppercase tracking-widest rounded">
+                          <CheckCircle2 size={10} />
+                          <span>VERIFIED</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[9px] font-mono px-2 py-0.5 bg-white/5 text-neutral-400 border border-white/10 uppercase tracking-widest rounded">
+                          <span>UNVERIFIED</span>
+                        </span>
+                      )}
+                    </div>
                     <input
                       type="tel"
                       name="phone"
@@ -1172,7 +1194,7 @@ function CheckoutContent() {
                       className="w-full min-h-[48px] bg-black border border-white/15 px-4 py-3 text-base sm:text-xs text-white rounded focus:outline-none focus:border-snake-green font-mono"
                     />
                     <p className="text-[10px] font-mono text-neutral-500">
-                      Required for dispatch notifications. No phone OTP required.
+                      Required for dispatch notifications. Zero OTP required before prepaid order.
                     </p>
                   </div>
 
