@@ -122,3 +122,24 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- 5. Database-Level Anti-Tamper & Reset Trigger: protect_profile_verification_columns()
+-- Enforces that whenever a phone number changes, phone_verified is automatically revoked at the database level.
+CREATE OR REPLACE FUNCTION public.protect_profile_verification_columns()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- If phone number is modified, immediately invalidate verified state
+  IF (NEW.phone IS DISTINCT FROM OLD.phone) THEN
+    NEW.phone_verified := FALSE;
+    NEW.phone_verified_at := NULL;
+    NEW.phone_verification_method := NULL;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS trg_protect_profile_verification ON public.profiles;
+CREATE TRIGGER trg_protect_profile_verification
+  BEFORE UPDATE ON public.profiles
+  FOR EACH ROW EXECUTE FUNCTION public.protect_profile_verification_columns();

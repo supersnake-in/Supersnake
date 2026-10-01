@@ -48,10 +48,19 @@ export function formatPasskeyError(err: any): string {
     return 'This passkey is already registered or not recognized on this device.';
   }
   if (name === 'NotSupportedError' || message.includes('NotSupportedError')) {
-    return 'Passkey authentication is not supported on this browser.';
+    return 'Passkey authentication is not supported on this browser or platform.';
   }
   if (message.includes('No credentials') || message.includes('no credential')) {
     return 'No registered passkey found for this device. Please sign in with Google or email.';
+  }
+  if (
+    message.includes('not enabled') ||
+    message.includes('unsupported') ||
+    message.includes('404') ||
+    message.includes('not found') ||
+    message.includes('disabled')
+  ) {
+    return 'Passkey service is in beta or not yet activated on the Supabase project. Please sign in with Google or email.';
   }
   if (message.includes('Fetch') || message.includes('network') || message.includes('Failed to fetch')) {
     return 'Network connection issue during passkey verification.';
