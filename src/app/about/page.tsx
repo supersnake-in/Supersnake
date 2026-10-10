@@ -106,17 +106,17 @@ export default function AboutPage() {
             02 — CAMPAIGN VISUAL (THE SUPERSNAKE AESTHETIC)
             ============================================================ */}
         <section className="relative w-full overflow-hidden rounded border border-white/10 group">
-          <div className="relative aspect-[16/9] md:aspect-[21/9] w-full bg-neutral-950 overflow-hidden">
+          <div className="relative aspect-[16/10] sm:aspect-[16/9] md:aspect-[21/10] w-full bg-neutral-950 overflow-hidden">
             <Image
-              src="/collection-the-serpent-card.jpg"
-              alt="SuperSnake Lookbook Campaign — The Serpent Series"
+              src="/about-campaign.jpg"
+              alt="SuperSnake Lookbook Campaign — Ancient Architecture Meets Modern Streetwear"
               fill
               priority
               sizes="(max-width: 1200px) 100vw, 1200px"
-              className="object-cover object-center transition-transform duration-1000 ease-out group-hover:scale-105"
+              className="object-cover object-[center_30%] transition-transform duration-1000 ease-out group-hover:scale-105"
             />
             {/* Dark luxury vignette overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-black/20" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-black/10" />
             
             {/* Cinematic editorial tags */}
             <div className="absolute top-4 left-4 sm:top-6 sm:left-6 flex items-center gap-2 text-[10px] sm:text-xs font-mono tracking-widest text-snake-green uppercase bg-black/60 backdrop-blur-md px-3 py-1 rounded border border-white/10">
@@ -129,7 +129,7 @@ export default function AboutPage() {
                   THE AESTHETIC
                 </span>
                 <p className="text-sm sm:text-lg font-display uppercase tracking-wider text-white">
-                  REALISTIC DRAPE. BOLD ICONOGRAPHY. DRAMATIC PRESENCE.
+                  HERITAGE ARCHITECTURE. CONTEMPORARY INSTINCT. BOLD PRESENCE.
                 </p>
               </div>
               <span className="text-[10px] font-mono tracking-widest text-neutral-400 uppercase">
