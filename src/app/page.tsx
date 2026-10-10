@@ -252,29 +252,37 @@ export default function HomePage() {
       {/* ============================================================
           03 — THE CHAPTERS // ART-DIRECTED COLLECTION UNIVERSE
           ============================================================ */}
-      <section className="py-20 md:py-32 px-4 sm:px-6 md:px-12 border-t border-white/[0.06] bg-[#030303] relative overflow-hidden">
+      <section className="py-12 sm:py-20 md:py-32 px-4 sm:px-6 md:px-12 border-t border-white/[0.06] bg-[#030303] relative overflow-hidden">
         {/* Subtle background glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-48 bg-snake-green/[0.02] blur-[120px] pointer-events-none" />
 
-        <div className="max-w-7xl mx-auto space-y-10 sm:space-y-14 relative z-10">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="max-w-7xl mx-auto space-y-6 sm:space-y-10 md:space-y-14 relative z-10">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-3.5 sm:gap-6">
             <div>
               <h2 className="text-2xl sm:text-4xl md:text-5xl font-display font-medium uppercase tracking-tight text-white">
                 THE <span className="text-snake-green">SUPER SNAKE</span> CHAPTERS
               </h2>
-              <p className="text-xs sm:text-sm font-mono text-neutral-400 max-w-2xl mt-2 leading-relaxed">
+              <p className="hidden md:block text-xs sm:text-sm font-mono text-neutral-400 max-w-2xl mt-2 leading-relaxed">
                 Every creation belongs to a distinct series with its own theme, mood, color palette, and personality—connected by the immortal SUPER SNAKE identity.
               </p>
             </div>
 
-            <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+            <div className="flex items-center justify-between md:justify-end gap-3 sm:gap-4 shrink-0 pt-0.5 md:pt-0">
+              <Link
+                href="/collections"
+                className="inline-flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-mono tracking-wider sm:tracking-widest text-white hover:text-snake-green uppercase transition-colors shrink-0 group order-1 md:order-2"
+              >
+                <span>EXPLORE ALL CHAPTERS</span>
+                <ArrowRight size={13} className="text-snake-green group-hover:translate-x-1 transition-transform" />
+              </Link>
+
               {/* Horizontal Scroll Navigation Controls */}
-              <div className="flex items-center gap-1.5 border border-white/10 p-1 rounded bg-black/40">
+              <div className="flex items-center gap-1 border border-white/10 p-1 rounded bg-black/40 order-2 md:order-1">
                 <button
                   type="button"
                   onClick={() => scrollChapters('left')}
                   aria-label="Scroll left"
-                  className="p-1.5 text-neutral-400 hover:text-white hover:bg-white/10 rounded transition-colors"
+                  className="p-1.5 text-neutral-400 hover:text-white hover:bg-white/10 rounded transition-colors active:scale-95"
                 >
                   <ChevronLeft size={16} />
                 </button>
@@ -282,19 +290,11 @@ export default function HomePage() {
                   type="button"
                   onClick={() => scrollChapters('right')}
                   aria-label="Scroll right"
-                  className="p-1.5 text-neutral-400 hover:text-white hover:bg-white/10 rounded transition-colors"
+                  className="p-1.5 text-neutral-400 hover:text-white hover:bg-white/10 rounded transition-colors active:scale-95"
                 >
                   <ChevronRight size={16} />
                 </button>
               </div>
-
-              <Link
-                href="/collections"
-                className="inline-flex items-center gap-2 text-xs font-mono tracking-widest text-white hover:text-snake-green uppercase transition-colors shrink-0 group"
-              >
-                <span>EXPLORE ALL CHAPTERS</span>
-                <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-              </Link>
             </div>
           </div>
 
