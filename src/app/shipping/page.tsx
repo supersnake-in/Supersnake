@@ -201,15 +201,15 @@ export default function ShippingAndDeliveryPage() {
           9. Live Order Tracking
         </h2>
         <p>
-          Patrons can track the live status of active dispatches using our dedicated order tracking interface:
+          Patrons can track the live status of active dispatches and milestone telemetry directly inside their patron account:
         </p>
         <div className="pt-2">
           <Link
-            href="/track-order"
+            href="/account"
             className="inline-flex items-center gap-2 px-6 py-3 bg-[#111] hover:bg-neutral-800 border border-white/15 text-white font-mono text-xs uppercase tracking-widest rounded-sm transition-colors"
           >
             <Truck size={14} className="text-snake-green" />
-            <span>LAUNCH LIVE ORDER TRACKER</span>
+            <span>ACCESS PATRON ACCOUNT & TRACKING</span>
             <ArrowRight size={13} />
           </Link>
         </div>

@@ -151,8 +151,8 @@ function ContactFormContent() {
               </span>
               <ul className="space-y-3 text-xs">
                 <li>
-                  <Link href="/track-order" className="text-neutral-300 hover:text-snake-green transition-colors flex items-center justify-between">
-                    <span>Live Order Tracking</span>
+                  <Link href="/account" className="text-neutral-300 hover:text-snake-green transition-colors flex items-center justify-between">
+                    <span>Order Archives & Live Tracking</span>
                     <ArrowRight size={12} className="text-neutral-500" />
                   </Link>
                 </li>

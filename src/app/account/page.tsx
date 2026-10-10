@@ -301,7 +301,7 @@ export default function AccountOverviewPage() {
                   </div>
                 </div>
                 <Link
-                  href={`/account/orders/${recentOrder.id}`}
+                  href={`/track-order?ref=${encodeURIComponent(recentOrder.orderNumber)}`}
                   className="text-[11px] text-snake-green hover:underline uppercase"
                 >
                   TRACK LIVE →
@@ -326,7 +326,7 @@ export default function AccountOverviewPage() {
       </div>
 
       {/* Fast Navigation Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Link
           href="/account/orders"
           className="p-5 bg-[#0a0a0a] border border-white/10 hover:border-snake-green/50 transition-colors group space-y-2 rounded-sm"
@@ -340,6 +340,24 @@ export default function AccountOverviewPage() {
           <h4 className="text-sm font-display font-medium text-white">ALL ORDERS</h4>
           <p className="text-[11px] font-mono text-neutral-500">
             View full order archives, download tax invoices, or initiate returns.
+          </p>
+        </Link>
+
+        <Link
+          href="/track-order"
+          className="p-5 bg-[#0a0a0a] border border-snake-green/30 hover:border-snake-green transition-colors group space-y-2 rounded-sm relative overflow-hidden"
+        >
+          <div className="absolute top-0 right-0 w-24 h-24 bg-snake-green/5 blur-xl rounded-full pointer-events-none" />
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-mono text-snake-green uppercase tracking-widest flex items-center gap-1.5 font-bold">
+              <Truck size={12} />
+              <span>LIVE TRACKING</span>
+            </span>
+            <ArrowRight size={14} className="text-snake-green group-hover:translate-x-1 transition-transform" />
+          </div>
+          <h4 className="text-sm font-display font-medium text-white">TRACK SHIPMENT</h4>
+          <p className="text-[11px] font-mono text-neutral-400">
+            Real-time courier telemetry, waypoint timeline, and dispatch scheduling.
           </p>
         </Link>
 

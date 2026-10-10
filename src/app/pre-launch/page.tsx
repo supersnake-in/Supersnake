@@ -289,17 +289,11 @@ export default function PreLaunchPage() {
 
             <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0 w-full sm:w-auto">
               <Link
-                href="/track-order"
+                href="/account/pre-bookings"
                 className="w-full sm:w-auto px-6 py-3.5 bg-white hover:bg-snake-green text-black font-mono font-bold uppercase text-xs tracking-wider rounded transition-all duration-300 flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(4,252,33,0.15)]"
               >
-                <span>TRACK RESERVATION</span>
+                <span>MY PRE-BOOKINGS & TRACKING</span>
                 <ArrowRight size={13} />
-              </Link>
-              <Link
-                href="/account/pre-bookings"
-                className="w-full sm:w-auto px-6 py-3.5 border border-white/20 hover:border-white text-white font-mono font-bold uppercase text-xs tracking-wider rounded transition-colors text-center"
-              >
-                MY PRE-BOOKINGS
               </Link>
             </div>
           </div>
