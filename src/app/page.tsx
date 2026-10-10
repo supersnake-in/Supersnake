@@ -239,7 +239,7 @@ export default function HomePage() {
       {/* ============================================================
           02 — NEW DROPS (4–6 CLEAN PRODUCT CARDS)
           ============================================================ */}
-      <section className="py-20 md:py-36 px-4 sm:px-6 md:px-12 border-t border-white/[0.06] bg-[#080808]">
+      <section className="pt-16 sm:pt-20 md:pt-28 pb-10 sm:pb-12 md:pb-16 px-4 sm:px-6 md:px-12 border-t border-white/[0.06] bg-[#080808]">
         <div className="max-w-7xl mx-auto space-y-8 sm:space-y-12">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
@@ -275,7 +275,7 @@ export default function HomePage() {
       {/* ============================================================
           03 — THE CHAPTERS // ART-DIRECTED COLLECTION UNIVERSE
           ============================================================ */}
-      <section className="py-12 sm:py-20 md:py-32 px-4 sm:px-6 md:px-12 border-t border-white/[0.06] bg-[#030303] relative overflow-hidden">
+      <section className="pt-10 sm:pt-12 md:pt-16 pb-16 sm:pb-20 md:pb-28 px-4 sm:px-6 md:px-12 border-t border-white/[0.06] bg-[#030303] relative overflow-hidden">
         {/* Subtle background glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-48 bg-snake-green/[0.02] blur-[120px] pointer-events-none" />
 
