@@ -301,7 +301,7 @@ export default function HomePage() {
           {/* Chapters Showcase Horizontal Carousel */}
           <div
             ref={chaptersScrollRef}
-            className="flex items-stretch gap-5 sm:gap-6 md:gap-7 overflow-x-auto pb-6 pt-1 no-scrollbar -mx-4 sm:-mx-6 md:-mx-12 px-4 sm:px-6 md:px-12 scroll-smooth snap-x snap-mandatory"
+            className="flex items-stretch gap-5 sm:gap-6 md:gap-7 overflow-x-auto pb-6 pt-1 no-scrollbar scroll-smooth snap-x snap-mandatory"
           >
             {activeCollections.map((col) => {
               return (
