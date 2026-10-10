@@ -53,7 +53,7 @@ export function Header() {
         { label: 'HOME', href: '/' },
         { label: 'COLLECTIONS', href: '/collections' },
         { label: 'THE FIRST DROP', href: '/#pre-book-grid' },
-        { label: 'ATELIER', href: '/about' },
+        { label: 'OUR STORY', href: '/about' },
         { label: 'CONTACT', href: '/contact' },
       ]
     : [
@@ -271,17 +271,6 @@ export function Header() {
                 </div>
               )}
             </div>
-
-            {isAdmin && (
-              <Link
-                href="/admin"
-                className="inline-flex items-center gap-1.5 text-[10px] font-mono tracking-widest text-snake-green border border-snake-green/30 bg-snake-green/10 hover:bg-snake-green hover:text-black px-2.5 py-1 rounded transition-all font-semibold"
-                title="SuperSnake Admin Atelier"
-              >
-                <Shield size={12} />
-                ADMIN
-              </Link>
-            )}
 
             <button
               onClick={openCart}

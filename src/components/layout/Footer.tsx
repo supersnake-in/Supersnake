@@ -37,7 +37,7 @@ export function Footer() {
         ? [
             { label: 'PRE-BOOK COLLECTION', href: '/#pre-book-grid' },
             { label: 'MY PRE-BOOKINGS', href: '/account/pre-bookings' },
-            { label: 'ATELIER CRAFT', href: '/about' },
+            { label: 'BRAND MANIFESTO', href: '/about' },
             { label: 'OFFICIAL DROP INTEL', href: '/#countdown' },
           ]
         : [
