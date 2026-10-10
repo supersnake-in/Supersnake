@@ -73,12 +73,12 @@ export function Header() {
             : 'bg-gradient-to-b from-black/80 via-black/40 to-transparent py-5'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 flex items-center justify-between relative">
           {/* ============================================================
               DESKTOP HEADER (LOCKED & UNTOUCHED FOR lg: AND ABOVE)
               ============================================================ */}
           {/* Desktop Left Nav */}
-          <nav className="hidden lg:flex items-center gap-8">
+          <nav className="hidden lg:flex items-center gap-6 xl:gap-8 z-10">
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
               return (
@@ -100,13 +100,13 @@ export function Header() {
             })}
           </nav>
 
-          {/* Desktop Center Brand Logo */}
-          <div className="hidden lg:flex items-center justify-center gap-3">
+          {/* Desktop Center Brand Logo — PERFECT CENTER OF SCREEN */}
+          <div className="hidden lg:flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-auto z-20">
             <SuperSnakeLogo size="md" showText={true} />
           </div>
 
           {/* Desktop Right Action Icons */}
-          <div className="hidden lg:flex items-center gap-4 md:gap-6">
+          <div className="hidden lg:flex items-center gap-4 md:gap-6 z-10">
             <button
               onClick={openSearch}
               className="text-neutral-400 hover:text-white transition-colors duration-200 p-1.5 focus:outline-none"
