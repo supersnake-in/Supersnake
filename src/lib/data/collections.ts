@@ -38,8 +38,8 @@ export const COLLECTIONS_DATA: Collection[] = [
       'Refined serif typography, sovereign serpent crest with imperial crown emblem, gilded tonal embroidery, bespoke heritage interior neck tape.',
     fabricSpecs:
       '280 GSM Compact Supima® Combed Cotton, Zero-Sag Ribbed Collar, Architectural Dropped Shoulders.',
-    heroImage: '/brand-pillar-fabric.png',
-    cardImage: '/signature-tee-spotlight.png',
+    heroImage: '/collection-the-royals-hero.jpg',
+    cardImage: '/collection-the-royals-card.jpg',
     moodPalette: [
       { name: 'Midnight Navy', hex: '#0d1527' },
       { name: 'Imperial Gold', hex: '#c5a059' },

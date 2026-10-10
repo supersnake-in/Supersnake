@@ -616,8 +616,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               const saved = parsedCols.find((c: any) => c.slug === defaultCol.slug || c.id === defaultCol.id);
               if (!saved) return defaultCol;
 
-              const isStaleCard = !saved.cardImage || saved.cardImage.includes('men-collection.png') || saved.cardImage.includes('hero2.png');
-              const isStaleHero = !saved.heroImage || saved.heroImage.includes('hero2.png') || saved.heroImage.includes('men-collection.png');
+              const isStaleCard =
+                !saved.cardImage ||
+                saved.cardImage.includes('men-collection.png') ||
+                saved.cardImage.includes('hero2.png') ||
+                saved.cardImage.includes('signature-tee-spotlight.png') ||
+                saved.cardImage.includes('brand-pillar') ||
+                Boolean(defaultCol.cardImage?.startsWith('/collection-') && !saved.cardImage?.startsWith('/collection-'));
+
+              const isStaleHero =
+                !saved.heroImage ||
+                saved.heroImage.includes('hero2.png') ||
+                saved.heroImage.includes('men-collection.png') ||
+                saved.heroImage.includes('brand-pillar') ||
+                Boolean(defaultCol.heroImage?.startsWith('/collection-') && !saved.heroImage?.startsWith('/collection-'));
 
               return {
                 ...defaultCol,
@@ -701,8 +713,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             const defaultCol = COLLECTIONS_DATA.find((c) => c.slug === col.slug || c.id === col.id);
             if (!defaultCol) return col;
 
-            const isStaleCard = !col.cardImage || col.cardImage.includes('men-collection.png') || col.cardImage.includes('hero2.png');
-            const isStaleHero = !col.heroImage || col.heroImage.includes('hero2.png') || col.heroImage.includes('men-collection.png');
+            const isStaleCard =
+              !col.cardImage ||
+              col.cardImage.includes('men-collection.png') ||
+              col.cardImage.includes('hero2.png') ||
+              col.cardImage.includes('signature-tee-spotlight.png') ||
+              col.cardImage.includes('brand-pillar') ||
+              Boolean(defaultCol.cardImage?.startsWith('/collection-') && !col.cardImage?.startsWith('/collection-'));
+
+            const isStaleHero =
+              !col.heroImage ||
+              col.heroImage.includes('hero2.png') ||
+              col.heroImage.includes('men-collection.png') ||
+              col.heroImage.includes('brand-pillar') ||
+              Boolean(defaultCol.heroImage?.startsWith('/collection-') && !col.heroImage?.startsWith('/collection-'));
 
             return {
               ...defaultCol,
@@ -2135,8 +2159,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           const defaultCol = COLLECTIONS_DATA.find((c) => c.slug === col.slug || c.id === col.id);
           if (!defaultCol) return col;
 
-          const isStaleCard = !col.cardImage || col.cardImage.includes('men-collection.png') || col.cardImage.includes('hero2.png');
-          const isStaleHero = !col.heroImage || col.heroImage.includes('hero2.png') || col.heroImage.includes('men-collection.png');
+          const isStaleCard =
+            !col.cardImage ||
+            col.cardImage.includes('men-collection.png') ||
+            col.cardImage.includes('hero2.png') ||
+            col.cardImage.includes('signature-tee-spotlight.png') ||
+            col.cardImage.includes('brand-pillar') ||
+            Boolean(defaultCol.cardImage?.startsWith('/collection-') && !col.cardImage?.startsWith('/collection-'));
+
+          const isStaleHero =
+            !col.heroImage ||
+            col.heroImage.includes('hero2.png') ||
+            col.heroImage.includes('men-collection.png') ||
+            col.heroImage.includes('brand-pillar') ||
+            Boolean(defaultCol.heroImage?.startsWith('/collection-') && !col.heroImage?.startsWith('/collection-'));
 
           return {
             ...defaultCol,

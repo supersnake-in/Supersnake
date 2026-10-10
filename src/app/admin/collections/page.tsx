@@ -29,6 +29,8 @@ import { sanitizeString, sanitizeSlug } from '@/lib/security';
 const PRESET_IMAGE_OPTIONS = [
   { label: 'Panther Hero Front', url: '/collection-black-panther-hero.jpg' },
   { label: 'Panther Card Back', url: '/collection-black-panther-card.jpg' },
+  { label: 'Royals Hero', url: '/collection-the-royals-hero.jpg' },
+  { label: 'Royals Card', url: '/collection-the-royals-card.jpg' },
   { label: 'Obsidian Predator', url: '/hero2.png' },
   { label: 'Men Heavyweight', url: '/men-collection.png' },
   { label: 'Women Heavyweight', url: '/women-collection.png' },
