@@ -76,10 +76,10 @@ const PRESET_PALETTES = [
     ],
   },
   {
-    name: 'Cinematic Nocturne',
+    name: 'Midnight Cyan',
     colors: [
       { name: 'Acid Charcoal', hex: '#1e1e1e' },
-      { name: 'Nocturne Violet', hex: '#1e142e' },
+      { name: 'Royal Violet', hex: '#1e142e' },
       { name: 'Electric Cyan', hex: '#00e5ff' },
       { name: 'Deep Pitch', hex: '#050505' },
     ],

@@ -48,9 +48,8 @@ export default function DedicatedCollectionPage() {
       (p) =>
         p.collectionSlug === collection.slug ||
         p.collectionId === collection.id ||
-        (collection.slug === 'the-signature' && (p.isSignature || p.slug === 'the-signature-tee' || p.slug === 'the-signature-womens-architectural-tee')) ||
+        (collection.slug === 'the-signature' && (p.isSignature || p.slug === 'the-signature-tee' || p.slug === 'the-signature-womens-architectural-tee' || p.slug === 'the-monolith-oversized' || p.slug === 'the-shadow-raw-hem')) ||
         (collection.slug === 'the-serpent' && (p.slug === 'the-serpent-tee' || p.slug === 'the-venom-edition' || p.slug === 'the-serpent-silk-cotton-crop')) ||
-        (collection.slug === 'the-nocturne' && (p.slug === 'the-monolith-oversized' || p.slug === 'the-shadow-raw-hem')) ||
         (collection.slug === 'the-aura' && (p.slug === 'the-chalk-minimalist' || p.slug === 'the-kinetic-silk-cotton')) ||
         (collection.slug === 'the-royals' && (p.slug === 'the-meridian-cropped' || p.slug === 'the-royal-serpent-crest')) ||
         (collection.slug === 'the-black-panther' && (p.slug === 'the-panther-embossed-heavyweight' || p.slug === 'the-panther-minimal-refined-tee'))

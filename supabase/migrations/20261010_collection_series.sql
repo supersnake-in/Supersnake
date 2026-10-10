@@ -140,26 +140,9 @@ INSERT INTO public.collections (
 ),
 (
   'a0000000-0000-0000-0000-000000000005',
-  'THE NOCTURNE',
-  'the-nocturne',
-  'CHAPTER 05 // CINEMATIC NIGHT',
-  'Darker cinematic artistry, nocturnal mood, and stark architectural contrasts.',
-  'Built around a darker, cinematic aesthetic with moody graphics and carefully controlled contrasts. The Nocturne series evokes urban neon-lit solitude, reflections across damp asphalt, and raw underground energy. Finished with specialized mineral washes and deconstructed laser-cut accents.',
-  'Cinematic chiaroscuro back prints, distressed acid wash textures, subtle violet undertones, controlled raw-edge hems.',
-  '300 GSM Heavyweight Loopback Cotton, Acid Mineral Wash, Over-Dyed Black.',
-  '/brand-pillar-finish.png',
-  '/community-supersnake.png',
-  '[{"name":"Acid Charcoal","hex":"#1e1e1e"},{"name":"Nocturne Violet","hex":"#1e142e"},{"name":"Electric Cyan","hex":"#00e5ff"},{"name":"Deep Pitch","hex":"#050505"}]'::jsonb,
-  '#00e5ff',
-  5,
-  TRUE,
-  TRUE
-),
-(
-  'a0000000-0000-0000-0000-000000000006',
   'THE SIGNATURE',
   'the-signature',
-  'THE CORE FOUNDATION // DAILY LUXURY',
+  'CHAPTER 05 // CORE FOUNDATION',
   'Our permanent core collection featuring timeless SUPER SNAKE essentials.',
   'The immortal cornerstone of SUPER SNAKE. Featuring the exact, uncompromised master brand symbol and engineered around the demands of daily life. The Signature collection showcases our heavyweight 280 GSM Supima® cotton, 1-inch zero-sag reinforced collar, and tailored boxy architecture. Timeless essentials built to wear forever.',
   'The pristine original SUPER SNAKE master symbol, signature neon-green accent label, embroidered serpent monogram.',
@@ -168,26 +151,9 @@ INSERT INTO public.collections (
   '/hero-object-supersnake-tee.png',
   '[{"name":"Obsidian Black","hex":"#0a0a0a"},{"name":"Chalk White","hex":"#f2f2f2"},{"name":"Washed Charcoal","hex":"#262626"},{"name":"Signature Green","hex":"#04fc21"}]'::jsonb,
   '#04fc21',
-  6,
+  5,
   TRUE,
   TRUE
-),
-(
-  'a0000000-0000-0000-0000-000000000007',
-  'SS MOTORS',
-  'ss-motors',
-  'SPECIALIZED LINE // VELOCITY LAB',
-  'Aerodynamic precision, automotive culture, and track-engineered aesthetic.',
-  'Where high-performance automotive engineering converges with luxury streetwear. The SS Motors specialized capsule draws inspiration from aggressive aerodynamic splitters, carbon fiber textures, racing telemetry, and automotive proportions. Engineered for those who move at high velocity.',
-  'Precision racing telemetry numbers, carbon weave print accents, aerodynamic sleeve split graphics, high-speed typography.',
-  '290 GSM Compact Aero-Knit Cotton, Reinforced Shoulder Webbing, Low-Drag Collar.',
-  '/hero2.png',
-  '/men-collection.png',
-  '[{"name":"Carbon Black","hex":"#121212"},{"name":"Racing Silver","hex":"#d4d4d4"},{"name":"Telemetry Red","hex":"#e50914"},{"name":"Asphalt Grey","hex":"#404040"}]'::jsonb,
-  '#e50914',
-  7,
-  TRUE,
-  FALSE
 )
 ON CONFLICT (slug) DO UPDATE SET
   name = EXCLUDED.name,
@@ -205,21 +171,19 @@ ON CONFLICT (slug) DO UPDATE SET
   is_featured = EXCLUDED.is_featured,
   updated_at = NOW();
 
+-- Clean up any removed chapters from the collections table
+DELETE FROM public.collections WHERE slug IN ('the-nocturne', 'ss-motors');
+
 -- Assign existing products to their corresponding collection series
 UPDATE public.products SET
   collection_slug = 'the-signature',
   collection_name = 'THE SIGNATURE'
-WHERE slug = 'the-signature-tee';
+WHERE slug IN ('the-signature-tee', 'the-monolith-oversized', 'the-shadow-raw-hem', 'the-signature-womens-architectural-tee');
 
 UPDATE public.products SET
   collection_slug = 'the-serpent',
   collection_name = 'THE SERPENT'
-WHERE slug IN ('the-serpent-tee', 'the-venom-edition');
-
-UPDATE public.products SET
-  collection_slug = 'the-nocturne',
-  collection_name = 'THE NOCTURNE'
-WHERE slug IN ('the-monolith-oversized', 'the-shadow-raw-hem');
+WHERE slug IN ('the-serpent-tee', 'the-venom-edition', 'the-serpent-silk-cotton-crop');
 
 UPDATE public.products SET
   collection_slug = 'the-aura',
@@ -229,4 +193,10 @@ WHERE slug IN ('the-chalk-minimalist', 'the-kinetic-silk-cotton');
 UPDATE public.products SET
   collection_slug = 'the-royals',
   collection_name = 'THE ROYALS'
-WHERE slug = 'the-meridian-cropped';
+WHERE slug IN ('the-meridian-cropped', 'the-royal-serpent-crest');
+
+UPDATE public.products SET
+  collection_slug = 'the-black-panther',
+  collection_name = 'THE BLACK PANTHER'
+WHERE slug IN ('the-panther-embossed-heavyweight', 'the-panther-minimal-refined-tee');
+
