@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
 import { Search, ShoppingBag, Heart, User, Menu, X, Shield, LogOut, ArrowRight } from 'lucide-react';
 import { SuperSnakeLogo } from '../brand/SuperSnakeLogo';
 import { useStore } from '@/lib/store';
@@ -25,25 +24,14 @@ export function Header() {
   const isPreLaunch = storefrontConfig?.storefrontMode === 'PRE_LAUNCH';
   const showAnnouncement = isStorefront && isAnnouncementActive(announcementConfig);
 
-  const { scrollY } = useScroll();
-  const rawHeaderY = useTransform(scrollY, [0, 36], [0, -36], { clamp: true });
-  const headerY = useSpring(rawHeaderY, {
-    stiffness: 400,
-    damping: 38,
-    mass: 0.2,
-  });
-
-  const announcementOpacity = useTransform(scrollY, [0, 24], [1, 0], { clamp: true });
-  const glassOpacity = useTransform(scrollY, [15, 45], [0, 1], { clamp: true });
-  const ambientGradientOpacity = useTransform(scrollY, [15, 45], [1, 0], { clamp: true });
-
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > (showAnnouncement ? 36 : 20));
+      setScrolled(window.scrollY > 20);
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [showAnnouncement]);
+  }, []);
 
   // Close mobile menu and account menu on route change
   useEffect(() => {
@@ -82,27 +70,27 @@ export function Header() {
 
   return (
     <>
-      <motion.header
-        style={{
-          y: showAnnouncement ? headerY : 0,
-        }}
-        className="fixed top-0 inset-x-0 z-40 flex flex-col will-change-transform"
-      >
-        {showAnnouncement && <AnnouncementBar style={{ opacity: announcementOpacity }} />}
-        <div className="relative w-full py-4 transition-colors duration-300">
-          {/* Ambient top-of-page gradient overlay */}
-          <motion.div
-            style={{ opacity: ambientGradientOpacity }}
-            className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/40 to-transparent pointer-events-none"
-          />
+      <header className="fixed top-0 inset-x-0 z-40 flex flex-col pointer-events-none">
+        {showAnnouncement && (
+          <div
+            className={`w-full overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-auto ${
+              scrolled
+                ? 'max-h-0 opacity-0 -translate-y-2'
+                : 'max-h-12 opacity-100 translate-y-0'
+            }`}
+          >
+            <AnnouncementBar />
+          </div>
+        )}
 
-          {/* Luxury frosted glass backdrop (fades in seamlessly on scroll) */}
-          <motion.div
-            style={{ opacity: glassOpacity }}
-            className="absolute inset-0 bg-black/85 backdrop-blur-md border-b border-white/[0.06] shadow-[0_4px_24px_rgba(0,0,0,0.45)] pointer-events-none"
-          />
-
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 flex items-center justify-between relative z-10">
+        <div
+          className={`w-full pointer-events-auto transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+            scrolled
+              ? 'bg-black/85 backdrop-blur-md py-3.5 border-b border-white/[0.08] shadow-[0_4px_24px_rgba(0,0,0,0.5)]'
+              : 'bg-gradient-to-b from-black/80 via-black/40 to-transparent py-5'
+          }`}
+        >
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 flex items-center justify-between relative">
           {/* ============================================================
               DESKTOP HEADER (LOCKED & UNTOUCHED FOR lg: AND ABOVE)
               ============================================================ */}
@@ -354,7 +342,7 @@ export function Header() {
           </div>
         </div>
       </div>
-    </motion.header>
+    </header>
 
       {/* ============================================================
           MOBILE & TABLET FULL-SCREEN NAVIGATION EXPERIENCE
