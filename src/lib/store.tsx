@@ -214,6 +214,7 @@ export const DEFAULT_STOREFRONT_CONFIG: StorefrontConfig = {
   maintenanceMessage:
     'We are calibrating the atelier for our next heavyweight drop. The portal will resume normal operations shortly.',
   estimatedRestoreTime: null,
+  snowEffectEnabled: false,
   updatedAt: new Date().toISOString(),
   updatedBy: 'system',
 };

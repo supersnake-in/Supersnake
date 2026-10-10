@@ -11,6 +11,7 @@ import { CartDrawer } from '@/components/cart/CartDrawer';
 import { SearchOverlay } from '@/components/search/SearchOverlay';
 import { QuickViewModal } from '@/components/product/QuickViewModal';
 import { AuthHashNotice } from '@/components/auth/AuthHashNotice';
+import { SnowEffect } from '@/components/effects/SnowEffect';
 
 import { JsonLd } from '@/components/seo/JsonLd';
 
@@ -144,6 +145,7 @@ export default function RootLayout({
             <SmoothScroll>
               <BrandReveal />
               <CustomCursor />
+              <SnowEffect />
               <Header />
               <main className="min-h-screen relative bg-black">{children}</main>
               <CartDrawer />

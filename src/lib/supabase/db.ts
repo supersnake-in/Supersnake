@@ -1591,6 +1591,7 @@ export async function fetchStorefrontConfigFromSupabase(forceRefresh: boolean = 
         preLaunchProductLimit: Number((mData as any).pre_launch_product_limit || 6),
         maintenanceMessage: mData.maintenance_message || '',
         estimatedRestoreTime: mData.estimated_restore_time || null,
+        snowEffectEnabled: Boolean((mData as any).snow_effect_enabled || false),
         updatedAt: mData.updated_at || new Date().toISOString(),
         updatedBy: mData.updated_by || 'system',
       };
@@ -1626,6 +1627,7 @@ export async function updateStorefrontConfigInSupabase(
     if (config.preLaunchProductLimit !== undefined) payload.pre_launch_product_limit = Number(config.preLaunchProductLimit);
     if (config.maintenanceMessage !== undefined) payload.maintenance_message = config.maintenanceMessage;
     if (config.estimatedRestoreTime !== undefined) payload.estimated_restore_time = config.estimatedRestoreTime || null;
+    if (config.snowEffectEnabled !== undefined) payload.snow_effect_enabled = Boolean(config.snowEffectEnabled);
 
     // 1. Try upserting into storefront_config
     const { error: sfError } = await supabase

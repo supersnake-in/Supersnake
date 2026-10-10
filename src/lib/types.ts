@@ -295,6 +295,7 @@ export interface StorefrontConfig {
   preLaunchProductLimit: number;
   maintenanceMessage: string;
   estimatedRestoreTime: string | null;
+  snowEffectEnabled?: boolean;
   updatedAt: string;
   updatedBy: string;
 }

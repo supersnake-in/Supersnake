@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
       preLaunchProductLimit,
       maintenanceMessage,
       estimatedRestoreTime,
+      snowEffectEnabled,
       adminEmail,
     } = body;
 
@@ -57,6 +58,9 @@ export async function POST(req: NextRequest) {
     }
     if (estimatedRestoreTime !== undefined) {
       updates.estimatedRestoreTime = estimatedRestoreTime || null;
+    }
+    if (typeof snowEffectEnabled === 'boolean') {
+      updates.snowEffectEnabled = snowEffectEnabled;
     }
 
     const success = await updateStorefrontConfigInSupabase(updates, adminEmail.trim().toLowerCase());

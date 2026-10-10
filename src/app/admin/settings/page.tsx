@@ -25,6 +25,7 @@ import {
   Eye,
   Sliders,
   ArrowRight,
+  Snowflake,
 } from 'lucide-react';
 import { BRAND } from '@/lib/design-tokens';
 import { useStore } from '@/lib/store';
@@ -95,6 +96,12 @@ export default function AdminSettingsPage() {
     message: string;
   } | null>(null);
 
+  // Seasonal Snow Atmosphere state
+  const [snowEffectActive, setSnowEffectActive] = useState<boolean>(
+    storefrontConfig?.snowEffectEnabled || false
+  );
+  const [isUpdatingSnow, setIsUpdatingSnow] = useState(false);
+
   // Sync storefront settings when context updates
   useEffect(() => {
     if (storefrontConfig) {
@@ -111,6 +118,9 @@ export default function AdminSettingsPage() {
       if (storefrontConfig.maintenanceMessage) {
         setMaintenanceMessage(storefrontConfig.maintenanceMessage);
       }
+      if (typeof storefrontConfig.snowEffectEnabled === 'boolean') {
+        setSnowEffectActive(storefrontConfig.snowEffectEnabled);
+      }
       if (storefrontConfig.estimatedRestoreTime) {
         try {
           const iso = new Date(storefrontConfig.estimatedRestoreTime).toISOString();
@@ -119,6 +129,37 @@ export default function AdminSettingsPage() {
       }
     }
   }, [storefrontConfig]);
+
+  const handleToggleSnow = async (newVal: boolean) => {
+    setIsUpdatingSnow(true);
+    setSnowEffectActive(newVal);
+    try {
+      const res = await updateStorefrontConfig({ snowEffectEnabled: newVal }, currentAdminEmail);
+      if (res.success) {
+        setModeFeedback({
+          type: 'success',
+          message: newVal
+            ? 'Winter Snow Atmosphere activated across storefront.'
+            : 'Winter Snow Atmosphere disabled.',
+        });
+        setTimeout(() => setModeFeedback(null), 3500);
+      } else {
+        setSnowEffectActive(!newVal);
+        setModeFeedback({
+          type: 'error',
+          message: res.error || 'Failed to update seasonal atmosphere.',
+        });
+      }
+    } catch (err) {
+      setSnowEffectActive(!newVal);
+      setModeFeedback({
+        type: 'error',
+        message: 'Network error updating seasonal effect.',
+      });
+    } finally {
+      setIsUpdatingSnow(false);
+    }
+  };
 
   useEffect(() => {
     try {
@@ -1045,6 +1086,57 @@ export default function AdminSettingsPage() {
                 onChange={(e) => setStudioLocation(e.target.value)}
                 className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green"
               />
+            </div>
+          </div>
+        </div>
+
+        {/* Visual Atmosphere & Seasonal FX */}
+        <div className="bg-[#0d0d0d] border border-neutral-800/80 rounded-lg p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-800 pb-3">
+            <div className="flex items-center gap-2 text-white font-bold uppercase text-sm">
+              <Snowflake size={16} className="text-cyan-400" />
+              <span>VISUAL ATMOSPHERE // SEASONAL FX</span>
+            </div>
+            <span className="text-[10px] font-mono tracking-widest text-neutral-500 uppercase">
+              HOLIDAY CAMPAIGN THEME
+            </span>
+          </div>
+
+          <div className="bg-black/60 border border-neutral-800/80 rounded-lg p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1.5 max-w-xl">
+              <div className="flex items-center gap-2.5">
+                <span className="text-sm font-bold text-white uppercase tracking-tight">
+                  WINTER SNOW ATMOSPHERE
+                </span>
+                <span
+                  className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase tracking-wider ${
+                    snowEffectActive
+                      ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30'
+                      : 'bg-neutral-900 text-neutral-400 border border-neutral-800'
+                  }`}
+                >
+                  {snowEffectActive ? 'ACTIVE (THEMED)' : 'INACTIVE (OFF)'}
+                </span>
+              </div>
+              <p className="text-xs text-neutral-400 leading-relaxed font-mono">
+                Renders a subtle, high-fashion winter frost dust particle effect across the storefront. Engineered for seasonal campaigns with zero lag, non-blocking click-throughs, and automatic accessibility support.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => handleToggleSnow(!snowEffectActive)}
+                disabled={isUpdatingSnow}
+                className={`px-5 py-2.5 rounded text-xs font-mono font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
+                  snowEffectActive
+                    ? 'bg-cyan-500 text-black hover:bg-white shadow-[0_0_20px_rgba(6,182,212,0.3)]'
+                    : 'bg-neutral-800 text-neutral-300 hover:text-white hover:bg-neutral-700'
+                }`}
+              >
+                <Snowflake size={14} className={snowEffectActive ? 'animate-spin' : ''} />
+                <span>{snowEffectActive ? 'TURN OFF SNOW' : 'TURN ON SNOW'}</span>
+              </button>
             </div>
           </div>
         </div>
