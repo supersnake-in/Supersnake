@@ -13,6 +13,7 @@ import { useStore, DEFAULT_HOMEPAGE_CONFIG, cleanHeroImages, cleanCollectionImag
 export default function HomePage() {
   const heroRef = useRef<HTMLDivElement>(null);
   const communityScrollRef = useRef<HTMLDivElement>(null);
+  const chaptersScrollRef = useRef<HTMLDivElement>(null);
   const { products, collections, homepageConfig, socialConfig } = useStore();
   const signatureProduct = products.find((p) => p.isSignature);
   const newDrops = products.filter((p) => p.isNew);
@@ -26,6 +27,16 @@ export default function HomePage() {
     if (communityScrollRef.current) {
       const scrollAmount = communityScrollRef.current.clientWidth * 0.75;
       communityScrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth',
+      });
+    }
+  };
+
+  const scrollChapters = (direction: 'left' | 'right') => {
+    if (chaptersScrollRef.current) {
+      const scrollAmount = chaptersScrollRef.current.clientWidth * 0.75;
+      chaptersScrollRef.current.scrollBy({
         left: direction === 'left' ? -scrollAmount : scrollAmount,
         behavior: 'smooth',
       });
@@ -256,18 +267,43 @@ export default function HomePage() {
               </p>
             </div>
 
-            <Link
-              href="/collections"
-              className="inline-flex items-center gap-2 text-xs font-mono tracking-widest text-white hover:text-snake-green uppercase transition-colors shrink-0 group"
-            >
-              <span>EXPLORE ALL {activeCollections.length} CHAPTERS</span>
-              <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-            </Link>
+            <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+              {/* Horizontal Scroll Navigation Controls */}
+              <div className="flex items-center gap-1.5 border border-white/10 p-1 rounded bg-black/40">
+                <button
+                  type="button"
+                  onClick={() => scrollChapters('left')}
+                  aria-label="Scroll left"
+                  className="p-1.5 text-neutral-400 hover:text-white hover:bg-white/10 rounded transition-colors"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollChapters('right')}
+                  aria-label="Scroll right"
+                  className="p-1.5 text-neutral-400 hover:text-white hover:bg-white/10 rounded transition-colors"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+
+              <Link
+                href="/collections"
+                className="inline-flex items-center gap-2 text-xs font-mono tracking-widest text-white hover:text-snake-green uppercase transition-colors shrink-0 group"
+              >
+                <span>EXPLORE ALL {activeCollections.length} CHAPTERS</span>
+                <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
           </div>
 
-          {/* Chapters Showcase Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-            {activeCollections.slice(0, 6).map((col) => {
+          {/* Chapters Showcase Horizontal Carousel */}
+          <div
+            ref={chaptersScrollRef}
+            className="flex items-stretch gap-5 sm:gap-6 md:gap-7 overflow-x-auto pb-6 pt-1 no-scrollbar -mx-4 sm:-mx-6 md:-mx-12 px-4 sm:px-6 md:px-12 scroll-smooth snap-x snap-mandatory"
+          >
+            {activeCollections.map((col) => {
               const pieceCount = products.filter(
                 (p) =>
                   p.collectionSlug === col.slug ||
@@ -280,7 +316,7 @@ export default function HomePage() {
                 <Link
                   key={col.id}
                   href={`/collections/${col.slug}`}
-                  className="group relative flex flex-col justify-between border border-white/10 hover:border-snake-green/50 bg-neutral-950/70 rounded-sm overflow-hidden transition-all duration-300 hover:shadow-[0_0_30px_rgba(4,252,33,0.12)]"
+                  className="group relative flex flex-col justify-between border border-white/10 hover:border-snake-green/50 bg-neutral-950/70 rounded-sm overflow-hidden transition-all duration-300 hover:shadow-[0_0_30px_rgba(4,252,33,0.12)] shrink-0 w-[285px] xs:w-[320px] sm:w-[360px] md:w-[390px] lg:w-[410px] snap-start"
                 >
                   {/* Thumbnail / Hero Preview */}
                   <div className="relative aspect-[16/10] w-full overflow-hidden bg-black">
