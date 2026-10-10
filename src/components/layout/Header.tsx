@@ -3,11 +3,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { Search, ShoppingBag, Heart, User, Menu, X, Shield, LogOut, ArrowRight } from 'lucide-react';
 import { SuperSnakeLogo } from '../brand/SuperSnakeLogo';
 import { useStore } from '@/lib/store';
 import { useAuth } from '@/lib/auth-context';
 import { isAnnouncementActive } from '@/lib/types';
+import { AnnouncementBar } from './AnnouncementBar';
 
 export function Header() {
   const pathname = usePathname();
@@ -23,13 +25,16 @@ export function Header() {
   const isPreLaunch = storefrontConfig?.storefrontMode === 'PRE_LAUNCH';
   const showAnnouncement = isStorefront && isAnnouncementActive(announcementConfig);
 
+  const { scrollY } = useScroll();
+  const headerY = useTransform(scrollY, [0, 36], [0, -36], { clamp: true });
+
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
+      setScrolled(window.scrollY > (showAnnouncement ? 36 : 20));
     };
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [showAnnouncement]);
 
   // Close mobile menu and account menu on route change
   useEffect(() => {
@@ -68,17 +73,21 @@ export function Header() {
 
   return (
     <>
-      <header
+      <motion.header
         style={{
-          top: showAnnouncement ? (scrolled ? '0px' : '36px') : '0px',
+          y: showAnnouncement ? headerY : 0,
         }}
-        className={`fixed inset-x-0 z-40 transition-all duration-300 ${
-          scrolled
-            ? 'bg-black/80 backdrop-blur-md py-3.5'
-            : 'bg-gradient-to-b from-black/80 via-black/40 to-transparent py-5'
-        }`}
+        className="fixed top-0 inset-x-0 z-40 flex flex-col will-change-transform"
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 flex items-center justify-between relative">
+        {showAnnouncement && <AnnouncementBar />}
+        <div
+          className={`w-full transition-all duration-300 ${
+            scrolled
+              ? 'bg-black/80 backdrop-blur-md py-3.5'
+              : 'bg-gradient-to-b from-black/80 via-black/40 to-transparent py-5'
+          }`}
+        >
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 flex items-center justify-between relative">
           {/* ============================================================
               DESKTOP HEADER (LOCKED & UNTOUCHED FOR lg: AND ABOVE)
               ============================================================ */}
@@ -329,7 +338,8 @@ export function Header() {
             </button>
           </div>
         </div>
-      </header>
+      </div>
+    </motion.header>
 
       {/* ============================================================
           MOBILE & TABLET FULL-SCREEN NAVIGATION EXPERIENCE
