@@ -633,9 +633,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                 saved.heroImage.includes('hero-object-supersnake-tee') ||
                 Boolean(defaultCol.heroImage?.startsWith('/collection-') && !saved.heroImage?.startsWith('/collection-'));
 
+              const isStaleCopy =
+                saved.badge?.includes('SHADOW PREDATOR') ||
+                saved.description?.includes('feline');
+
               return {
                 ...defaultCol,
                 ...saved,
+                badge: isStaleCopy ? defaultCol.badge : (saved.badge || defaultCol.badge),
+                tagline: isStaleCopy ? defaultCol.tagline : (saved.tagline || defaultCol.tagline),
+                description: isStaleCopy ? defaultCol.description : (saved.description || defaultCol.description),
+                artworkMood: isStaleCopy ? defaultCol.artworkMood : (saved.artworkMood || defaultCol.artworkMood),
+                moodPalette: isStaleCopy ? defaultCol.moodPalette : (saved.moodPalette || defaultCol.moodPalette),
                 cardImage: isStaleCard ? defaultCol.cardImage : saved.cardImage,
                 heroImage: isStaleHero ? defaultCol.heroImage : saved.heroImage,
               };
@@ -732,9 +741,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               col.heroImage.includes('hero-object-supersnake-tee') ||
               Boolean(defaultCol.heroImage?.startsWith('/collection-') && !col.heroImage?.startsWith('/collection-'));
 
+            const isStaleCopy =
+              col.badge?.includes('SHADOW PREDATOR') ||
+              col.description?.includes('feline');
+
             return {
               ...defaultCol,
               ...col,
+              badge: isStaleCopy ? defaultCol.badge : (col.badge || defaultCol.badge),
+              tagline: isStaleCopy ? defaultCol.tagline : (col.tagline || defaultCol.tagline),
+              description: isStaleCopy ? defaultCol.description : (col.description || defaultCol.description),
+              artworkMood: isStaleCopy ? defaultCol.artworkMood : (col.artworkMood || defaultCol.artworkMood),
+              moodPalette: isStaleCopy ? defaultCol.moodPalette : (col.moodPalette || defaultCol.moodPalette),
               cardImage: isStaleCard ? defaultCol.cardImage : col.cardImage,
               heroImage: isStaleHero ? defaultCol.heroImage : col.heroImage,
             };
@@ -2180,9 +2198,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             col.heroImage.includes('hero-object-supersnake-tee') ||
             Boolean(defaultCol.heroImage?.startsWith('/collection-') && !col.heroImage?.startsWith('/collection-'));
 
+          const isStaleCopy =
+            col.badge?.includes('SHADOW PREDATOR') ||
+            col.description?.includes('feline');
+
           return {
             ...defaultCol,
             ...col,
+            badge: isStaleCopy ? defaultCol.badge : (col.badge || defaultCol.badge),
+            tagline: isStaleCopy ? defaultCol.tagline : (col.tagline || defaultCol.tagline),
+            description: isStaleCopy ? defaultCol.description : (col.description || defaultCol.description),
+            artworkMood: isStaleCopy ? defaultCol.artworkMood : (col.artworkMood || defaultCol.artworkMood),
+            moodPalette: isStaleCopy ? defaultCol.moodPalette : (col.moodPalette || defaultCol.moodPalette),
             cardImage: isStaleCard ? defaultCol.cardImage : col.cardImage,
             heroImage: isStaleHero ? defaultCol.heroImage : col.heroImage,
           };
