@@ -1546,11 +1546,23 @@ export async function fetchStorefrontConfigFromSupabase(forceRefresh: boolean = 
   }
 
   try {
-    const { data, error } = await supabase
+    // 1. Try selecting with snow_effect_enabled
+    let { data, error } = await supabase
       .from('storefront_config')
-      .select('id, storefront_mode, launch_date, launch_time, launch_timezone, automatic_launch, pre_launch_product_limit, maintenance_message, estimated_restore_time, updated_at, updated_by')
+      .select('id, storefront_mode, launch_date, launch_time, launch_timezone, automatic_launch, pre_launch_product_limit, maintenance_message, estimated_restore_time, snow_effect_enabled, updated_at, updated_by')
       .eq('id', 'default')
       .maybeSingle();
+
+    // If column doesn't exist yet in Supabase schema cache, gracefully retry without it
+    if (error && (error.code === 'PGRST204' || error.message?.includes('snow_effect_enabled'))) {
+      const fallback = await supabase
+        .from('storefront_config')
+        .select('id, storefront_mode, launch_date, launch_time, launch_timezone, automatic_launch, pre_launch_product_limit, maintenance_message, estimated_restore_time, updated_at, updated_by')
+        .eq('id', 'default')
+        .maybeSingle();
+      data = fallback.data as any;
+      error = fallback.error;
+    }
 
     if (!error && data) {
       cachedStorefrontConfig = {
@@ -1563,6 +1575,9 @@ export async function fetchStorefrontConfigFromSupabase(forceRefresh: boolean = 
         preLaunchProductLimit: Number(data.pre_launch_product_limit || 6),
         maintenanceMessage: data.maintenance_message || '',
         estimatedRestoreTime: data.estimated_restore_time || null,
+        snowEffectEnabled: (data as any).snow_effect_enabled !== undefined 
+          ? Boolean((data as any).snow_effect_enabled) 
+          : (cachedStorefrontConfig?.snowEffectEnabled ?? false),
         updatedAt: data.updated_at || new Date().toISOString(),
         updatedBy: data.updated_by || 'system',
       };
@@ -1591,7 +1606,7 @@ export async function fetchStorefrontConfigFromSupabase(forceRefresh: boolean = 
         preLaunchProductLimit: Number((mData as any).pre_launch_product_limit || 6),
         maintenanceMessage: mData.maintenance_message || '',
         estimatedRestoreTime: mData.estimated_restore_time || null,
-        snowEffectEnabled: Boolean((mData as any).snow_effect_enabled || false),
+        snowEffectEnabled: Boolean((mData as any).snow_effect_enabled || cachedStorefrontConfig?.snowEffectEnabled || false),
         updatedAt: mData.updated_at || new Date().toISOString(),
         updatedBy: mData.updated_by || 'system',
       };
@@ -1610,10 +1625,14 @@ export async function updateStorefrontConfigInSupabase(
   config: Partial<StorefrontConfig>,
   adminEmail: string = 'system'
 ): Promise<boolean> {
+  const now = new Date().toISOString();
+  if (config.snowEffectEnabled !== undefined && cachedStorefrontConfig) {
+    cachedStorefrontConfig.snowEffectEnabled = Boolean(config.snowEffectEnabled);
+  }
   cachedStorefrontConfig = null;
   cachedMaintenanceConfig = null;
+
   try {
-    const now = new Date().toISOString();
     const payload: any = {
       updated_at: now,
       updated_by: adminEmail,
@@ -1630,9 +1649,19 @@ export async function updateStorefrontConfigInSupabase(
     if (config.snowEffectEnabled !== undefined) payload.snow_effect_enabled = Boolean(config.snowEffectEnabled);
 
     // 1. Try upserting into storefront_config
-    const { error: sfError } = await supabase
+    let { error: sfError } = await supabase
       .from('storefront_config')
       .upsert({ id: 'default', ...payload }, { onConflict: 'id' });
+
+    // If snow_effect_enabled column is missing in schema, retry without it so other fields succeed
+    if (sfError && (sfError.code === 'PGRST204' || sfError.message?.includes('snow_effect_enabled'))) {
+      const safePayload = { ...payload };
+      delete safePayload.snow_effect_enabled;
+      const retryRes = await supabase
+        .from('storefront_config')
+        .upsert({ id: 'default', ...safePayload }, { onConflict: 'id' });
+      sfError = retryRes.error;
+    }
 
     if (sfError) {
       console.warn('Notice: storefront_config upsert warning (migration may be pending):', sfError.message);

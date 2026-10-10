@@ -145,9 +145,9 @@ export default function RootLayout({
             <SmoothScroll>
               <BrandReveal />
               <CustomCursor />
-              <SnowEffect />
               <Header />
               <main className="min-h-screen relative bg-black">{children}</main>
+              <SnowEffect />
               <CartDrawer />
               <SearchOverlay />
               <QuickViewModal />

@@ -818,16 +818,26 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         if (res.ok) {
           const cfg = await res.json();
           if (cfg && cfg.storefrontMode) {
-            setStorefrontConfig(cfg);
+            setStorefrontConfig((prev) => {
+              const merged: StorefrontConfig = {
+                ...prev,
+                ...cfg,
+                snowEffectEnabled:
+                  typeof cfg.snowEffectEnabled === 'boolean'
+                    ? cfg.snowEffectEnabled
+                    : (prev.snowEffectEnabled ?? false),
+              };
+              try {
+                localStorage.setItem('supersnake_storefront_config', JSON.stringify(merged));
+              } catch (e) {}
+              return merged;
+            });
             setMaintenanceConfig((prev) => ({
               ...prev,
               maintenanceMode: cfg.storefrontMode === 'MAINTENANCE',
               maintenanceMessage: cfg.maintenanceMessage || prev.maintenanceMessage,
               estimatedRestoreTime: cfg.estimatedRestoreTime || prev.estimatedRestoreTime,
             }));
-            try {
-              localStorage.setItem('supersnake_storefront_config', JSON.stringify(cfg));
-            } catch (e) {}
             return;
           }
         }
@@ -837,16 +847,26 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         fetchStorefrontConfigFromSupabase()
           .then((dbConfig) => {
             if (dbConfig) {
-              setStorefrontConfig(dbConfig);
+              setStorefrontConfig((prev) => {
+                const merged: StorefrontConfig = {
+                  ...prev,
+                  ...dbConfig,
+                  snowEffectEnabled:
+                    typeof dbConfig.snowEffectEnabled === 'boolean'
+                      ? dbConfig.snowEffectEnabled
+                      : (prev.snowEffectEnabled ?? false),
+                };
+                try {
+                  localStorage.setItem('supersnake_storefront_config', JSON.stringify(merged));
+                } catch (e) {}
+                return merged;
+              });
               setMaintenanceConfig((prev) => ({
                 ...prev,
                 maintenanceMode: dbConfig.storefrontMode === 'MAINTENANCE',
                 maintenanceMessage: dbConfig.maintenanceMessage || prev.maintenanceMessage,
                 estimatedRestoreTime: dbConfig.estimatedRestoreTime || prev.estimatedRestoreTime,
               }));
-              try {
-                localStorage.setItem('supersnake_storefront_config', JSON.stringify(dbConfig));
-              } catch (e) {}
             }
           })
           .catch(() => {});
@@ -883,6 +903,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           }
         } catch (err) {}
       }
+      if (e.key === 'supersnake_storefront_config' && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (parsed) {
+            setStorefrontConfig((prev) => ({
+              ...prev,
+              ...parsed,
+              snowEffectEnabled: typeof parsed.snowEffectEnabled === 'boolean'
+                ? parsed.snowEffectEnabled
+                : prev.snowEffectEnabled,
+            }));
+          }
+        } catch (err) {}
+      }
     };
 
     const handleCustomChange = () => {
@@ -906,6 +940,24 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       } catch (e) {}
     };
 
+    const handleStorefrontChange = () => {
+      try {
+        const saved = localStorage.getItem('supersnake_storefront_config');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed) {
+            setStorefrontConfig((prev) => ({
+              ...prev,
+              ...parsed,
+              snowEffectEnabled: typeof parsed.snowEffectEnabled === 'boolean'
+                ? parsed.snowEffectEnabled
+                : prev.snowEffectEnabled,
+            }));
+          }
+        }
+      } catch (e) {}
+    };
+
     const handleAbandonedChange = () => {
       try {
         const saved = localStorage.getItem('supersnake_abandoned_carts');
@@ -922,11 +974,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     window.addEventListener('supersnake_threshold_change', handleCustomChange);
     window.addEventListener('supersnake_defects_change', handleDefectsChange);
     window.addEventListener('supersnake_abandoned_change', handleAbandonedChange);
+    window.addEventListener('supersnake_storefront_change', handleStorefrontChange);
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('supersnake_threshold_change', handleCustomChange);
       window.removeEventListener('supersnake_defects_change', handleDefectsChange);
       window.removeEventListener('supersnake_abandoned_change', handleAbandonedChange);
+      window.removeEventListener('supersnake_storefront_change', handleStorefrontChange);
     };
   }, []);
 
@@ -1952,10 +2006,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       });
 
       const data = await res.json();
-      if (res.ok && data.success && data.config) {
-        setStorefrontConfig(data.config);
+      if (res.ok && data.success) {
+        const returned = data.config || {};
+        const merged: StorefrontConfig = {
+          ...updated,
+          ...returned,
+          snowEffectEnabled:
+            typeof returned.snowEffectEnabled === 'boolean'
+              ? returned.snowEffectEnabled
+              : updated.snowEffectEnabled,
+        };
+        setStorefrontConfig(merged);
         try {
-          localStorage.setItem('supersnake_storefront_config', JSON.stringify(data.config));
+          localStorage.setItem('supersnake_storefront_config', JSON.stringify(merged));
+          window.dispatchEvent(new Event('supersnake_storefront_change'));
         } catch (e) {}
         return { success: true };
       }

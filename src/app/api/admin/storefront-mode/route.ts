@@ -64,13 +64,20 @@ export async function POST(req: NextRequest) {
     }
 
     const success = await updateStorefrontConfigInSupabase(updates, adminEmail.trim().toLowerCase());
-    const updated = await fetchStorefrontConfigFromSupabase();
+    const updated = await fetchStorefrontConfigFromSupabase(true);
+
+    const finalConfig: StorefrontConfig = {
+      ...(updated || {}),
+      snowEffectEnabled: updates.snowEffectEnabled !== undefined
+        ? updates.snowEffectEnabled
+        : (updated?.snowEffectEnabled ?? false),
+    } as StorefrontConfig;
 
     return NextResponse.json(
       {
         success,
-        config: updated,
-        message: `Storefront mode updated to ${updates.storefrontMode || updated?.storefrontMode}.`,
+        config: finalConfig,
+        message: `Storefront mode updated to ${updates.storefrontMode || finalConfig.storefrontMode}.`,
       },
       {
         headers: {

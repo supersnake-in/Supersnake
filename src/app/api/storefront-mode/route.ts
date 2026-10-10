@@ -43,7 +43,12 @@ export async function GET() {
     try {
       const config = await fetchStorefrontConfigFromSupabase();
       if (config) {
-        cachedConfig = config;
+        cachedConfig = {
+          ...config,
+          snowEffectEnabled: typeof config.snowEffectEnabled === 'boolean'
+            ? config.snowEffectEnabled
+            : (cachedConfig.snowEffectEnabled ?? false),
+        };
         lastFetch = now;
       }
     } catch (e) {}
