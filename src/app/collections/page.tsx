@@ -28,11 +28,6 @@ export default function CollectionsOverviewPage() {
     return list.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
   }, [collections, activeFilter]);
 
-  // Count products assigned to each collection
-  const getProductCountForCollection = (colSlug: string) => {
-    return products.filter((p) => p.collectionSlug === colSlug).length;
-  };
-
   return (
     <div className="min-h-screen bg-black text-white pt-24 sm:pt-28 pb-24 px-4 sm:px-6 md:px-12 selection:bg-snake-green selection:text-black">
       {/* ============================================================
@@ -78,19 +73,6 @@ export default function CollectionsOverviewPage() {
       <section className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           {displayCollections.map((col, index) => {
-            const pieceCount = getProductCountForCollection(col.slug);
-            const menCount = products.filter(
-              (p) =>
-                (p.collectionSlug === col.slug || p.collectionId === col.id) &&
-                (p.gender === 'men' || p.gender === 'unisex')
-            ).length;
-            const womenCount = products.filter(
-              (p) =>
-                (p.collectionSlug === col.slug || p.collectionId === col.id) &&
-                (p.gender === 'women' || p.gender === 'unisex')
-            ).length;
-            const accent = col.accentColor || '#04fc21';
-
             return (
               <motion.article
                 key={col.id}
@@ -114,13 +96,6 @@ export default function CollectionsOverviewPage() {
                   {/* Series Badge Overlay */}
                   <div className="absolute top-3 left-3 z-10 text-[10px] sm:text-[11px] font-mono tracking-[0.2em] uppercase text-snake-green font-bold drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
                     {col.badge || `CHAPTER 0${index + 1}`}
-                  </div>
-
-                  {/* Piece count pill with Men & Women breakdown */}
-                  <div className="absolute top-3 right-3 z-10 px-2 py-0.5 bg-black/75 backdrop-blur-md border border-white/10 text-[9px] font-mono text-neutral-300 rounded-sm flex items-center gap-1.5">
-                    <span className="text-snake-green font-bold">{pieceCount} PIECES</span>
-                    <span className="text-neutral-500 hidden sm:inline">•</span>
-                    <span className="text-neutral-400 hidden sm:inline">{menCount}M / {womenCount}W</span>
                   </div>
 
                   {/* Gender Department Pill */}

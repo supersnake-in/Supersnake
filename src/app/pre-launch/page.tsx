@@ -331,14 +331,6 @@ export default function PreLaunchPage() {
           {/* Chapters Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {activeCollections.slice(0, 6).map((col) => {
-              const pieceCount = products.filter(
-                (p) =>
-                  p.collectionSlug === col.slug ||
-                  p.collectionId === col.id ||
-                  (col.slug === 'the-signature' && p.isSignature) ||
-                  (col.slug === 'the-serpent' && (p.slug === 'the-serpent-tee' || p.slug === 'the-venom-edition'))
-              ).length;
-
               return (
                 <Link
                   key={col.id}
@@ -358,11 +350,6 @@ export default function PreLaunchPage() {
                     {/* Badge */}
                     <div className="absolute top-3 left-3 z-10 text-[10px] sm:text-[11px] font-mono tracking-[0.2em] uppercase text-snake-green font-bold drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
                       {col.badge || 'ATELIER SERIES'}
-                    </div>
-
-                    {/* Piece Count */}
-                    <div className="absolute top-3 right-3 px-2 py-0.5 rounded bg-black/80 backdrop-blur-md border border-white/15 text-[9px] font-mono tracking-widest uppercase text-snake-green">
-                      {pieceCount} {pieceCount === 1 ? 'PIECE' : 'PIECES'}
                     </div>
 
                     {/* Mood Swatches */}

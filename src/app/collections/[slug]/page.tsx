@@ -199,10 +199,6 @@ export default function DedicatedCollectionPage() {
                   </p>
                 )}
               </div>
-
-              <div className="text-[11px] font-mono text-neutral-500 whitespace-nowrap">
-                <span className="text-white font-bold">{seriesProducts.length}</span> PIECES IN THIS SERIES
-              </div>
             </div>
           </div>
         </div>
@@ -224,7 +220,7 @@ export default function DedicatedCollectionPage() {
                   : 'text-neutral-400 hover:text-white'
               }`}
             >
-              ALL PIECES ({seriesProducts.length})
+              ALL PIECES
             </button>
             <button
               onClick={() => setActiveGender('MEN')}
@@ -234,7 +230,7 @@ export default function DedicatedCollectionPage() {
                   : 'text-neutral-400 hover:text-white'
               }`}
             >
-              MEN ({menCount})
+              MEN
             </button>
             <button
               onClick={() => setActiveGender('WOMEN')}
@@ -244,7 +240,7 @@ export default function DedicatedCollectionPage() {
                   : 'text-neutral-400 hover:text-white'
               }`}
             >
-              WOMEN ({womenCount})
+              WOMEN
             </button>
           </div>
 
@@ -294,7 +290,7 @@ export default function DedicatedCollectionPage() {
               onClick={() => setActiveGender('ALL')}
               className="mt-2 px-6 py-2.5 bg-white hover:bg-snake-green text-black font-mono text-xs uppercase tracking-widest font-bold transition-colors inline-block rounded-sm"
             >
-              VIEW ALL PIECES ({seriesProducts.length})
+              VIEW ALL PIECES
             </button>
           </div>
         )}

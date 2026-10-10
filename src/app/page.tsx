@@ -292,7 +292,7 @@ export default function HomePage() {
                 href="/collections"
                 className="inline-flex items-center gap-2 text-xs font-mono tracking-widest text-white hover:text-snake-green uppercase transition-colors shrink-0 group"
               >
-                <span>EXPLORE ALL {activeCollections.length} CHAPTERS</span>
+                <span>EXPLORE ALL CHAPTERS</span>
                 <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
@@ -304,14 +304,6 @@ export default function HomePage() {
             className="flex items-stretch gap-5 sm:gap-6 md:gap-7 overflow-x-auto pb-6 pt-1 no-scrollbar -mx-4 sm:-mx-6 md:-mx-12 px-4 sm:px-6 md:px-12 scroll-smooth snap-x snap-mandatory"
           >
             {activeCollections.map((col) => {
-              const pieceCount = products.filter(
-                (p) =>
-                  p.collectionSlug === col.slug ||
-                  p.collectionId === col.id ||
-                  (col.slug === 'the-signature' && p.isSignature) ||
-                  (col.slug === 'the-serpent' && (p.slug === 'the-serpent-tee' || p.slug === 'the-venom-edition'))
-              ).length;
-
               return (
                 <Link
                   key={col.id}
@@ -331,11 +323,6 @@ export default function HomePage() {
                     {/* Badge */}
                     <div className="absolute top-3 left-3 z-10 text-[10px] sm:text-[11px] font-mono tracking-[0.2em] uppercase text-snake-green font-bold drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
                       {col.badge || 'ATELIER SERIES'}
-                    </div>
-
-                    {/* Piece Count */}
-                    <div className="absolute top-3 right-3 px-2 py-0.5 rounded bg-black/80 backdrop-blur-md border border-white/15 text-[9px] font-mono tracking-widest uppercase text-snake-green">
-                      {pieceCount} {pieceCount === 1 ? 'PIECE' : 'PIECES'}
                     </div>
 
                     {/* Mood Swatches */}
