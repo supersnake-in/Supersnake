@@ -613,13 +613,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           const parsedCols = JSON.parse(savedCollections);
           if (Array.isArray(parsedCols) && parsedCols.length > 0) {
             const mergedCols = COLLECTIONS_DATA.map((defaultCol) => {
-              const saved = parsedCols.find((c: any) => c.id === defaultCol.id || c.slug === defaultCol.slug);
+              const saved = parsedCols.find((c: any) => c.slug === defaultCol.slug || c.id === defaultCol.id);
               if (!saved) return defaultCol;
+
+              const isStaleCard = !saved.cardImage || saved.cardImage.includes('men-collection.png') || saved.cardImage.includes('hero2.png');
+              const isStaleHero = !saved.heroImage || saved.heroImage.includes('hero2.png') || saved.heroImage.includes('men-collection.png');
+
               return {
                 ...defaultCol,
                 ...saved,
-                cardImage: defaultCol.cardImage,
-                heroImage: defaultCol.heroImage,
+                cardImage: isStaleCard ? defaultCol.cardImage : saved.cardImage,
+                heroImage: isStaleHero ? defaultCol.heroImage : saved.heroImage,
               };
             });
             const customCols = parsedCols.filter((c: any) => !COLLECTIONS_DATA.some((d) => d.id === c.id || d.slug === c.slug));
@@ -693,9 +697,24 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     fetchCollectionsFromSupabase()
       .then((supabaseCols) => {
         if (supabaseCols && supabaseCols.length > 0) {
-          setCollections(supabaseCols);
+          const merged = supabaseCols.map((col) => {
+            const defaultCol = COLLECTIONS_DATA.find((c) => c.slug === col.slug || c.id === col.id);
+            if (!defaultCol) return col;
+
+            const isStaleCard = !col.cardImage || col.cardImage.includes('men-collection.png') || col.cardImage.includes('hero2.png');
+            const isStaleHero = !col.heroImage || col.heroImage.includes('hero2.png') || col.heroImage.includes('men-collection.png');
+
+            return {
+              ...defaultCol,
+              ...col,
+              cardImage: isStaleCard ? defaultCol.cardImage : col.cardImage,
+              heroImage: isStaleHero ? defaultCol.heroImage : col.heroImage,
+            };
+          });
+
+          setCollections(merged);
           try {
-            localStorage.setItem('supersnake_collections', JSON.stringify(supabaseCols));
+            localStorage.setItem('supersnake_collections', JSON.stringify(merged));
           } catch (e) {}
         }
       })
@@ -2112,11 +2131,26 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     try {
       const supaCols = await fetchCollectionsFromSupabase(forceRefresh);
       if (supaCols && supaCols.length > 0) {
-        setCollections(supaCols);
+        const merged = supaCols.map((col) => {
+          const defaultCol = COLLECTIONS_DATA.find((c) => c.slug === col.slug || c.id === col.id);
+          if (!defaultCol) return col;
+
+          const isStaleCard = !col.cardImage || col.cardImage.includes('men-collection.png') || col.cardImage.includes('hero2.png');
+          const isStaleHero = !col.heroImage || col.heroImage.includes('hero2.png') || col.heroImage.includes('men-collection.png');
+
+          return {
+            ...defaultCol,
+            ...col,
+            cardImage: isStaleCard ? defaultCol.cardImage : col.cardImage,
+            heroImage: isStaleHero ? defaultCol.heroImage : col.heroImage,
+          };
+        });
+
+        setCollections(merged);
         try {
-          localStorage.setItem('supersnake_collections', JSON.stringify(supaCols));
+          localStorage.setItem('supersnake_collections', JSON.stringify(merged));
         } catch (e) {}
-        return supaCols;
+        return merged;
       }
     } catch (e) {}
     return collections;
