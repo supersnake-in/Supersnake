@@ -46,9 +46,9 @@ export function AnnouncementBar({
         backgroundColor: bgColor,
         color: textColor,
       }}
-      className={`w-full min-h-[34px] sm:min-h-[36px] flex items-center justify-center transition-colors duration-300 border-b border-white/[0.08] shrink-0 relative ${className || ''}`}
+      className={`w-full h-9 flex items-center justify-center transition-colors duration-300 shrink-0 relative ${className || ''}`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 w-full h-full flex items-center justify-center py-1 sm:py-0.5 relative">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 w-full h-full flex items-center justify-center relative">
         {/* Centered Message Area */}
         <div className="flex-1 flex items-center justify-center text-center px-7 sm:px-10">
           {hasValidUrl && !hasCta ? (

@@ -13,11 +13,12 @@ import { AnnouncementBar } from './AnnouncementBar';
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();
-  const [announcementCollapsed, setAnnouncementCollapsed] = useState(false);
-  const [navScrolled, setNavScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
+  const headerRef = useRef<HTMLElement>(null);
+  const gradientLayerRef = useRef<HTMLDivElement>(null);
+  const glassLayerRef = useRef<HTMLDivElement>(null);
   const accountMenuRef = useRef<HTMLDivElement>(null);
   const { cartCount, wishlist, openCart, openSearch, storefrontConfig, announcementConfig } = useStore();
   const { user, profile, signOut, isAdmin } = useAuth();
@@ -51,32 +52,59 @@ export function Header() {
     }
   };
 
+  // Pure continuous 1:1 scroll physics and imperceptible background crossfade
   useEffect(() => {
+    let rafId: number | null = null;
+
     const handleScroll = () => {
       const scrollY = window.scrollY;
+      const isAnnouncementShowing = showAnnouncement && !isDismissed;
+      const maxOffset = isAnnouncementShowing ? 36 : 0;
+      const offset = Math.min(Math.max(scrollY, 0), maxOffset);
 
-      // 1. Collapse announcement bar when scrolling away from top (20px)
-      setAnnouncementCollapsed(scrollY > 20);
+      if (headerRef.current) {
+        headerRef.current.style.transform = `translate3d(0, -${offset}px, 0)`;
+      }
 
-      // 2. Activate navigation bar background on scrolling 1/6th of hero section
+      // 1/6th of hero section calculation
       const heroEl = document.getElementById('hero');
       const heroHeight = heroEl ? heroEl.offsetHeight : window.innerHeight;
       const heroThreshold = heroHeight / 6;
 
       const hasHero = Boolean(heroEl) || pathname === '/' || pathname === '/pre-launch';
-      const bgThreshold = hasHero ? heroThreshold : 20;
+      const startFade = isAnnouncementShowing ? 36 : 10;
+      const endFade = hasHero ? heroThreshold : 50;
 
-      setNavScrolled(scrollY > bgThreshold);
+      // Continuous, imperceptible progress from 0.00 to 1.00
+      const rawProgress = (scrollY - startFade) / Math.max(endFade - startFade, 1);
+      const progress = Math.min(Math.max(rawProgress, 0), 1);
+
+      if (glassLayerRef.current) {
+        glassLayerRef.current.style.opacity = `${progress}`;
+      }
+      if (gradientLayerRef.current) {
+        gradientLayerRef.current.style.opacity = `${1 - progress}`;
+      }
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('resize', handleScroll, { passive: true });
+    const onScroll = () => {
+      if (rafId !== null) return;
+      rafId = requestAnimationFrame(() => {
+        handleScroll();
+        rafId = null;
+      });
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
     handleScroll();
+
     return () => {
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', handleScroll);
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
     };
-  }, [pathname]);
+  }, [pathname, showAnnouncement, isDismissed]);
 
   // Close mobile menu and account menu on route change
   useEffect(() => {
@@ -115,27 +143,39 @@ export function Header() {
 
   return (
     <>
-      <header className="fixed top-0 inset-x-0 z-40 flex flex-col pointer-events-none">
+      <header
+        ref={headerRef}
+        className="fixed top-0 inset-x-0 z-40 flex flex-col pointer-events-none will-change-transform"
+        style={{ transform: 'translate3d(0, 0, 0)' }}
+      >
         {showAnnouncement && (
           <div
-            className={`w-full overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-auto ${
-              announcementCollapsed || isDismissed
-                ? 'max-h-0 opacity-0 -translate-y-2 pointer-events-none'
-                : 'max-h-12 opacity-100 translate-y-0'
+            className={`w-full overflow-hidden pointer-events-auto transition-[grid-template-rows,opacity] duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] grid ${
+              isDismissed ? 'grid-rows-[0fr] opacity-0 pointer-events-none' : 'grid-rows-[1fr] opacity-100'
             }`}
           >
-            <AnnouncementBar onDismiss={handleDismissAnnouncement} />
+            <div className="overflow-hidden min-h-0">
+              <AnnouncementBar onDismiss={handleDismissAnnouncement} />
+            </div>
           </div>
         )}
 
-        <div
-          className={`w-full pointer-events-auto transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-            navScrolled
-              ? 'bg-black/85 backdrop-blur-md py-3.5 border-b border-white/[0.08] shadow-[0_4px_24px_rgba(0,0,0,0.5)]'
-              : 'bg-gradient-to-b from-black/80 via-black/40 to-transparent py-5'
-          }`}
-        >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 flex items-center justify-between relative">
+        <div className="relative w-full pointer-events-auto py-4 sm:py-4.5">
+          {/* Ambient top-of-page gradient overlay (fades out continuously on scroll) */}
+          <div
+            ref={gradientLayerRef}
+            className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/40 to-transparent pointer-events-none transition-opacity duration-150"
+            style={{ opacity: 1 }}
+          />
+
+          {/* Luxury frosted glass backdrop (fades in continuously on scroll - NO border line) */}
+          <div
+            ref={glassLayerRef}
+            className="absolute inset-0 bg-black/85 backdrop-blur-md shadow-[0_12px_40px_rgba(0,0,0,0.45)] pointer-events-none transition-opacity duration-150"
+            style={{ opacity: 0 }}
+          />
+
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 flex items-center justify-between relative z-10">
           {/* ============================================================
               DESKTOP HEADER (LOCKED & UNTOUCHED FOR lg: AND ABOVE)
               ============================================================ */}

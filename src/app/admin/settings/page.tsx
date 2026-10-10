@@ -1396,7 +1396,7 @@ export default function AdminSettingsPage() {
                   backgroundColor: announcementBgColor,
                   color: announcementTextColor,
                 }}
-                className="w-full min-h-[32px] md:min-h-[34px] px-4 py-1.5 flex items-center justify-center transition-colors border-b border-white/[0.08] relative"
+                className="w-full min-h-[32px] md:min-h-[34px] px-4 py-1.5 flex items-center justify-center transition-colors relative"
               >
                 <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center text-[10px] sm:text-[11px] font-mono uppercase tracking-[0.18em] font-medium pr-7 sm:pr-8">
                   <span className="truncate max-w-[70vw] sm:max-w-none">
