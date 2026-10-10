@@ -382,3 +382,142 @@ export interface Collection {
   createdAt: string;
   updatedAt?: string;
 }
+
+// =========================================================================
+// ANNOUNCEMENT BAR SYSTEM
+// =========================================================================
+
+export type AnnouncementStatus = 'disabled' | 'active' | 'scheduled' | 'expired';
+
+export interface AnnouncementConfig {
+  id: string; // 'default'
+  isEnabled: boolean;
+  message: string;
+  destinationUrl?: string | null;
+  ctaLabel?: string | null;
+  bgColor: string; // default '#111111'
+  textColor: string; // default '#EDEDED'
+  accentColor?: string | null; // default '#04fc21'
+  startTime?: string | null; // ISO 8601 string in UTC
+  endTime?: string | null; // ISO 8601 string in UTC
+  createdAt?: string;
+  updatedAt?: string;
+  updatedBy?: string;
+}
+
+/**
+ * Validates whether an announcement is eligible to be shown right now.
+ */
+export function isAnnouncementActive(config?: AnnouncementConfig | null): boolean {
+  if (!config || !config.isEnabled) return false;
+  if (!config.message || !config.message.trim()) return false;
+
+  const now = Date.now();
+  if (config.startTime) {
+    const startMs = new Date(config.startTime).getTime();
+    if (!isNaN(startMs) && now < startMs) {
+      return false; // Scheduled in future
+    }
+  }
+
+  if (config.endTime) {
+    const endMs = new Date(config.endTime).getTime();
+    if (!isNaN(endMs) && now > endMs) {
+      return false; // Expired
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Calculates current publication status for administrator display.
+ */
+export function getAnnouncementStatus(config?: AnnouncementConfig | null): {
+  status: AnnouncementStatus;
+  label: string;
+} {
+  if (!config || !config.isEnabled) {
+    return { status: 'disabled', label: 'DISABLED' };
+  }
+  if (!config.message?.trim()) {
+    return { status: 'disabled', label: 'DISABLED (NO MESSAGE)' };
+  }
+
+  const now = Date.now();
+  if (config.startTime) {
+    const startMs = new Date(config.startTime).getTime();
+    if (!isNaN(startMs) && now < startMs) {
+      return { status: 'scheduled', label: 'SCHEDULED (UPCOMING)' };
+    }
+  }
+
+  if (config.endTime) {
+    const endMs = new Date(config.endTime).getTime();
+    if (!isNaN(endMs) && now > endMs) {
+      return { status: 'expired', label: 'EXPIRED' };
+    }
+  }
+
+  return { status: 'active', label: 'PUBLISHED (LIVE)' };
+}
+
+/**
+ * Validates a destination URL against security rules (prevents open redirects & XSS).
+ * Strictly allows internal relative paths (/...) and secure https:// links.
+ */
+export function isValidAnnouncementUrl(url?: string | null): boolean {
+  if (!url || typeof url !== 'string') return false;
+  const clean = url.trim();
+  if (!clean) return false;
+
+  // Reject dangerous protocols
+  const lower = clean.toLowerCase();
+  if (
+    lower.startsWith('javascript:') ||
+    lower.startsWith('data:') ||
+    lower.startsWith('vbscript:') ||
+    lower.startsWith('file:')
+  ) {
+    return false;
+  }
+
+  // Allow relative internal paths, rejecting protocol-relative '//'
+  if (clean.startsWith('/')) {
+    if (clean.startsWith('//')) return false;
+    // Reject whitespace or invalid URL path characters
+    return !/[\s\\<>]/.test(clean);
+  }
+
+  // Allow explicit secure HTTPS URLs
+  if (clean.startsWith('https://')) {
+    try {
+      const parsed = new URL(clean);
+      return parsed.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Validates 3-char or 6-char hex color codes (e.g. #111111, #04fc21).
+ */
+export function isValidHexColor(color?: string | null): boolean {
+  if (!color || typeof color !== 'string') return false;
+  return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(color.trim());
+}
+
+/**
+ * Sanitizes announcement copy (strips HTML tags and limits to 160 chars).
+ */
+export function sanitizeAnnouncementMessage(msg: string): string {
+  if (!msg || typeof msg !== 'string') return '';
+  return msg
+    .replace(/<[^>]*>?/gm, '') // Strip HTML tags
+    .replace(/\s+/g, ' ') // Collapse multiple whitespace
+    .trim()
+    .slice(0, 160);
+}

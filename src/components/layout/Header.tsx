@@ -7,6 +7,7 @@ import { Search, ShoppingBag, Heart, User, Menu, X, Shield, LogOut, ArrowRight }
 import { SuperSnakeLogo } from '../brand/SuperSnakeLogo';
 import { useStore } from '@/lib/store';
 import { useAuth } from '@/lib/auth-context';
+import { isAnnouncementActive } from '@/lib/types';
 
 export function Header() {
   const pathname = usePathname();
@@ -15,11 +16,12 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement>(null);
-  const { cartCount, wishlist, openCart, openSearch, storefrontConfig } = useStore();
+  const { cartCount, wishlist, openCart, openSearch, storefrontConfig, announcementConfig } = useStore();
   const { user, profile, signOut, isAdmin } = useAuth();
 
   const isStorefront = !pathname.startsWith('/admin') && !pathname.startsWith('/maintenance');
   const isPreLaunch = storefrontConfig?.storefrontMode === 'PRE_LAUNCH';
+  const showAnnouncement = isStorefront && isAnnouncementActive(announcementConfig);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -67,7 +69,10 @@ export function Header() {
   return (
     <>
       <header
-        className={`fixed top-0 inset-x-0 z-40 transition-all duration-500 ${
+        style={{
+          top: showAnnouncement ? (scrolled ? '0px' : '32px') : '0px',
+        }}
+        className={`fixed inset-x-0 z-40 transition-all duration-300 ${
           scrolled
             ? 'bg-black/80 backdrop-blur-md py-3.5'
             : 'bg-gradient-to-b from-black/80 via-black/40 to-transparent py-5'

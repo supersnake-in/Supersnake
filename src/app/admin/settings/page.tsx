@@ -26,11 +26,21 @@ import {
   Sliders,
   ArrowRight,
   Snowflake,
+  Megaphone,
+  Copy,
+  Palette,
+  Link2,
 } from 'lucide-react';
 import { BRAND } from '@/lib/design-tokens';
 import { useStore } from '@/lib/store';
 import { useAuth } from '@/lib/auth-context';
-import { StorefrontMode } from '@/lib/types';
+import {
+  StorefrontMode,
+  AnnouncementConfig,
+  getAnnouncementStatus,
+  isValidAnnouncementUrl,
+  isValidHexColor,
+} from '@/lib/types';
 
 export default function AdminSettingsPage() {
   const {
@@ -40,6 +50,9 @@ export default function AdminSettingsPage() {
     storefrontConfig,
     updateStorefrontConfig,
     refreshStorefrontConfig,
+    announcementConfig,
+    updateAnnouncementConfig,
+    refreshAnnouncementConfig,
     products,
     preBookings,
     freeShippingThreshold: storeThreshold,
@@ -159,6 +172,213 @@ export default function AdminSettingsPage() {
     } finally {
       setIsUpdatingSnow(false);
     }
+  };
+
+  // Announcement Bar state
+  const [announcementEnabled, setAnnouncementEnabled] = useState(false);
+  const [announcementMessage, setAnnouncementMessage] = useState('THE NEW CHAPTERS HAVE ARRIVED — EXPLORE NOW.');
+  const [announcementUrl, setAnnouncementUrl] = useState('/collections');
+  const [announcementCta, setAnnouncementCta] = useState('EXPLORE NOW');
+  const [announcementBgColor, setAnnouncementBgColor] = useState('#111111');
+  const [announcementTextColor, setAnnouncementTextColor] = useState('#EDEDED');
+  const [announcementAccentColor, setAnnouncementAccentColor] = useState('#04fc21');
+  const [announcementStartTime, setAnnouncementStartTime] = useState('');
+  const [announcementEndTime, setAnnouncementEndTime] = useState('');
+  const [isSavingAnnouncement, setIsSavingAnnouncement] = useState(false);
+  const [announcementFeedback, setAnnouncementFeedback] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
+  const [sqlCopied, setSqlCopied] = useState(false);
+
+  // Sync announcement settings when context updates
+  useEffect(() => {
+    if (announcementConfig) {
+      setAnnouncementEnabled(Boolean(announcementConfig.isEnabled));
+      setAnnouncementMessage(announcementConfig.message || '');
+      setAnnouncementUrl(announcementConfig.destinationUrl || '');
+      setAnnouncementCta(announcementConfig.ctaLabel || '');
+      setAnnouncementBgColor(announcementConfig.bgColor || '#111111');
+      setAnnouncementTextColor(announcementConfig.textColor || '#EDEDED');
+      setAnnouncementAccentColor(announcementConfig.accentColor || '#04fc21');
+      if (announcementConfig.startTime) {
+        try {
+          const d = new Date(announcementConfig.startTime);
+          setAnnouncementStartTime(d.toISOString().slice(0, 16));
+        } catch (e) {
+          setAnnouncementStartTime('');
+        }
+      } else {
+        setAnnouncementStartTime('');
+      }
+      if (announcementConfig.endTime) {
+        try {
+          const d = new Date(announcementConfig.endTime);
+          setAnnouncementEndTime(d.toISOString().slice(0, 16));
+        } catch (e) {
+          setAnnouncementEndTime('');
+        }
+      } else {
+        setAnnouncementEndTime('');
+      }
+    }
+  }, [announcementConfig]);
+
+  const draftAnnouncementConfig: AnnouncementConfig = {
+    id: 'default',
+    isEnabled: announcementEnabled,
+    message: announcementMessage,
+    destinationUrl: announcementUrl.trim() || null,
+    ctaLabel: announcementCta.trim() || null,
+    bgColor: announcementBgColor,
+    textColor: announcementTextColor,
+    accentColor: announcementAccentColor,
+    startTime: announcementStartTime ? new Date(announcementStartTime).toISOString() : null,
+    endTime: announcementEndTime ? new Date(announcementEndTime).toISOString() : null,
+  };
+
+  const draftAnnouncementStatus = getAnnouncementStatus(draftAnnouncementConfig);
+
+  const hasUnsavedAnnouncementChanges = React.useMemo(() => {
+    if (!announcementConfig) return false;
+    const normStart = announcementStartTime ? new Date(announcementStartTime).toISOString() : null;
+    const normEnd = announcementEndTime ? new Date(announcementEndTime).toISOString() : null;
+    return (
+      announcementEnabled !== Boolean(announcementConfig.isEnabled) ||
+      announcementMessage.trim() !== (announcementConfig.message || '').trim() ||
+      announcementUrl.trim() !== (announcementConfig.destinationUrl || '').trim() ||
+      announcementCta.trim() !== (announcementConfig.ctaLabel || '').trim() ||
+      announcementBgColor !== (announcementConfig.bgColor || '#111111') ||
+      announcementTextColor !== (announcementConfig.textColor || '#EDEDED') ||
+      announcementAccentColor !== (announcementConfig.accentColor || '#04fc21') ||
+      normStart !== (announcementConfig.startTime || null) ||
+      normEnd !== (announcementConfig.endTime || null)
+    );
+  }, [
+    announcementConfig,
+    announcementEnabled,
+    announcementMessage,
+    announcementUrl,
+    announcementCta,
+    announcementBgColor,
+    announcementTextColor,
+    announcementAccentColor,
+    announcementStartTime,
+    announcementEndTime,
+  ]);
+
+  const handleSaveAnnouncement = async () => {
+    setIsSavingAnnouncement(true);
+    setAnnouncementFeedback(null);
+
+    // Validation
+    if (announcementEnabled && !announcementMessage.trim()) {
+      setAnnouncementFeedback({
+        type: 'error',
+        message: 'Announcement message cannot be empty when enabled.',
+      });
+      setIsSavingAnnouncement(false);
+      return;
+    }
+
+    if (announcementUrl.trim() && !isValidAnnouncementUrl(announcementUrl.trim())) {
+      setAnnouncementFeedback({
+        type: 'error',
+        message: 'Destination URL must be a valid internal path (e.g. /collections) or secure https:// link.',
+      });
+      setIsSavingAnnouncement(false);
+      return;
+    }
+
+    if (!isValidHexColor(announcementBgColor) || !isValidHexColor(announcementTextColor)) {
+      setAnnouncementFeedback({
+        type: 'error',
+        message: 'Please provide valid 6-character hexadecimal color codes.',
+      });
+      setIsSavingAnnouncement(false);
+      return;
+    }
+
+    const startIso = announcementStartTime ? new Date(announcementStartTime).toISOString() : null;
+    const endIso = announcementEndTime ? new Date(announcementEndTime).toISOString() : null;
+
+    if (startIso && endIso && new Date(startIso).getTime() >= new Date(endIso).getTime()) {
+      setAnnouncementFeedback({
+        type: 'error',
+        message: 'Publication start time must be before end time.',
+      });
+      setIsSavingAnnouncement(false);
+      return;
+    }
+
+    try {
+      const res = await updateAnnouncementConfig(
+        {
+          isEnabled: announcementEnabled,
+          message: announcementMessage.trim(),
+          destinationUrl: announcementUrl.trim() || null,
+          ctaLabel: announcementCta.trim() || null,
+          bgColor: announcementBgColor,
+          textColor: announcementTextColor,
+          accentColor: announcementAccentColor,
+          startTime: startIso,
+          endTime: endIso,
+        },
+        currentAdminEmail
+      );
+
+      if (res.success) {
+        setAnnouncementFeedback({
+          type: 'success',
+          message: announcementEnabled
+            ? 'Announcement bar saved and published live to storefront.'
+            : 'Announcement bar disabled on storefront.',
+        });
+        setTimeout(() => setAnnouncementFeedback(null), 4000);
+      } else {
+        setAnnouncementFeedback({
+          type: 'error',
+          message: res.error || 'Failed to persist announcement settings.',
+        });
+      }
+    } catch (err: any) {
+      setAnnouncementFeedback({
+        type: 'error',
+        message: err.message || 'Network error saving announcement bar.',
+      });
+    } finally {
+      setIsSavingAnnouncement(false);
+    }
+  };
+
+  const handleDiscardAnnouncementDraft = () => {
+    if (!announcementConfig) return;
+    setAnnouncementEnabled(Boolean(announcementConfig.isEnabled));
+    setAnnouncementMessage(announcementConfig.message || '');
+    setAnnouncementUrl(announcementConfig.destinationUrl || '');
+    setAnnouncementCta(announcementConfig.ctaLabel || '');
+    setAnnouncementBgColor(announcementConfig.bgColor || '#111111');
+    setAnnouncementTextColor(announcementConfig.textColor || '#EDEDED');
+    setAnnouncementAccentColor(announcementConfig.accentColor || '#04fc21');
+    if (announcementConfig.startTime) {
+      try {
+        setAnnouncementStartTime(new Date(announcementConfig.startTime).toISOString().slice(0, 16));
+      } catch (e) {
+        setAnnouncementStartTime('');
+      }
+    } else {
+      setAnnouncementStartTime('');
+    }
+    if (announcementConfig.endTime) {
+      try {
+        setAnnouncementEndTime(new Date(announcementConfig.endTime).toISOString().slice(0, 16));
+      } catch (e) {
+        setAnnouncementEndTime('');
+      }
+    } else {
+      setAnnouncementEndTime('');
+    }
+    setAnnouncementFeedback(null);
   };
 
   useEffect(() => {
@@ -1086,6 +1306,508 @@ export default function AdminSettingsPage() {
                 onChange={(e) => setStudioLocation(e.target.value)}
                 className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green"
               />
+            </div>
+          </div>
+        </div>
+
+        {/* ========================================================================= */}
+        {/* SECTION: ANNOUNCEMENT BAR // STOREFRONT BROADCAST */}
+        {/* ========================================================================= */}
+        <div id="announcement" className="bg-[#0d0d0d] border border-neutral-800/80 rounded-lg p-6 space-y-6">
+          {/* Card Header & Status */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-800 pb-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-white font-bold uppercase text-sm">
+                <Megaphone size={16} className="text-snake-green" />
+                <span>ANNOUNCEMENT BAR // STOREFRONT BROADCAST</span>
+              </div>
+              <p className="text-[11px] text-neutral-400 font-mono">
+                Broadcast campaigns, drop dates, shipping perks, or private invitations above the header across all storefront pages.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Dynamic Status Badge */}
+              <span
+                className={`px-2.5 py-1 rounded text-[10px] font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 border ${
+                  draftAnnouncementStatus.status === 'active'
+                    ? 'bg-emerald-950/50 text-emerald-400 border-emerald-500/50 shadow-[0_0_12px_rgba(16,185,129,0.2)]'
+                    : draftAnnouncementStatus.status === 'scheduled'
+                    ? 'bg-cyan-950/50 text-cyan-400 border-cyan-500/50'
+                    : draftAnnouncementStatus.status === 'expired'
+                    ? 'bg-amber-950/50 text-amber-400 border-amber-500/50'
+                    : 'bg-neutral-900 text-neutral-400 border-neutral-800'
+                }`}
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    draftAnnouncementStatus.status === 'active'
+                      ? 'bg-emerald-400 animate-ping'
+                      : draftAnnouncementStatus.status === 'scheduled'
+                      ? 'bg-cyan-400'
+                      : draftAnnouncementStatus.status === 'expired'
+                      ? 'bg-amber-400'
+                      : 'bg-neutral-500'
+                  }`}
+                />
+                <span>{draftAnnouncementStatus.label}</span>
+              </span>
+
+              {hasUnsavedAnnouncementChanges && (
+                <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase tracking-wider bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                  UNSAVED DRAFT
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Feedback Alert Banner */}
+          {announcementFeedback && (
+            <div
+              className={`p-3.5 rounded-lg border text-xs font-mono flex items-start gap-2.5 transition-all animate-in fade-in ${
+                announcementFeedback.type === 'success'
+                  ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300'
+                  : 'bg-red-950/40 border-red-500/40 text-red-300'
+              }`}
+            >
+              {announcementFeedback.type === 'success' ? (
+                <CheckCircle2 size={16} className="text-emerald-400 shrink-0 mt-0.5" />
+              ) : (
+                <AlertTriangle size={16} className="text-red-400 shrink-0 mt-0.5" />
+              )}
+              <div className="flex-1">{announcementFeedback.message}</div>
+            </div>
+          )}
+
+          {/* LIVE STOREFRONT PREVIEW BOX */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-[10px] font-mono text-neutral-400 uppercase tracking-widest">
+              <span className="flex items-center gap-1.5">
+                <Eye size={12} className="text-snake-green" />
+                <span>STOREFRONT LIVE PREVIEW (DRAFT)</span>
+              </span>
+              <span>PLACEMENT: ABOVE HEADER (DOCUMENT FLOW)</span>
+            </div>
+
+            <div className="rounded-md border border-neutral-800 overflow-hidden bg-black/90 relative">
+              {/* The Representative Storefront Bar */}
+              <div
+                style={{
+                  backgroundColor: announcementBgColor,
+                  color: announcementTextColor,
+                }}
+                className="w-full min-h-[32px] md:min-h-[34px] px-4 py-1.5 flex items-center justify-center transition-colors border-b border-white/[0.08]"
+              >
+                <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center text-[10px] sm:text-[11px] font-mono uppercase tracking-[0.18em] font-medium">
+                  <span className="truncate max-w-[70vw] sm:max-w-none">
+                    {announcementMessage.trim() || 'ENTER ANNOUNCEMENT MESSAGE BELOW...'}
+                  </span>
+                  {announcementUrl.trim() && announcementCta.trim() && (
+                    <span
+                      style={{ color: announcementAccentColor || undefined }}
+                      className="inline-flex items-center gap-1 font-bold underline-offset-4 hover:underline shrink-0"
+                    >
+                      <span>{announcementCta.trim()}</span>
+                      <ArrowRight size={11} />
+                    </span>
+                  )}
+                  {announcementUrl.trim() && !announcementCta.trim() && (
+                    <ArrowRight
+                      size={11}
+                      style={{ color: announcementAccentColor || undefined }}
+                      className="shrink-0"
+                    />
+                  )}
+                </div>
+              </div>
+
+              {!announcementEnabled && (
+                <div className="bg-neutral-950/85 backdrop-blur-xs py-1 px-3 border-t border-neutral-800/80 flex items-center justify-between text-[9px] font-mono text-neutral-400">
+                  <span className="text-neutral-500">BAR IS CURRENTLY TURNED OFF ON STOREFRONT</span>
+                  <span className="text-snake-green">ENABLE BELOW TO PUBLISH</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* CONTROLS GRID */}
+          <div className="space-y-5 pt-2">
+            {/* Control A: Enable/Disable Toggle */}
+            <div className="bg-black/60 border border-neutral-800 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="space-y-1">
+                <span className="text-xs font-bold text-white uppercase block">
+                  ANNOUNCEMENT BAR ENABLED
+                </span>
+                <p className="text-[11px] text-neutral-400 leading-relaxed font-mono">
+                  When enabled, renders the published announcement strip directly above the header across all storefront pages.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setAnnouncementEnabled(!announcementEnabled)}
+                className={`px-4 py-2 rounded text-xs font-mono font-bold uppercase tracking-wider transition-all flex items-center gap-2 shrink-0 ${
+                  announcementEnabled
+                    ? 'bg-snake-green text-black hover:bg-white shadow-[0_0_15px_rgba(4,252,33,0.3)]'
+                    : 'bg-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-700'
+                }`}
+              >
+                <Power size={13} />
+                <span>{announcementEnabled ? 'ENABLED (ON)' : 'DISABLED (OFF)'}</span>
+              </button>
+            </div>
+
+            {/* Control B: Announcement Copy */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <label className="text-neutral-300 font-bold uppercase tracking-wider">
+                  ANNOUNCEMENT MESSAGE
+                </label>
+                <span
+                  className={`text-[10px] font-mono ${
+                    announcementMessage.length > 150 ? 'text-amber-400' : 'text-neutral-500'
+                  }`}
+                >
+                  {announcementMessage.length} / 160 CHARACTERS
+                </span>
+              </div>
+
+              <textarea
+                rows={2}
+                maxLength={160}
+                value={announcementMessage}
+                onChange={(e) => setAnnouncementMessage(e.target.value)}
+                placeholder="e.g. THE NEW CHAPTERS HAVE ARRIVED — EXPLORE NOW."
+                className="w-full bg-black border border-neutral-800 px-3.5 py-2.5 text-xs text-white rounded focus:border-snake-green focus:outline-none font-mono resize-none leading-relaxed"
+              />
+
+              {/* Quick Preset Ideas */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                <span className="text-[9px] text-neutral-500 uppercase tracking-widest mr-1">
+                  SUGGESTED COPY:
+                </span>
+                {[
+                  'THE NEW CHAPTERS HAVE ARRIVED — EXPLORE NOW.',
+                  'DISCOVER YOUR NEXT FAVOURITE. SHOP THE LATEST DROP.',
+                  'COMPLIMENTARY SHIPPING ON ALL HEAVYWEIGHT ORDERS.',
+                ].map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setAnnouncementMessage(preset)}
+                    className="text-[9px] font-mono px-2 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 transition-colors"
+                  >
+                    {preset.slice(0, 32)}...
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Control C: Destination URL & CTA Label */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs text-neutral-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    <Link2 size={12} className="text-snake-green" />
+                    <span>DESTINATION URL (OPTIONAL)</span>
+                  </label>
+                  {announcementUrl.trim() && (
+                    <span
+                      className={`text-[9px] font-mono font-bold ${
+                        isValidAnnouncementUrl(announcementUrl.trim())
+                          ? 'text-emerald-400'
+                          : 'text-red-400'
+                      }`}
+                    >
+                      {isValidAnnouncementUrl(announcementUrl.trim()) ? 'VALID URL' : 'INVALID PATH'}
+                    </span>
+                  )}
+                </div>
+
+                <input
+                  type="text"
+                  value={announcementUrl}
+                  onChange={(e) => setAnnouncementUrl(e.target.value)}
+                  placeholder="e.g. /collections or /new-drops"
+                  className="w-full bg-black border border-neutral-800 px-3 py-2 text-xs text-white rounded focus:border-snake-green focus:outline-none font-mono"
+                />
+                <p className="text-[10px] text-neutral-500 font-mono">
+                  Internal routes (e.g. <code className="text-neutral-400">/collections</code>, <code className="text-neutral-400">/shop</code>) or secure <code className="text-neutral-400">https://</code> links.
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs text-neutral-300 font-bold uppercase tracking-wider block">
+                  CTA LABEL (OPTIONAL)
+                </label>
+                <input
+                  type="text"
+                  maxLength={30}
+                  value={announcementCta}
+                  disabled={!announcementUrl.trim()}
+                  onChange={(e) => setAnnouncementCta(e.target.value)}
+                  placeholder="e.g. EXPLORE NOW or SHOP DROP"
+                  className="w-full bg-black border border-neutral-800 px-3 py-2 text-xs text-white rounded focus:border-snake-green focus:outline-none font-mono disabled:opacity-40 disabled:cursor-not-allowed"
+                />
+                <p className="text-[10px] text-neutral-500 font-mono">
+                  {announcementUrl.trim()
+                    ? 'Subtle interactive link label rendered beside message.'
+                    : 'Requires destination URL to be configured.'}
+                </p>
+              </div>
+            </div>
+
+            {/* Control D: Color Customization & Presets */}
+            <div className="space-y-3 bg-black/40 border border-neutral-800/80 rounded-lg p-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-neutral-800/60 pb-2">
+                <span className="text-xs text-neutral-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                  <Palette size={13} className="text-snake-green" />
+                  <span>APPEARANCE &amp; COLOUR PALETTE</span>
+                </span>
+
+                {/* Preset Themes */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[9px] text-neutral-500 uppercase tracking-widest mr-1">
+                    PRESETS:
+                  </span>
+                  {[
+                    { name: 'Luxury Obsidian', bg: '#111111', text: '#EDEDED', accent: '#04fc21' },
+                    { name: 'Deep Atelier', bg: '#080808', text: '#FFFFFF', accent: '#04fc21' },
+                    { name: 'Pure Monolith', bg: '#000000', text: '#E5E5E5', accent: '#EDEDED' },
+                    { name: 'Winter Frost', bg: '#081724', text: '#E0F2FE', accent: '#38bdf8' },
+                  ].map((preset) => (
+                    <button
+                      key={preset.name}
+                      type="button"
+                      onClick={() => {
+                        setAnnouncementBgColor(preset.bg);
+                        setAnnouncementTextColor(preset.text);
+                        setAnnouncementAccentColor(preset.accent);
+                      }}
+                      className="text-[9px] font-mono px-2 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-neutral-300 hover:border-neutral-600 transition-colors"
+                    >
+                      {preset.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                {/* Background Color */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] text-neutral-400 uppercase font-mono block">
+                    BACKGROUND COLOUR
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={isValidHexColor(announcementBgColor) ? announcementBgColor : '#111111'}
+                      onChange={(e) => setAnnouncementBgColor(e.target.value)}
+                      className="w-7 h-7 rounded border border-neutral-700 bg-transparent cursor-pointer p-0 shrink-0"
+                    />
+                    <input
+                      type="text"
+                      maxLength={7}
+                      value={announcementBgColor}
+                      onChange={(e) => setAnnouncementBgColor(e.target.value)}
+                      className="w-full bg-black border border-neutral-800 px-2.5 py-1 text-xs text-white rounded font-mono uppercase focus:border-snake-green"
+                    />
+                  </div>
+                </div>
+
+                {/* Text Color */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] text-neutral-400 uppercase font-mono block">
+                    TEXT COLOUR
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={isValidHexColor(announcementTextColor) ? announcementTextColor : '#EDEDED'}
+                      onChange={(e) => setAnnouncementTextColor(e.target.value)}
+                      className="w-7 h-7 rounded border border-neutral-700 bg-transparent cursor-pointer p-0 shrink-0"
+                    />
+                    <input
+                      type="text"
+                      maxLength={7}
+                      value={announcementTextColor}
+                      onChange={(e) => setAnnouncementTextColor(e.target.value)}
+                      className="w-full bg-black border border-neutral-800 px-2.5 py-1 text-xs text-white rounded font-mono uppercase focus:border-snake-green"
+                    />
+                  </div>
+                </div>
+
+                {/* Accent Color */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] text-neutral-400 uppercase font-mono block">
+                    CTA / ACCENT COLOUR
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={isValidHexColor(announcementAccentColor) ? announcementAccentColor : '#04fc21'}
+                      onChange={(e) => setAnnouncementAccentColor(e.target.value)}
+                      className="w-7 h-7 rounded border border-neutral-700 bg-transparent cursor-pointer p-0 shrink-0"
+                    />
+                    <input
+                      type="text"
+                      maxLength={7}
+                      value={announcementAccentColor}
+                      onChange={(e) => setAnnouncementAccentColor(e.target.value)}
+                      className="w-full bg-black border border-neutral-800 px-2.5 py-1 text-xs text-white rounded font-mono uppercase focus:border-snake-green"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Control E: Optional Publication Scheduling */}
+            <div className="space-y-3 bg-black/40 border border-neutral-800/80 rounded-lg p-4">
+              <div className="flex items-center justify-between border-b border-neutral-800/60 pb-2">
+                <span className="text-xs text-neutral-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                  <Calendar size={13} className="text-snake-green" />
+                  <span>PUBLICATION WINDOW // OPTIONAL SCHEDULING</span>
+                </span>
+
+                {(announcementStartTime || announcementEndTime) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAnnouncementStartTime('');
+                      setAnnouncementEndTime('');
+                    }}
+                    className="text-[9px] font-mono text-neutral-400 hover:text-white underline"
+                  >
+                    CLEAR SCHEDULE
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div className="space-y-1">
+                  <label className="text-[10px] text-neutral-400 uppercase font-mono block">
+                    START PUBLICATION (OPTIONAL)
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={announcementStartTime}
+                    onChange={(e) => setAnnouncementStartTime(e.target.value)}
+                    className="w-full bg-black border border-neutral-800 px-3 py-1.5 text-xs text-white rounded font-mono focus:border-snake-green [color-scheme:dark]"
+                  />
+                  <p className="text-[9px] text-neutral-500 font-mono">
+                    Announcement will remain hidden until this datetime.
+                  </p>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] text-neutral-400 uppercase font-mono block">
+                    END PUBLICATION / EXPIRY (OPTIONAL)
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={announcementEndTime}
+                    onChange={(e) => setAnnouncementEndTime(e.target.value)}
+                    className="w-full bg-black border border-neutral-800 px-3 py-1.5 text-xs text-white rounded font-mono focus:border-snake-green [color-scheme:dark]"
+                  />
+                  <p className="text-[9px] text-neutral-500 font-mono">
+                    Announcement automatically disappears after this datetime.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-neutral-800/80">
+              <div className="text-[10px] font-mono text-neutral-400 flex items-center gap-2">
+                {hasUnsavedAnnouncementChanges ? (
+                  <span className="text-amber-400 flex items-center gap-1">
+                    <Clock size={12} />
+                    <span>Unsaved draft in progress. Save to publish live to storefront.</span>
+                  </span>
+                ) : (
+                  <span className="text-neutral-500 flex items-center gap-1">
+                    <CheckCircle2 size={12} className="text-emerald-500" />
+                    <span>All changes saved and synchronized with database.</span>
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+                {hasUnsavedAnnouncementChanges && (
+                  <button
+                    type="button"
+                    onClick={handleDiscardAnnouncementDraft}
+                    disabled={isSavingAnnouncement}
+                    className="px-4 py-2 rounded text-xs font-mono uppercase text-neutral-400 hover:text-white transition-colors"
+                  >
+                    DISCARD DRAFT
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleSaveAnnouncement}
+                  disabled={isSavingAnnouncement}
+                  className="px-6 py-2.5 rounded text-xs font-mono font-bold uppercase tracking-wider bg-white text-black hover:bg-snake-green transition-all shadow-[0_0_20px_rgba(4,252,33,0.25)] flex items-center gap-2 disabled:opacity-50"
+                >
+                  {isSavingAnnouncement ? (
+                    <>
+                      <RefreshCw size={13} className="animate-spin" />
+                      <span>SAVING CHANGES...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check size={14} />
+                      <span>SAVE CHANGES</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Supabase Schema Migration Helper */}
+            <div className="pt-2">
+              <div className="p-3 bg-black/60 border border-neutral-800/80 rounded-md space-y-2 text-[10px] font-mono">
+                <div className="flex items-center justify-between">
+                  <span className="text-neutral-400 font-bold uppercase flex items-center gap-1.5">
+                    <Info size={12} className="text-snake-green" />
+                    <span>SUPABASE CLOUD PERSISTENCE TABLE (OPTIONAL SQL)</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const sql = `CREATE TABLE IF NOT EXISTS public.announcement_config (
+  id TEXT PRIMARY KEY DEFAULT 'default',
+  is_enabled BOOLEAN DEFAULT FALSE,
+  message TEXT NOT NULL DEFAULT '',
+  destination_url TEXT,
+  cta_label TEXT,
+  bg_color TEXT NOT NULL DEFAULT '#111111',
+  text_color TEXT NOT NULL DEFAULT '#EDEDED',
+  accent_color TEXT DEFAULT '#04fc21',
+  start_time TIMESTAMPTZ,
+  end_time TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_by TEXT DEFAULT 'system'
+);
+ALTER TABLE public.announcement_config ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read announcement_config" ON public.announcement_config FOR SELECT USING (true);
+CREATE POLICY "Allow admin all announcement_config" ON public.announcement_config FOR ALL USING (true);`;
+                      navigator.clipboard.writeText(sql);
+                      setSqlCopied(true);
+                      setTimeout(() => setSqlCopied(false), 2500);
+                    }}
+                    className="text-snake-green hover:underline flex items-center gap-1 font-bold"
+                  >
+                    <Copy size={10} />
+                    <span>{sqlCopied ? 'COPIED TO CLIPBOARD!' : 'COPY SQL QUERY'}</span>
+                  </button>
+                </div>
+                <p className="text-neutral-500 leading-relaxed">
+                  Run this idempotent query in your Supabase SQL Editor to enable long-term cloud persistence for the announcement bar across edge deployments.
+                </p>
+              </div>
             </div>
           </div>
         </div>

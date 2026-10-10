@@ -12,6 +12,7 @@ import { SearchOverlay } from '@/components/search/SearchOverlay';
 import { QuickViewModal } from '@/components/product/QuickViewModal';
 import { AuthHashNotice } from '@/components/auth/AuthHashNotice';
 import { SnowEffect } from '@/components/effects/SnowEffect';
+import { AnnouncementBar } from '@/components/layout/AnnouncementBar';
 
 import { JsonLd } from '@/components/seo/JsonLd';
 
@@ -145,6 +146,7 @@ export default function RootLayout({
             <SmoothScroll>
               <BrandReveal />
               <CustomCursor />
+              <AnnouncementBar />
               <Header />
               <main className="min-h-screen relative bg-black">{children}</main>
               <SnowEffect />

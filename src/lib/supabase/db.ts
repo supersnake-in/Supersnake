@@ -16,6 +16,7 @@ import {
   PreBooking,
   PreBookingStatus,
   Collection,
+  AnnouncementConfig,
 } from '../types';
 import { PRODUCTS } from '../data/products';
 
@@ -2107,6 +2108,130 @@ export async function deleteCollectionInSupabase(id: string): Promise<boolean> {
     return true;
   } catch (err) {
     console.warn('Exception deleting collection in Supabase:', err);
+    return false;
+  }
+}
+
+// =========================================================================
+// ANNOUNCEMENT BAR DATABASE ACCESS
+// =========================================================================
+
+export const DEFAULT_ANNOUNCEMENT_CONFIG: AnnouncementConfig = {
+  id: 'default',
+  isEnabled: false,
+  message: 'THE NEW CHAPTERS HAVE ARRIVED — EXPLORE NOW.',
+  destinationUrl: '/collections',
+  ctaLabel: 'EXPLORE NOW',
+  bgColor: '#111111',
+  textColor: '#EDEDED',
+  accentColor: '#04fc21',
+  startTime: null,
+  endTime: null,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  updatedBy: 'system',
+};
+
+let cachedAnnouncementConfig: AnnouncementConfig | null = null;
+let announcementConfigCacheTime = 0;
+
+/**
+ * FETCH ANNOUNCEMENT CONFIG FROM SUPABASE
+ * Caches in memory for 30 seconds to prevent redundant egress.
+ */
+export async function fetchAnnouncementConfigFromSupabase(
+  forceRefresh: boolean = false
+): Promise<AnnouncementConfig | null> {
+  const now = Date.now();
+  if (!forceRefresh && cachedAnnouncementConfig && now - announcementConfigCacheTime < 30000) {
+    return cachedAnnouncementConfig;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('announcement_config')
+      .select('id, is_enabled, message, destination_url, cta_label, bg_color, text_color, accent_color, start_time, end_time, created_at, updated_at, updated_by')
+      .eq('id', 'default')
+      .maybeSingle();
+
+    if (!error && data) {
+      cachedAnnouncementConfig = {
+        id: data.id || 'default',
+        isEnabled: Boolean(data.is_enabled),
+        message: data.message || '',
+        destinationUrl: data.destination_url || null,
+        ctaLabel: data.cta_label || null,
+        bgColor: data.bg_color || '#111111',
+        textColor: data.text_color || '#EDEDED',
+        accentColor: data.accent_color || '#04fc21',
+        startTime: data.start_time || null,
+        endTime: data.end_time || null,
+        createdAt: data.created_at || new Date().toISOString(),
+        updatedAt: data.updated_at || new Date().toISOString(),
+        updatedBy: data.updated_by || 'system',
+      };
+      announcementConfigCacheTime = now;
+      return cachedAnnouncementConfig;
+    }
+  } catch (err) {}
+
+  return cachedAnnouncementConfig;
+}
+
+/**
+ * UPDATE ANNOUNCEMENT CONFIG IN SUPABASE
+ */
+export async function updateAnnouncementConfigInSupabase(
+  config: Partial<AnnouncementConfig>,
+  adminEmail: string = 'system'
+): Promise<boolean> {
+  const now = new Date().toISOString();
+  if (cachedAnnouncementConfig) {
+    cachedAnnouncementConfig = {
+      ...cachedAnnouncementConfig,
+      ...config,
+      updatedAt: now,
+      updatedBy: adminEmail,
+    };
+  } else {
+    cachedAnnouncementConfig = {
+      ...DEFAULT_ANNOUNCEMENT_CONFIG,
+      ...config,
+      updatedAt: now,
+      updatedBy: adminEmail,
+    };
+  }
+  announcementConfigCacheTime = Date.now();
+
+  try {
+    const payload: any = {
+      id: 'default',
+      updated_at: now,
+      updated_by: adminEmail,
+    };
+
+    if (config.isEnabled !== undefined) payload.is_enabled = Boolean(config.isEnabled);
+    if (config.message !== undefined) payload.message = config.message;
+    if (config.destinationUrl !== undefined) payload.destination_url = config.destinationUrl || null;
+    if (config.ctaLabel !== undefined) payload.cta_label = config.ctaLabel || null;
+    if (config.bgColor !== undefined) payload.bg_color = config.bgColor;
+    if (config.textColor !== undefined) payload.text_color = config.textColor;
+    if (config.accentColor !== undefined) payload.accent_color = config.accentColor || null;
+    if (config.startTime !== undefined) payload.start_time = config.startTime || null;
+    if (config.endTime !== undefined) payload.end_time = config.endTime || null;
+
+    const { error } = await supabase
+      .from('announcement_config')
+      .upsert(payload, { onConflict: 'id' });
+
+    if (error) {
+      console.warn('Notice: announcement_config upsert warning (migration may be pending):', error.message);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    console.warn('Exception updating announcement config in Supabase:', err);
     return false;
   }
 }

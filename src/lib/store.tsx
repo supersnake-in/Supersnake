@@ -20,6 +20,7 @@ import {
   PreBooking,
   PreBookingStatus,
   Collection,
+  AnnouncementConfig,
 } from './types';
 import {
   fetchProductsFromSupabase,
@@ -56,6 +57,9 @@ import {
   createCollectionInSupabase,
   updateCollectionInSupabase,
   deleteCollectionInSupabase,
+  DEFAULT_ANNOUNCEMENT_CONFIG,
+  fetchAnnouncementConfigFromSupabase,
+  updateAnnouncementConfigInSupabase,
 } from './supabase/db';
 import { COLLECTIONS_DATA } from './data/collections';
 import { PRODUCTS } from './data/products';
@@ -389,6 +393,14 @@ interface StoreContextType {
   deleteCollection: (id: string) => Promise<boolean>;
   getCollectionBySlug: (slug: string) => Collection | undefined;
   refreshCollections: (forceRefresh?: boolean) => Promise<Collection[]>;
+
+  // Announcement Bar System
+  announcementConfig: AnnouncementConfig;
+  updateAnnouncementConfig: (
+    updates: Partial<AnnouncementConfig>,
+    adminEmail?: string
+  ) => Promise<{ success: boolean; error?: string }>;
+  refreshAnnouncementConfig: () => Promise<AnnouncementConfig>;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -409,6 +421,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [abandonedCarts, setAbandonedCarts] = useState<AbandonedCart[]>([]);
   const [maintenanceConfig, setMaintenanceConfig] = useState<MaintenanceConfig>(DEFAULT_MAINTENANCE_CONFIG);
   const [storefrontConfig, setStorefrontConfig] = useState<StorefrontConfig>(DEFAULT_STOREFRONT_CONFIG);
+  const [announcementConfig, setAnnouncementConfig] = useState<AnnouncementConfig>(DEFAULT_ANNOUNCEMENT_CONFIG);
   const [preBookings, setPreBookings] = useState<PreBooking[]>([]);
   const [freeShippingThreshold, setFreeShippingThresholdState] = useState<number>(BRAND.freeShippingThreshold);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -592,6 +605,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           const parsedSf = JSON.parse(savedStorefront);
           if (parsedSf && parsedSf.storefrontMode) {
             setStorefrontConfig((prev) => ({ ...prev, ...parsedSf }));
+          }
+        } catch (e) {}
+      }
+
+      // Announcement configuration from browser storage
+      const savedAnnouncement = localStorage.getItem('supersnake_announcement_config');
+      if (savedAnnouncement) {
+        try {
+          const parsedAnn = JSON.parse(savedAnnouncement);
+          if (parsedAnn && typeof parsedAnn.isEnabled === 'boolean') {
+            setAnnouncementConfig((prev) => ({ ...prev, ...parsedAnn }));
           }
         } catch (e) {}
       }
@@ -872,6 +896,24 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           .catch(() => {});
       });
 
+    // Fetch consolidated announcement configuration (30s edge cached)
+    fetch('/api/announcement')
+      .then(async (res) => {
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.config) {
+            setAnnouncementConfig((prev) => {
+              const merged = { ...prev, ...data.config };
+              try {
+                localStorage.setItem('supersnake_announcement_config', JSON.stringify(merged));
+              } catch (e) {}
+              return merged;
+            });
+          }
+        }
+      })
+      .catch(() => {});
+
     // Free shipping threshold sync from localStorage
     try {
       const savedThreshold = localStorage.getItem('supersnake_free_shipping_threshold');
@@ -917,6 +959,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           }
         } catch (err) {}
       }
+      if (e.key === 'supersnake_announcement_config' && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (parsed) {
+            setAnnouncementConfig((prev) => ({
+              ...prev,
+              ...parsed,
+            }));
+          }
+        } catch (err) {}
+      }
     };
 
     const handleCustomChange = () => {
@@ -958,6 +1011,21 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       } catch (e) {}
     };
 
+    const handleAnnouncementChange = () => {
+      try {
+        const saved = localStorage.getItem('supersnake_announcement_config');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed) {
+            setAnnouncementConfig((prev) => ({
+              ...prev,
+              ...parsed,
+            }));
+          }
+        }
+      } catch (e) {}
+    };
+
     const handleAbandonedChange = () => {
       try {
         const saved = localStorage.getItem('supersnake_abandoned_carts');
@@ -975,12 +1043,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     window.addEventListener('supersnake_defects_change', handleDefectsChange);
     window.addEventListener('supersnake_abandoned_change', handleAbandonedChange);
     window.addEventListener('supersnake_storefront_change', handleStorefrontChange);
+    window.addEventListener('supersnake_announcement_change', handleAnnouncementChange);
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('supersnake_threshold_change', handleCustomChange);
       window.removeEventListener('supersnake_defects_change', handleDefectsChange);
       window.removeEventListener('supersnake_abandoned_change', handleAbandonedChange);
       window.removeEventListener('supersnake_storefront_change', handleStorefrontChange);
+      window.removeEventListener('supersnake_announcement_change', handleAnnouncementChange);
     };
   }, []);
 
@@ -2042,6 +2112,98 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return { success: true };
   };
 
+  const refreshAnnouncementConfig = async (): Promise<AnnouncementConfig> => {
+    try {
+      const res = await fetch('/api/announcement');
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.config) {
+          const merged = { ...announcementConfig, ...data.config };
+          setAnnouncementConfig(merged);
+          try {
+            localStorage.setItem('supersnake_announcement_config', JSON.stringify(merged));
+          } catch (e) {}
+          return merged;
+        }
+      }
+    } catch (e) {}
+
+    try {
+      const dbConfig = await fetchAnnouncementConfigFromSupabase();
+      if (dbConfig) {
+        setAnnouncementConfig(dbConfig);
+        try {
+          localStorage.setItem('supersnake_announcement_config', JSON.stringify(dbConfig));
+        } catch (e) {}
+        return dbConfig;
+      }
+    } catch (e) {}
+
+    return announcementConfig;
+  };
+
+  const updateAnnouncementConfig = async (
+    updates: Partial<AnnouncementConfig>,
+    adminEmail?: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    const userEmail = adminEmail || 'supersnake.in@gmail.com';
+    const updated: AnnouncementConfig = {
+      ...announcementConfig,
+      ...updates,
+      updatedAt: new Date().toISOString(),
+      updatedBy: userEmail,
+    };
+
+    // Optimistic local update
+    setAnnouncementConfig(updated);
+    try {
+      localStorage.setItem('supersnake_announcement_config', JSON.stringify(updated));
+      window.dispatchEvent(new Event('supersnake_announcement_change'));
+    } catch (e) {}
+
+    try {
+      const res = await fetch('/api/admin/announcement', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...updates,
+          adminEmail: userEmail,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        const returned = data.config || {};
+        const merged: AnnouncementConfig = {
+          ...updated,
+          ...returned,
+        };
+        setAnnouncementConfig(merged);
+        try {
+          localStorage.setItem('supersnake_announcement_config', JSON.stringify(merged));
+          window.dispatchEvent(new Event('supersnake_announcement_change'));
+        } catch (e) {}
+        return { success: true };
+      }
+
+      if (!res.ok) {
+        const directSuccess = await updateAnnouncementConfigInSupabase(updated, userEmail);
+        if (directSuccess) return { success: true };
+        return { success: false, error: data.message || 'Failed to update announcement' };
+      }
+    } catch (err: any) {
+      console.warn('API announcement update failed, writing directly to Supabase:', err);
+      try {
+        const directSuccess = await updateAnnouncementConfigInSupabase(updated, userEmail);
+        if (directSuccess) return { success: true };
+      } catch (dbErr: any) {
+        return { success: false, error: dbErr?.message || 'Database connection error' };
+      }
+    }
+
+    return { success: true };
+  };
+
   const toggleProductPreLaunch = async (
     productId: string,
     enabled: boolean
@@ -2358,6 +2520,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         updateStorefrontConfig,
         refreshStorefrontConfig,
         toggleProductPreLaunch,
+        announcementConfig,
+        updateAnnouncementConfig,
+        refreshAnnouncementConfig,
         preBookings,
         createPreBooking,
         updatePreBookingStatus,
