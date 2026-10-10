@@ -3,8 +3,9 @@
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import {
+  ArrowLeft,
   Truck,
   Search,
   ArrowRight,
@@ -65,6 +66,7 @@ const PRE_BOOKING_STAGES: {
 ];
 
 function TrackOrderInner() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const { orders, preBookings, storefrontConfig } = useStore();
 
@@ -230,6 +232,24 @@ function TrackOrderInner() {
   return (
     <div className="bg-black text-white min-h-screen pt-32 pb-24 px-4 sm:px-6 md:px-12 font-sans selection:bg-snake-green selection:text-black">
       <div className="max-w-3xl mx-auto space-y-8">
+        {/* Back Navigation */}
+        <div>
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof window !== 'undefined' && window.history.length > 1) {
+                router.back();
+              } else {
+                router.push('/account');
+              }
+            }}
+            className="inline-flex items-center gap-2 text-xs font-mono text-neutral-400 hover:text-snake-green transition-colors group cursor-pointer"
+          >
+            <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
+            <span>BACK</span>
+          </button>
+        </div>
+
         {/* Header */}
         <div className="text-center space-y-3">
           <div className="flex items-center justify-center gap-2">
