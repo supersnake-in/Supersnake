@@ -40,13 +40,6 @@ export default function CollectionsOverviewPage() {
           ============================================================ */}
       <section className="max-w-7xl mx-auto mb-16 sm:mb-20">
         <div className="flex flex-col items-center text-center space-y-4 max-w-3xl mx-auto pt-6 sm:pt-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/10 backdrop-blur-md">
-            <span className="w-1.5 h-1.5 rounded-full bg-snake-green animate-pulse" />
-            <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-neutral-300">
-              COLLECTION UNIVERSE // ATELIER CHAPTERS
-            </span>
-          </div>
-
           <h1 className="text-3xl sm:text-5xl md:text-6xl font-display font-medium tracking-tight text-white uppercase leading-[1.08]">
             THE <span className="text-snake-green">SUPER SNAKE</span> SERIES
           </h1>

@@ -4,7 +4,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
-import { ArrowRight, ArrowDown, Sparkles, Instagram, ChevronLeft, ChevronRight, Layers } from 'lucide-react';
+import { ArrowRight, ArrowDown, Sparkles, Instagram, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ProductCard } from '@/components/product/ProductCard';
 import { SuperSnakeLogo } from '@/components/brand/SuperSnakeLogo';
 import { formatPrice } from '@/lib/design-tokens';
@@ -248,10 +248,6 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto space-y-10 sm:space-y-14 relative z-10">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/10 text-[10px] font-mono tracking-widest text-neutral-300 uppercase mb-3">
-                <Layers size={11} className="text-snake-green" />
-                <span>COLLECTION UNIVERSE // ATELIER CHAPTERS</span>
-              </div>
               <h2 className="text-2xl sm:text-4xl md:text-5xl font-display font-medium uppercase tracking-tight text-white">
                 THE <span className="text-snake-green">SUPER SNAKE</span> CHAPTERS
               </h2>
