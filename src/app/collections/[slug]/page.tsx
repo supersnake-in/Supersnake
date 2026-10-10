@@ -332,8 +332,21 @@ export default function DedicatedCollectionPage() {
                   alt={other.name}
                   fill
                   sizes="(max-width: 768px) 50vw, 25vw"
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  className={`object-cover transition-all duration-500 group-hover:scale-105 ${
+                    other.heroImage && other.heroImage !== other.cardImage
+                      ? 'opacity-100 group-hover:opacity-0'
+                      : 'opacity-100'
+                  }`}
                 />
+                {other.heroImage && other.heroImage !== other.cardImage && (
+                  <Image
+                    src={other.heroImage}
+                    alt={`${other.name} alternate view`}
+                    fill
+                    sizes="(max-width: 768px) 50vw, 25vw"
+                    className="object-cover opacity-0 group-hover:opacity-100 transition-all duration-500 group-hover:scale-105"
+                  />
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
               </div>
               <div className="p-3 space-y-1">

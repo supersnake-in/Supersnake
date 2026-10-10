@@ -343,8 +343,20 @@ export default function PreLaunchPage() {
                       src={col.cardImage || col.heroImage || '/hero2.png'}
                       alt={col.name}
                       fill
-                      className="object-cover transition-transform duration-700 ease-out group-hover:scale-105 opacity-80 group-hover:opacity-100"
+                      className={`object-cover transition-all duration-700 ease-out group-hover:scale-105 ${
+                        col.heroImage && col.heroImage !== col.cardImage
+                          ? 'opacity-100 group-hover:opacity-0'
+                          : 'opacity-90 group-hover:opacity-100'
+                      }`}
                     />
+                    {col.heroImage && col.heroImage !== col.cardImage && (
+                      <Image
+                        src={col.heroImage}
+                        alt={`${col.name} alternate view`}
+                        fill
+                        className="object-cover transition-all duration-700 ease-out group-hover:scale-105 opacity-0 group-hover:opacity-100"
+                      />
+                    )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
 
                     {/* Badge */}

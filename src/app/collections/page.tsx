@@ -88,8 +88,21 @@ export default function CollectionsOverviewPage() {
                     alt={`${col.name} — SUPER SNAKE Collection Series`}
                     fill
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    className="object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                    className={`object-cover object-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105 ${
+                      col.heroImage && col.heroImage !== col.cardImage
+                        ? 'opacity-100 group-hover:opacity-0'
+                        : 'opacity-100'
+                    }`}
                   />
+                  {col.heroImage && col.heroImage !== col.cardImage && (
+                    <Image
+                      src={col.heroImage}
+                      alt={`${col.name} alternate view`}
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      className="object-cover object-center opacity-0 group-hover:opacity-100 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105"
+                    />
+                  )}
                   {/* Subtle Dark Vignette & Gradient */}
                   <div className="absolute inset-0 bg-gradient-to-t from-[#080808] via-[#080808]/40 to-transparent" />
 

@@ -344,8 +344,21 @@ export function SearchOverlay() {
                                   alt={col.name}
                                   fill
                                   sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 300px"
-                                  className="object-cover transition-transform duration-700 group-hover:scale-105"
+                                  className={`object-cover transition-all duration-700 group-hover:scale-105 ${
+                                    col.heroImage && col.heroImage !== col.cardImage
+                                      ? 'opacity-100 group-hover:opacity-0'
+                                      : 'opacity-100'
+                                  }`}
                                 />
+                                {col.heroImage && col.heroImage !== col.cardImage && (
+                                  <Image
+                                    src={col.heroImage}
+                                    alt={`${col.name} alternate view`}
+                                    fill
+                                    sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 300px"
+                                    className="object-cover opacity-0 group-hover:opacity-100 transition-all duration-700 group-hover:scale-105"
+                                  />
+                                )}
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                               </div>
 
