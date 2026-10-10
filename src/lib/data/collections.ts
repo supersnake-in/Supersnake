@@ -12,8 +12,8 @@ export const COLLECTIONS_DATA: Collection[] = [
     artworkMood:
       'Subtle panther chest crest, micro-embossed feline silhouette, tonal neck embroidery, restrained neon-green bar-tacks.',
     fabricSpecs: '280–300 GSM Heavyweight Supima® Cotton & French Terry, Preshrunk Boxy Contour.',
-    heroImage: '/hero2.png',
-    cardImage: '/men-collection.png',
+    heroImage: '/collection-black-panther.jpg',
+    cardImage: '/collection-black-panther.jpg',
     moodPalette: [
       { name: 'Obsidian Black', hex: '#0a0a0a' },
       { name: 'Panther Charcoal', hex: '#1c1c1c' },

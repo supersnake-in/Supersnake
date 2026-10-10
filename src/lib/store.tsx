@@ -612,7 +612,22 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         try {
           const parsedCols = JSON.parse(savedCollections);
           if (Array.isArray(parsedCols) && parsedCols.length > 0) {
-            setCollections(parsedCols);
+            const mergedCols = COLLECTIONS_DATA.map((defaultCol) => {
+              const saved = parsedCols.find((c: any) => c.id === defaultCol.id || c.slug === defaultCol.slug);
+              if (!saved) return defaultCol;
+              return {
+                ...defaultCol,
+                ...saved,
+                cardImage: defaultCol.cardImage,
+                heroImage: defaultCol.heroImage,
+              };
+            });
+            const customCols = parsedCols.filter((c: any) => !COLLECTIONS_DATA.some((d) => d.id === c.id || d.slug === c.slug));
+            const finalCols = [...mergedCols, ...customCols];
+            setCollections(finalCols);
+            try {
+              localStorage.setItem('supersnake_collections', JSON.stringify(finalCols));
+            } catch (e) {}
           } else {
             setCollections(COLLECTIONS_DATA);
             localStorage.setItem('supersnake_collections', JSON.stringify(COLLECTIONS_DATA));
