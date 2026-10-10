@@ -3,11 +3,12 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { isAnnouncementActive, isValidAnnouncementUrl } from '@/lib/types';
 
-export function AnnouncementBar() {
+export function AnnouncementBar({ style }: { style?: any }) {
   const pathname = usePathname();
   const { announcementConfig } = useStore();
 
@@ -33,14 +34,15 @@ export function AnnouncementBar() {
   const hasCta = hasValidUrl && Boolean(ctaLabel?.trim());
 
   return (
-    <aside
+    <motion.aside
       role="region"
       aria-label="Announcement"
       style={{
         backgroundColor: bgColor,
         color: textColor,
+        ...style,
       }}
-      className="w-full h-9 flex items-center justify-center transition-colors duration-300 border-b border-white/[0.08] shrink-0"
+      className="w-full h-9 flex items-center justify-center transition-colors duration-300 border-b border-white/[0.08] shrink-0 overflow-hidden"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 w-full h-full flex items-center justify-center">
         {hasValidUrl && !hasCta ? (
@@ -87,6 +89,6 @@ export function AnnouncementBar() {
           </div>
         )}
       </div>
-    </aside>
+    </motion.aside>
   );
 }

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
 import { Search, ShoppingBag, Heart, User, Menu, X, Shield, LogOut, ArrowRight } from 'lucide-react';
 import { SuperSnakeLogo } from '../brand/SuperSnakeLogo';
 import { useStore } from '@/lib/store';
@@ -26,7 +26,16 @@ export function Header() {
   const showAnnouncement = isStorefront && isAnnouncementActive(announcementConfig);
 
   const { scrollY } = useScroll();
-  const headerY = useTransform(scrollY, [0, 36], [0, -36], { clamp: true });
+  const rawHeaderY = useTransform(scrollY, [0, 36], [0, -36], { clamp: true });
+  const headerY = useSpring(rawHeaderY, {
+    stiffness: 400,
+    damping: 38,
+    mass: 0.2,
+  });
+
+  const announcementOpacity = useTransform(scrollY, [0, 24], [1, 0], { clamp: true });
+  const glassOpacity = useTransform(scrollY, [15, 45], [0, 1], { clamp: true });
+  const ambientGradientOpacity = useTransform(scrollY, [15, 45], [1, 0], { clamp: true });
 
   useEffect(() => {
     const handleScroll = () => {
@@ -79,15 +88,21 @@ export function Header() {
         }}
         className="fixed top-0 inset-x-0 z-40 flex flex-col will-change-transform"
       >
-        {showAnnouncement && <AnnouncementBar />}
-        <div
-          className={`w-full transition-all duration-300 ${
-            scrolled
-              ? 'bg-black/80 backdrop-blur-md py-3.5'
-              : 'bg-gradient-to-b from-black/80 via-black/40 to-transparent py-5'
-          }`}
-        >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 flex items-center justify-between relative">
+        {showAnnouncement && <AnnouncementBar style={{ opacity: announcementOpacity }} />}
+        <div className="relative w-full py-4 transition-colors duration-300">
+          {/* Ambient top-of-page gradient overlay */}
+          <motion.div
+            style={{ opacity: ambientGradientOpacity }}
+            className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/40 to-transparent pointer-events-none"
+          />
+
+          {/* Luxury frosted glass backdrop (fades in seamlessly on scroll) */}
+          <motion.div
+            style={{ opacity: glassOpacity }}
+            className="absolute inset-0 bg-black/85 backdrop-blur-md border-b border-white/[0.06] shadow-[0_4px_24px_rgba(0,0,0,0.45)] pointer-events-none"
+          />
+
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 flex items-center justify-between relative z-10">
           {/* ============================================================
               DESKTOP HEADER (LOCKED & UNTOUCHED FOR lg: AND ABOVE)
               ============================================================ */}
