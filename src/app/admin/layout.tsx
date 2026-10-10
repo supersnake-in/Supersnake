@@ -23,6 +23,7 @@ import {
   ShoppingCart,
   AlertTriangle,
   Calendar,
+  Layers,
 } from 'lucide-react';
 import { SuperSnakeLogo } from '@/components/brand/SuperSnakeLogo';
 import { useAuth } from '@/lib/auth-context';
@@ -84,6 +85,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const navItems = [
     { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
     { label: 'Products', href: '/admin/products', icon: Shirt },
+    { label: 'Collections', href: '/admin/collections', icon: Layers },
     {
       label: 'Pre-Bookings',
       href: '/admin/pre-bookings',

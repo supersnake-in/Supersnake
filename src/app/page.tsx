@@ -4,7 +4,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
-import { ArrowRight, ArrowDown, Sparkles, Instagram, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowRight, ArrowDown, Sparkles, Instagram, ChevronLeft, ChevronRight, Layers } from 'lucide-react';
 import { ProductCard } from '@/components/product/ProductCard';
 import { SuperSnakeLogo } from '@/components/brand/SuperSnakeLogo';
 import { formatPrice } from '@/lib/design-tokens';
@@ -13,10 +13,14 @@ import { useStore, DEFAULT_HOMEPAGE_CONFIG, cleanHeroImages, cleanCollectionImag
 export default function HomePage() {
   const heroRef = useRef<HTMLDivElement>(null);
   const communityScrollRef = useRef<HTMLDivElement>(null);
-  const { products, homepageConfig, socialConfig } = useStore();
+  const { products, collections, homepageConfig, socialConfig } = useStore();
   const signatureProduct = products.find((p) => p.isSignature);
   const newDrops = products.filter((p) => p.isNew);
   const bestsellers = products.filter((p) => p.isBestseller).slice(0, 4);
+
+  const activeCollections = React.useMemo(() => {
+    return (collections || []).filter((c) => c.isActive).sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+  }, [collections]);
 
   const scrollCommunity = (direction: 'left' | 'right') => {
     if (communityScrollRef.current) {
@@ -234,7 +238,109 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ============================================================
+          03 — THE CHAPTERS // ART-DIRECTED COLLECTION UNIVERSE
+          ============================================================ */}
+      <section className="py-20 md:py-32 px-4 sm:px-6 md:px-12 border-t border-white/[0.06] bg-[#030303] relative overflow-hidden">
+        {/* Subtle background glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-48 bg-snake-green/[0.02] blur-[120px] pointer-events-none" />
 
+        <div className="max-w-7xl mx-auto space-y-10 sm:space-y-14 relative z-10">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/10 text-[10px] font-mono tracking-widest text-neutral-300 uppercase mb-3">
+                <Layers size={11} className="text-snake-green" />
+                <span>COLLECTION UNIVERSE // ATELIER CHAPTERS</span>
+              </div>
+              <h2 className="text-2xl sm:text-4xl md:text-5xl font-display font-medium uppercase tracking-tight text-white">
+                THE <span className="text-snake-green">SUPER SNAKE</span> CHAPTERS
+              </h2>
+              <p className="text-xs sm:text-sm font-mono text-neutral-400 max-w-2xl mt-2 leading-relaxed">
+                Every creation belongs to a distinct series with its own theme, mood, color palette, and personality—connected by the immortal SUPER SNAKE identity.
+              </p>
+            </div>
+
+            <Link
+              href="/collections"
+              className="inline-flex items-center gap-2 text-xs font-mono tracking-widest text-white hover:text-snake-green uppercase transition-colors shrink-0 group"
+            >
+              <span>EXPLORE ALL {activeCollections.length} CHAPTERS</span>
+              <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </div>
+
+          {/* Chapters Showcase Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            {activeCollections.slice(0, 6).map((col) => {
+              const pieceCount = products.filter(
+                (p) =>
+                  p.collectionSlug === col.slug ||
+                  p.collectionId === col.id ||
+                  (col.slug === 'the-signature' && p.isSignature) ||
+                  (col.slug === 'the-serpent' && (p.slug === 'the-serpent-tee' || p.slug === 'the-venom-edition'))
+              ).length;
+
+              return (
+                <Link
+                  key={col.id}
+                  href={`/collections/${col.slug}`}
+                  className="group relative flex flex-col justify-between border border-white/10 hover:border-snake-green/50 bg-neutral-950/70 rounded-sm overflow-hidden transition-all duration-300 hover:shadow-[0_0_30px_rgba(4,252,33,0.12)]"
+                >
+                  {/* Thumbnail / Hero Preview */}
+                  <div className="relative aspect-[16/10] w-full overflow-hidden bg-black">
+                    <Image
+                      src={col.cardImage || col.heroImage || '/hero2.png'}
+                      alt={col.name}
+                      fill
+                      className="object-cover transition-transform duration-700 ease-out group-hover:scale-105 opacity-80 group-hover:opacity-100"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+
+                    {/* Badge */}
+                    <div className="absolute top-3 left-3 px-2 py-0.5 rounded bg-black/80 backdrop-blur-md border border-white/15 text-[9px] font-mono tracking-widest uppercase text-neutral-300">
+                      {col.badge || 'ATELIER SERIES'}
+                    </div>
+
+                    {/* Piece Count */}
+                    <div className="absolute top-3 right-3 px-2 py-0.5 rounded bg-black/80 backdrop-blur-md border border-white/15 text-[9px] font-mono tracking-widest uppercase text-snake-green">
+                      {pieceCount} {pieceCount === 1 ? 'PIECE' : 'PIECES'}
+                    </div>
+
+                    {/* Mood Swatches */}
+                    <div className="absolute bottom-3 left-3 flex items-center gap-1.5">
+                      {col.moodPalette?.map((swatch, sIdx) => (
+                        <div
+                          key={`${swatch.name}-${sIdx}`}
+                          className="w-3.5 h-3.5 rounded-full border border-white/30 shadow"
+                          style={{ backgroundColor: swatch.hex }}
+                          title={swatch.name}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Body Content */}
+                  <div className="p-6 flex flex-col justify-between flex-1 space-y-4">
+                    <div>
+                      <h3 className="text-lg sm:text-xl font-display font-bold uppercase tracking-wide text-white group-hover:text-snake-green transition-colors">
+                        {col.name}
+                      </h3>
+                      <p className="text-xs font-mono text-neutral-400 mt-2 line-clamp-2 leading-relaxed">
+                        {col.tagline || col.description}
+                      </p>
+                    </div>
+
+                    <div className="pt-3 border-t border-white/5 flex items-center justify-between text-[11px] font-mono uppercase tracking-widest text-neutral-300 group-hover:text-white transition-colors">
+                      <span>EXPLORE SERIES</span>
+                      <ArrowRight size={13} className="text-snake-green group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </section>
 
       {/* ============================================================
           04 — MEN / WOMEN (EDITORIAL SPLIT SCREEN)

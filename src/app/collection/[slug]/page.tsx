@@ -1,6 +1,8 @@
 import { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import { ShopCatalog } from '@/components/shop/ShopCatalog';
 import { FitType, Gender } from '@/lib/types';
+import { COLLECTIONS_DATA } from '@/lib/data/collections';
 
 interface CollectionConfig {
   title: string;
@@ -54,13 +56,26 @@ const COLLECTION_MAP: Record<string, CollectionConfig> = {
 };
 
 export async function generateStaticParams() {
-  return Object.keys(COLLECTION_MAP).map((slug) => ({
+  const mapSlugs = Object.keys(COLLECTION_MAP);
+  const seriesSlugs = COLLECTIONS_DATA.map((c) => c.slug);
+  return Array.from(new Set([...mapSlugs, ...seriesSlugs])).map((slug) => ({
     slug,
   }));
 }
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const slug = params?.slug || 'heavyweight';
+  const seriesMatch = COLLECTIONS_DATA.find((c) => c.slug === slug || c.id === slug);
+  if (seriesMatch) {
+    return {
+      title: `${seriesMatch.name} | SuperSnake Fashion Universe`,
+      description: seriesMatch.tagline || seriesMatch.description,
+      alternates: {
+        canonical: `https://supersnake.in/collections/${seriesMatch.slug}`,
+      },
+    };
+  }
+
   const config = COLLECTION_MAP[slug] || {
     title: `${slug.toUpperCase().replace(/-/g, ' ')} COLLECTION`,
     subtitle: 'Curated limited releases from the SuperSnake atelier.',
@@ -101,6 +116,12 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 
 export default function CollectionPage({ params }: { params: { slug: string } }) {
   const slug = params?.slug || 'heavyweight';
+
+  // If this slug belongs to an art-directed collection series, redirect to /collections/[slug]
+  if (COLLECTIONS_DATA.some((c) => c.slug === slug || c.id === slug)) {
+    redirect(`/collections/${slug}`);
+  }
+
   const config = COLLECTION_MAP[slug] || {
     title: `${slug.toUpperCase().replace(/-/g, ' ')} COLLECTION`,
     subtitle: 'Curated limited releases from the SuperSnake atelier.',

@@ -15,6 +15,7 @@ import {
   StorefrontConfig,
   PreBooking,
   PreBookingStatus,
+  Collection,
 } from '../types';
 
 // In-memory catalog cache (60s) to prevent repetitive PostgREST egress bursts
@@ -99,6 +100,9 @@ export function mapProductRowToProduct(row: any): Product {
     isSignature: Boolean(row.is_signature),
     preLaunchEnabled: Boolean(row.pre_launch_enabled),
     maxPreBookings: row.max_pre_bookings ? Number(row.max_pre_bookings) : undefined,
+    collectionId: row.collection_id || undefined,
+    collectionSlug: row.collection_slug || undefined,
+    collectionName: row.collection_name || undefined,
     rating: Number(row.rating || 5.0),
     reviewsCount: Number(row.reviews_count || 0),
     createdAt: row.created_at || new Date().toISOString(),
@@ -268,9 +272,14 @@ export async function createProductInSupabase(product: Product): Promise<boolean
       sizes: product.sizes,
       pre_launch_enabled: Boolean(product.preLaunchEnabled),
       max_pre_bookings: product.maxPreBookings || null,
+      collection_slug: product.collectionSlug || null,
+      collection_name: product.collectionName || null,
     };
     if (isUuid) {
       insertPayload.id = product.id;
+    }
+    if (product.collectionId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(product.collectionId)) {
+      insertPayload.collection_id = product.collectionId;
     }
 
     const { data: insertedProduct, error: productError } = await supabase
@@ -419,8 +428,13 @@ export async function updateProductInSupabase(product: Product): Promise<boolean
       sizes: product.sizes,
       pre_launch_enabled: Boolean(product.preLaunchEnabled),
       max_pre_bookings: product.maxPreBookings || null,
+      collection_slug: product.collectionSlug || null,
+      collection_name: product.collectionName || null,
       updated_at: new Date().toISOString(),
     };
+    if (product.collectionId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(product.collectionId)) {
+      updatePayload.collection_id = product.collectionId;
+    }
 
     let targetId = product.id;
 
@@ -1878,6 +1892,161 @@ export async function updatePreBookingInSupabase(
     return !error;
   } catch (err) {
     console.warn('Exception updating pre_booking in Supabase:', err);
+    return false;
+  }
+}
+
+// In-memory collections cache (60s) to eliminate redundant PostgREST egress
+let cachedCollections: Collection[] | null = null;
+let collectionsCacheTime = 0;
+
+/**
+ * FETCH COLLECTIONS FROM SUPABASE
+ * Cached for 60s in memory to minimize database egress.
+ */
+export async function fetchCollectionsFromSupabase(forceRefresh: boolean = false): Promise<Collection[] | null> {
+  const now = Date.now();
+  if (!forceRefresh && cachedCollections && now - collectionsCacheTime < 60000) {
+    return cachedCollections;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('collections')
+      .select('id, name, slug, tagline, description, badge, artwork_mood, fabric_specs, hero_image, card_image, mood_palette, accent_color, display_order, is_active, is_featured, created_at, updated_at')
+      .order('display_order', { ascending: true })
+      .order('created_at', { ascending: true });
+
+    if (error || !data || data.length === 0) {
+      return null;
+    }
+
+    cachedCollections = data.map((row: any) => ({
+      id: row.id,
+      name: row.name,
+      slug: row.slug,
+      tagline: row.tagline || '',
+      description: row.description || '',
+      badge: row.badge || '',
+      artworkMood: row.artwork_mood || undefined,
+      fabricSpecs: row.fabric_specs || undefined,
+      heroImage: row.hero_image || '/hero2.png',
+      cardImage: row.card_image || row.hero_image || '/hero2.png',
+      moodPalette: Array.isArray(row.mood_palette) ? row.mood_palette : [],
+      accentColor: row.accent_color || '#04fc21',
+      displayOrder: Number(row.display_order || 0),
+      isActive: row.is_active !== undefined ? Boolean(row.is_active) : true,
+      isFeatured: Boolean(row.is_featured),
+      createdAt: row.created_at || new Date().toISOString(),
+      updatedAt: row.updated_at || undefined,
+    }));
+    collectionsCacheTime = now;
+    return cachedCollections;
+  } catch (err) {
+    console.warn('Error fetching collections from Supabase:', err);
+    return null;
+  }
+}
+
+/**
+ * CREATE COLLECTION IN SUPABASE
+ */
+export async function createCollectionInSupabase(collection: Collection): Promise<boolean> {
+  try {
+    cachedCollections = null; // Invalidate cache
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(collection.id);
+    const payload: any = {
+      name: collection.name,
+      slug: collection.slug,
+      tagline: collection.tagline,
+      description: collection.description,
+      badge: collection.badge,
+      artwork_mood: collection.artworkMood || null,
+      fabric_specs: collection.fabricSpecs || null,
+      hero_image: collection.heroImage,
+      card_image: collection.cardImage || collection.heroImage,
+      mood_palette: collection.moodPalette || [],
+      accent_color: collection.accentColor || '#04fc21',
+      display_order: collection.displayOrder || 0,
+      is_active: collection.isActive,
+      is_featured: Boolean(collection.isFeatured),
+      created_at: collection.createdAt || new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    if (isUuid) {
+      payload.id = collection.id;
+    }
+
+    const { error } = await supabase.from('collections').insert(payload);
+    if (error) {
+      console.warn('Error creating collection in Supabase:', error.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('Exception creating collection in Supabase:', err);
+    return false;
+  }
+}
+
+/**
+ * UPDATE COLLECTION IN SUPABASE
+ */
+export async function updateCollectionInSupabase(id: string, updates: Partial<Collection>): Promise<boolean> {
+  try {
+    cachedCollections = null; // Invalidate cache
+    const payload: any = {
+      updated_at: new Date().toISOString(),
+    };
+    if (updates.name !== undefined) payload.name = updates.name;
+    if (updates.slug !== undefined) payload.slug = updates.slug;
+    if (updates.tagline !== undefined) payload.tagline = updates.tagline;
+    if (updates.description !== undefined) payload.description = updates.description;
+    if (updates.badge !== undefined) payload.badge = updates.badge;
+    if (updates.artworkMood !== undefined) payload.artwork_mood = updates.artworkMood;
+    if (updates.fabricSpecs !== undefined) payload.fabric_specs = updates.fabricSpecs;
+    if (updates.heroImage !== undefined) payload.hero_image = updates.heroImage;
+    if (updates.cardImage !== undefined) payload.card_image = updates.cardImage;
+    if (updates.moodPalette !== undefined) payload.mood_palette = updates.moodPalette;
+    if (updates.accentColor !== undefined) payload.accent_color = updates.accentColor;
+    if (updates.displayOrder !== undefined) payload.display_order = updates.displayOrder;
+    if (updates.isActive !== undefined) payload.is_active = updates.isActive;
+    if (updates.isFeatured !== undefined) payload.is_featured = updates.isFeatured;
+
+    const { error } = await supabase
+      .from('collections')
+      .update(payload)
+      .eq('id', id);
+
+    if (error) {
+      console.warn('Error updating collection in Supabase:', error.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('Exception updating collection in Supabase:', err);
+    return false;
+  }
+}
+
+/**
+ * DELETE COLLECTION FROM SUPABASE
+ */
+export async function deleteCollectionInSupabase(id: string): Promise<boolean> {
+  try {
+    cachedCollections = null; // Invalidate cache
+    const { error } = await supabase
+      .from('collections')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.warn('Error deleting collection in Supabase:', error.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('Exception deleting collection in Supabase:', err);
     return false;
   }
 }

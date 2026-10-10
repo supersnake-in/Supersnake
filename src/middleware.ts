@@ -241,6 +241,8 @@ export async function middleware(request: NextRequest) {
     // - Informational / Brand pages: /contact, /about, /privacy, /terms, /size-guide, /care-guide, /cookies
     if (
       pathname.startsWith('/pre-launch') ||
+      pathname.startsWith('/collections') ||
+      pathname.startsWith('/collection') ||
       pathname.startsWith('/product/') ||
       pathname.startsWith('/account') ||
       pathname.startsWith('/api/pincode') ||

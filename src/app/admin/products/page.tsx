@@ -20,6 +20,7 @@ import {
   Tag,
   Palette,
   Ruler,
+  Layers,
 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { Product, Size, Gender, FitType } from '@/lib/types';
@@ -42,12 +43,13 @@ const LUXURY_COLOR_PRESETS = [
 const ALL_SIZES: Size[] = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL', '6XL'];
 
 export default function AdminProductsPage() {
-  const { products, addProduct, updateProduct, deleteProduct, setSignatureProduct, toggleProductPreLaunch, storefrontConfig } = useStore();
+  const { products, collections, addProduct, updateProduct, deleteProduct, setSignatureProduct, toggleProductPreLaunch, storefrontConfig } = useStore();
   const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGender, setSelectedGender] = useState('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [selectedCollectionId, setSelectedCollectionId] = useState<string>('');
   const [notification, setNotification] = useState<string | null>(null);
   const [signatureConfirmProduct, setSignatureConfirmProduct] = useState<Product | null>(null);
   const [isSwitchingSignature, setIsSwitchingSignature] = useState(false);
@@ -292,6 +294,7 @@ export default function AdminProductsPage() {
     setIsSignatureChoice(false);
     setIsPreLaunchEnabled(false);
     setMaxPreBookings(undefined);
+    setSelectedCollectionId('');
     setSelectedSizes(['S', 'M', 'L', 'XL']);
     setSelectedColors([{ name: 'Obsidian Black', hex: '#0a0a0a' }]);
     setUploadedImages([]);
@@ -300,6 +303,7 @@ export default function AdminProductsPage() {
 
   const handleOpenEditModal = (prod: Product) => {
     setEditingProductId(prod.id);
+    setSelectedCollectionId(prod.collectionId || prod.collectionSlug || '');
     setName(prod.name);
     setTagline(prod.tagline || '');
     setDescription(prod.description || '');
@@ -394,10 +398,17 @@ export default function AdminProductsPage() {
       }
     }
 
+    const matchedCollection = collections.find(
+      (c) => c.id === selectedCollectionId || c.slug === selectedCollectionId
+    );
+
     const productPayload: Product = {
       id: editingProductId || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `prod-${Date.now()}`),
       name: cleanName,
       slug: cleanSlug,
+      collectionId: matchedCollection?.id,
+      collectionSlug: matchedCollection?.slug,
+      collectionName: matchedCollection?.name,
       tagline: sanitizeString(tagline || `${cleanGsm} GSM Engineered luxury garment`),
       description: sanitizeString(
         description || 'Constructed from premium heavyweight long-staple cotton with architectural drape.'
@@ -676,9 +687,17 @@ export default function AdminProductsPage() {
                     </div>
                     <div>
                       <span className="font-bold text-white block uppercase">{prod.name}</span>
-                      <span className="text-[10px] text-neutral-500">
-                        /{prod.slug} • {prod.gender.toUpperCase()}
-                      </span>
+                      <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                        <span className="text-[10px] text-neutral-500">
+                          /{prod.slug} • {prod.gender.toUpperCase()}
+                        </span>
+                        {prod.collectionName && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-snake-green/10 text-snake-green border border-snake-green/20 text-[9px] uppercase tracking-wider font-mono">
+                            <Layers size={9} />
+                            {prod.collectionName}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </td>
@@ -1164,8 +1183,8 @@ export default function AdminProductsPage() {
                   </div>
                 </div>
 
-                {/* SECTION 6: GSM, FIT, GENDER & FABRIC */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {/* SECTION 6: GSM, FIT, GENDER & COLLECTION SERIES */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="space-y-1">
                     <div className="flex justify-between items-center">
                       <label className="text-neutral-400 uppercase font-semibold text-[11px]">
@@ -1217,7 +1236,7 @@ export default function AdminProductsPage() {
 
                   <div className="space-y-1">
                     <label className="text-neutral-400 uppercase font-semibold text-[11px]">
-                      COLLECTION / CATEGORY *
+                      GENDER / DEPARTMENT *
                     </label>
                     <select
                       value={gender}
@@ -1227,6 +1246,34 @@ export default function AdminProductsPage() {
                       <option value="unisex">Unisex Collection</option>
                       <option value="men">Men Collection</option>
                       <option value="women">Women Collection</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <label className="text-neutral-400 uppercase font-semibold text-[11px] flex items-center gap-1">
+                        <Layers size={11} className="text-snake-green" />
+                        SERIES / CHAPTER
+                      </label>
+                      <Link
+                        href="/admin/collections"
+                        target="_blank"
+                        className="text-[9px] text-snake-green hover:underline uppercase"
+                      >
+                        + NEW
+                      </Link>
+                    </div>
+                    <select
+                      value={selectedCollectionId}
+                      onChange={(e) => setSelectedCollectionId(e.target.value)}
+                      className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green cursor-pointer font-mono text-[11px]"
+                    >
+                      <option value="">No Series / Core Piece</option>
+                      {collections.map((col) => (
+                        <option key={col.id} value={col.id}>
+                          {col.name}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>

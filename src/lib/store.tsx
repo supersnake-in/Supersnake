@@ -19,6 +19,7 @@ import {
   StorefrontConfig,
   PreBooking,
   PreBookingStatus,
+  Collection,
 } from './types';
 import {
   fetchProductsFromSupabase,
@@ -51,7 +52,12 @@ import {
   fetchPreBookingsFromSupabase,
   createPreBookingInSupabase,
   updatePreBookingInSupabase,
+  fetchCollectionsFromSupabase,
+  createCollectionInSupabase,
+  updateCollectionInSupabase,
+  deleteCollectionInSupabase,
 } from './supabase/db';
+import { COLLECTIONS_DATA } from './data/collections';
 import {
   saveCartToStorage,
   loadCartFromStorageSync,
@@ -373,12 +379,21 @@ interface StoreContextType {
     trackingNumber?: string
   ) => Promise<boolean>;
   refreshPreBookings: () => Promise<PreBooking[]>;
+
+  // Collections Series
+  collections: Collection[];
+  addCollection: (newCollection: Collection) => Promise<boolean>;
+  updateCollection: (id: string, updates: Partial<Collection>) => Promise<boolean>;
+  deleteCollection: (id: string) => Promise<boolean>;
+  getCollectionBySlug: (slug: string) => Collection | undefined;
+  refreshCollections: (forceRefresh?: boolean) => Promise<Collection[]>;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [products, setProducts] = useState<Product[]>([]);
+  const [collections, setCollections] = useState<Collection[]>(COLLECTIONS_DATA);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
@@ -589,6 +604,27 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           }
         } catch (e) {}
       }
+
+      // Collections from browser storage
+      const savedCollections = localStorage.getItem('supersnake_collections');
+      if (savedCollections) {
+        try {
+          const parsedCols = JSON.parse(savedCollections);
+          if (Array.isArray(parsedCols) && parsedCols.length > 0) {
+            setCollections(parsedCols);
+          } else {
+            setCollections(COLLECTIONS_DATA);
+            localStorage.setItem('supersnake_collections', JSON.stringify(COLLECTIONS_DATA));
+          }
+        } catch (e) {
+          setCollections(COLLECTIONS_DATA);
+        }
+      } else {
+        setCollections(COLLECTIONS_DATA);
+        try {
+          localStorage.setItem('supersnake_collections', JSON.stringify(COLLECTIONS_DATA));
+        } catch (e) {}
+      }
     } catch (e) {
       console.warn('Failed to load storage:', e);
       setIsLoaded(true);
@@ -621,6 +657,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       })
       .catch((err) => {
         console.warn('Supabase fetch failed:', err);
+      });
+
+    // Fetch dynamic collections from Supabase
+    fetchCollectionsFromSupabase()
+      .then((supabaseCols) => {
+        if (supabaseCols && supabaseCols.length > 0) {
+          setCollections(supabaseCols);
+          try {
+            localStorage.setItem('supersnake_collections', JSON.stringify(supabaseCols));
+          } catch (e) {}
+        }
+      })
+      .catch((err) => {
+        console.warn('Supabase collections fetch notice:', err);
       });
 
     // Fetch dynamic homepage config from Supabase (5m cached)
@@ -1967,6 +2017,81 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const addCollection = async (newCol: Collection): Promise<boolean> => {
+    setCollections((prev) => {
+      const filtered = prev.filter((c) => c.id !== newCol.id && c.slug !== newCol.slug);
+      const next = [...filtered, newCol].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+      try {
+        localStorage.setItem('supersnake_collections', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+
+    try {
+      await createCollectionInSupabase(newCol);
+      return true;
+    } catch (e) {
+      console.warn('Could not sync collection to Supabase:', e);
+      return true;
+    }
+  };
+
+  const updateCollection = async (id: string, updates: Partial<Collection>): Promise<boolean> => {
+    setCollections((prev) => {
+      const next = prev
+        .map((c) => (c.id === id ? { ...c, ...updates, updatedAt: new Date().toISOString() } : c))
+        .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+      try {
+        localStorage.setItem('supersnake_collections', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+
+    try {
+      await updateCollectionInSupabase(id, updates);
+      return true;
+    } catch (e) {
+      console.warn('Could not sync collection update to Supabase:', e);
+      return true;
+    }
+  };
+
+  const deleteCollection = async (id: string): Promise<boolean> => {
+    setCollections((prev) => {
+      const next = prev.filter((c) => c.id !== id);
+      try {
+        localStorage.setItem('supersnake_collections', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+
+    try {
+      await deleteCollectionInSupabase(id);
+      return true;
+    } catch (e) {
+      console.warn('Could not sync collection deletion to Supabase:', e);
+      return true;
+    }
+  };
+
+  const getCollectionBySlug = (slug: string): Collection | undefined => {
+    return collections.find((c) => c.slug === slug || c.id === slug);
+  };
+
+  const refreshCollections = async (forceRefresh: boolean = false): Promise<Collection[]> => {
+    try {
+      const supaCols = await fetchCollectionsFromSupabase(forceRefresh);
+      if (supaCols && supaCols.length > 0) {
+        setCollections(supaCols);
+        try {
+          localStorage.setItem('supersnake_collections', JSON.stringify(supaCols));
+        } catch (e) {}
+        return supaCols;
+      }
+    } catch (e) {}
+    return collections;
+  };
+
   return (
     <StoreContext.Provider
       value={{
@@ -1977,6 +2102,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         deleteProduct,
         setSignatureProduct,
         getProductBySlug,
+        collections,
+        addCollection,
+        updateCollection,
+        deleteCollection,
+        getCollectionBySlug,
+        refreshCollections,
         homepageConfig,
         updateHomepageConfig,
         socialConfig,

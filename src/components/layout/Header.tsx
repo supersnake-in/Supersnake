@@ -51,12 +51,14 @@ export function Header() {
   const navLinks = isPreLaunch
     ? [
         { label: 'HOME', href: '/' },
+        { label: 'COLLECTIONS', href: '/collections' },
         { label: 'THE FIRST DROP', href: '/#pre-book-grid' },
         { label: 'TRACK PRE-BOOKING', href: '/track-order' },
         { label: 'ATELIER', href: '/about' },
         { label: 'CONTACT', href: '/contact' },
       ]
     : [
+        { label: 'COLLECTIONS', href: '/collections' },
         { label: 'SHOP', href: '/shop' },
         { label: 'MEN', href: '/men' },
         { label: 'WOMEN', href: '/women' },
@@ -374,6 +376,7 @@ export function Header() {
               {(isPreLaunch
                 ? [
                     { label: 'HOME', href: '/' },
+                    { label: 'COLLECTIONS', href: '/collections' },
                     { label: 'THE FIRST DROP', href: '/#pre-book-grid' },
                     { label: 'TRACK PRE-BOOKING', href: '/track-order' },
                     { label: 'MY PRE-BOOKINGS', href: '/account/pre-bookings' },
@@ -381,6 +384,7 @@ export function Header() {
                     { label: 'CONTACT', href: '/contact' },
                   ]
                 : [
+                    { label: 'COLLECTIONS', href: '/collections' },
                     { label: 'SHOP', href: '/shop' },
                     { label: 'MEN', href: '/men' },
                     { label: 'WOMEN', href: '/women' },

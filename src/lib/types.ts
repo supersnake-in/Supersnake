@@ -77,6 +77,9 @@ export interface Product {
   isSignature?: boolean;
   preLaunchEnabled?: boolean;
   maxPreBookings?: number;
+  collectionId?: string;
+  collectionSlug?: string;
+  collectionName?: string;
   rating: number;
   reviewsCount: number;
   createdAt: string;
@@ -354,5 +357,27 @@ export interface PreBooking {
   updatedAt: string;
 }
 
+export interface CollectionColor {
+  name: string;
+  hex: string;
+}
 
-
+export interface Collection {
+  id: string;
+  name: string;
+  slug: string;
+  tagline: string;
+  description: string;
+  badge: string;
+  artworkMood?: string;
+  fabricSpecs?: string;
+  heroImage: string;
+  cardImage?: string;
+  moodPalette: CollectionColor[];
+  displayOrder: number;
+  isActive: boolean;
+  isFeatured?: boolean;
+  accentColor?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
