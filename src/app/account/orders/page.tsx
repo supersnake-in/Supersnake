@@ -120,13 +120,13 @@ export default function AccountOrdersPage() {
               key={order.id}
               className="bg-[#0a0a0a] border border-white/10 p-5 md:p-6 rounded-sm space-y-5 hover:border-white/20 transition-colors"
             >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-4 text-xs font-mono">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-white/5 pb-4 text-xs font-mono">
                 <div className="space-y-1">
-                  <span className="text-neutral-500">ORDER NUMBER</span>
+                  <span className="block text-neutral-500">ORDER NUMBER</span>
                   <p className="text-white font-medium">{order.orderNumber}</p>
                 </div>
                 <div className="space-y-1">
-                  <span className="text-neutral-500">DATE</span>
+                  <span className="block text-neutral-500">DATE</span>
                   <p className="text-neutral-300">
                     {new Date(order.createdAt).toLocaleDateString('en-IN', {
                       day: 'numeric',
@@ -136,14 +136,14 @@ export default function AccountOrdersPage() {
                   </p>
                 </div>
                 <div className="space-y-1">
-                  <span className="text-neutral-500">AMOUNT</span>
+                  <span className="block text-neutral-500">AMOUNT</span>
                   <p className="text-white font-semibold">
                     {formatPrice(order.total)}
                   </p>
                 </div>
                 <div className="space-y-1">
-                  <span className="text-neutral-500">STATUS</span>
-                  <div>
+                  <span className="block text-neutral-500">STATUS</span>
+                  <div className="pt-0.5">
                     <span
                       className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded border text-[10px] uppercase font-semibold ${getStatusBadge(
                         order.status

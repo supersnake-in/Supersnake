@@ -229,13 +229,13 @@ export default function AccountOverviewPage() {
 
         {recentOrder ? (
           <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs font-mono">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 text-xs font-mono">
               <div className="space-y-1">
-                <span className="text-neutral-500">ORDER NO.</span>
+                <span className="block text-neutral-500">ORDER NO.</span>
                 <p className="text-white font-medium">{recentOrder.orderNumber}</p>
               </div>
               <div className="space-y-1">
-                <span className="text-neutral-500">PLACED ON</span>
+                <span className="block text-neutral-500">PLACED ON</span>
                 <p className="text-white">
                   {new Date(recentOrder.createdAt).toLocaleDateString('en-IN', {
                     day: 'numeric',
@@ -245,16 +245,18 @@ export default function AccountOverviewPage() {
                 </p>
               </div>
               <div className="space-y-1">
-                <span className="text-neutral-500">TOTAL</span>
+                <span className="block text-neutral-500">TOTAL</span>
                 <p className="text-snake-green font-semibold">
                   {formatPrice(recentOrder.total)}
                 </p>
               </div>
               <div className="space-y-1">
-                <span className="text-neutral-500">STATUS</span>
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-snake-green/10 text-snake-green border border-snake-green/30 text-[10px] uppercase font-semibold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-snake-green animate-pulse" />
-                  <span>{recentOrder.status}</span>
+                <span className="block text-neutral-500">STATUS</span>
+                <div className="pt-0.5">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-snake-green/10 text-snake-green border border-snake-green/30 text-[10px] uppercase font-semibold">
+                    <span className="w-1.5 h-1.5 rounded-full bg-snake-green animate-pulse" />
+                    <span>{recentOrder.status}</span>
+                  </span>
                 </div>
               </div>
             </div>
