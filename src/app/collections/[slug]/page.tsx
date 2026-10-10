@@ -184,11 +184,8 @@ export default function DedicatedCollectionPage() {
 
           {/* Badge & Title */}
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/15">
-              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: accent }} />
-              <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-neutral-300">
-                {collection.badge || 'ATELIER SERIES'}
-              </span>
+            <div className="text-[11px] sm:text-xs font-mono uppercase tracking-[0.25em] text-snake-green font-bold">
+              {collection.badge || 'ATELIER SERIES'}
             </div>
 
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -344,7 +341,7 @@ export default function DedicatedCollectionPage() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
               </div>
               <div className="p-3 space-y-1">
-                <span className="text-[9px] font-mono tracking-widest text-neutral-400 uppercase block truncate">
+                <span className="text-[9px] font-mono tracking-widest text-snake-green font-bold uppercase block truncate">
                   {other.badge}
                 </span>
                 <h4 className="text-xs font-display font-bold uppercase text-white group-hover:text-snake-green transition-colors truncate">

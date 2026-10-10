@@ -217,7 +217,7 @@ function ShopCatalogContent({
               <div className="p-4 sm:p-6 bg-gradient-to-r from-neutral-950 via-[#0e0e0e] to-neutral-950 border border-snake-green/30 rounded-sm flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in duration-300">
                 <div className="space-y-1.5">
                   <div className="flex items-center gap-2">
-                    <span className="text-[9px] font-mono tracking-widest text-neutral-400 uppercase px-2 py-0.5 rounded bg-white/[0.04] border border-white/10">
+                    <span className="text-[10px] font-mono tracking-[0.2em] uppercase text-snake-green font-bold">
                       {matchedSeries.badge || 'ATELIER CHAPTER'}
                     </span>
                     <span className="text-[10px] font-mono tracking-widest text-snake-green uppercase font-bold">

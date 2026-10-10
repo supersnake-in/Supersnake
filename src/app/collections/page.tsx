@@ -112,12 +112,8 @@ export default function CollectionsOverviewPage() {
                   <div className="absolute inset-0 bg-gradient-to-t from-[#080808] via-[#080808]/40 to-transparent" />
 
                   {/* Series Badge Overlay */}
-                  <div className="absolute top-3 left-3 z-10 px-2.5 py-1 bg-black/70 backdrop-blur-md border border-white/10 text-[9px] font-mono tracking-widest uppercase text-white rounded-sm flex items-center gap-1.5">
-                    <span
-                      className="w-1.5 h-1.5 rounded-full"
-                      style={{ backgroundColor: accent }}
-                    />
-                    <span>{col.badge || `CHAPTER 0${index + 1}`}</span>
+                  <div className="absolute top-3 left-3 z-10 text-[10px] sm:text-[11px] font-mono tracking-[0.2em] uppercase text-snake-green font-bold drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+                    {col.badge || `CHAPTER 0${index + 1}`}
                   </div>
 
                   {/* Piece count pill with Men & Women breakdown */}

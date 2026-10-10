@@ -356,7 +356,7 @@ export default function PreLaunchPage() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
 
                     {/* Badge */}
-                    <div className="absolute top-3 left-3 px-2 py-0.5 rounded bg-black/80 backdrop-blur-md border border-white/15 text-[9px] font-mono tracking-widest uppercase text-neutral-300">
+                    <div className="absolute top-3 left-3 z-10 text-[10px] sm:text-[11px] font-mono tracking-[0.2em] uppercase text-snake-green font-bold drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
                       {col.badge || 'ATELIER SERIES'}
                     </div>
 
