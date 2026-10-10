@@ -58,6 +58,7 @@ import {
   deleteCollectionInSupabase,
 } from './supabase/db';
 import { COLLECTIONS_DATA } from './data/collections';
+import { PRODUCTS } from './data/products';
 import {
   saveCartToStorage,
   loadCartFromStorageSync,
@@ -392,7 +393,7 @@ interface StoreContextType {
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>(PRODUCTS);
   const [collections, setCollections] = useState<Collection[]>(COLLECTIONS_DATA);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -651,8 +652,22 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             };
           });
           const normalized = normalizeSignatureProduct(deduplicated);
-          setProducts(normalized);
-          saveProductsToLocalStorage(normalized);
+          // Merge with master catalog to guarantee complete chapter assignments
+          const mergedMap = new Map<string, Product>();
+          for (const p of PRODUCTS) mergedMap.set(p.slug, p);
+          for (const p of normalized) {
+            const def = mergedMap.get(p.slug);
+            mergedMap.set(p.slug, {
+              ...def,
+              ...p,
+              collectionSlug: p.collectionSlug || def?.collectionSlug,
+              collectionId: p.collectionId || def?.collectionId,
+              collectionName: p.collectionName || def?.collectionName,
+            });
+          }
+          const finalProducts = Array.from(mergedMap.values());
+          setProducts(finalProducts);
+          saveProductsToLocalStorage(finalProducts);
         }
       })
       .catch((err) => {

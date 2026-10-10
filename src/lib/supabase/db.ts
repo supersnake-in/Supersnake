@@ -17,6 +17,7 @@ import {
   PreBookingStatus,
   Collection,
 } from '../types';
+import { PRODUCTS } from '../data/products';
 
 // In-memory catalog cache (60s) to prevent repetitive PostgREST egress bursts
 let cachedProducts: Product[] | null = null;
@@ -100,9 +101,9 @@ export function mapProductRowToProduct(row: any): Product {
     isSignature: Boolean(row.is_signature),
     preLaunchEnabled: Boolean(row.pre_launch_enabled),
     maxPreBookings: row.max_pre_bookings ? Number(row.max_pre_bookings) : undefined,
-    collectionId: row.collection_id || undefined,
-    collectionSlug: row.collection_slug || undefined,
-    collectionName: row.collection_name || undefined,
+    collectionId: row.collection_id || PRODUCTS.find((p) => p.slug === row.slug || p.id === row.id)?.collectionId || undefined,
+    collectionSlug: row.collection_slug || PRODUCTS.find((p) => p.slug === row.slug || p.id === row.id)?.collectionSlug || undefined,
+    collectionName: row.collection_name || PRODUCTS.find((p) => p.slug === row.slug || p.id === row.id)?.collectionName || undefined,
     rating: Number(row.rating || 5.0),
     reviewsCount: Number(row.reviews_count || 0),
     createdAt: row.created_at || new Date().toISOString(),
@@ -220,8 +221,16 @@ export async function fetchProductsFromSupabase(forceRefresh: boolean = false): 
       return null;
     }
 
-    // Map Supabase rows to Product TypeScript interface
-    cachedProducts = productsData.map(mapProductRowToProduct);
+    // Map Supabase rows to Product TypeScript interface and merge with master catalog
+    const mapped = productsData.map(mapProductRowToProduct);
+    const existingSlugs = new Set(mapped.map((p) => p.slug));
+    const merged = [...mapped];
+    for (const p of PRODUCTS) {
+      if (!existingSlugs.has(p.slug)) {
+        merged.push(p);
+      }
+    }
+    cachedProducts = merged;
     productsCacheTime = now;
     return cachedProducts;
   } catch (err) {
