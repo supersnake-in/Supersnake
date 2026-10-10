@@ -27,29 +27,20 @@ export function Header() {
   const isPreLaunch = storefrontConfig?.storefrontMode === 'PRE_LAUNCH';
   const showAnnouncement = isStorefront && isAnnouncementActive(announcementConfig);
 
-  // Restore dismissal from sessionStorage if user previously closed this announcement in the current session
+  // Clear any legacy sessionStorage keys so notification bar reliably reappears on every page refresh
   useEffect(() => {
-    if (typeof window === 'undefined' || !announcementConfig) return;
+    if (typeof window === 'undefined') return;
     try {
-      const dismissKey = `supersnake_announcement_dismissed_${announcementConfig.id || announcementConfig.updatedAt || announcementConfig.message}`;
-      if (sessionStorage.getItem(dismissKey) === 'true') {
-        setIsDismissed(true);
-      }
-    } catch {
-      // Ignore private browsing sessionStorage errors
-    }
-  }, [announcementConfig?.id, announcementConfig?.updatedAt, announcementConfig?.message]);
+      Object.keys(sessionStorage).forEach((key) => {
+        if (key.startsWith('supersnake_announcement_dismissed')) {
+          sessionStorage.removeItem(key);
+        }
+      });
+    } catch {}
+  }, []);
 
   const handleDismissAnnouncement = () => {
     setIsDismissed(true);
-    if (typeof window !== 'undefined' && announcementConfig) {
-      try {
-        const dismissKey = `supersnake_announcement_dismissed_${announcementConfig.id || announcementConfig.updatedAt || announcementConfig.message}`;
-        sessionStorage.setItem(dismissKey, 'true');
-      } catch {
-        // Ignore private browsing sessionStorage errors
-      }
-    }
   };
 
   // Pure continuous 1:1 scroll physics and imperceptible background crossfade
