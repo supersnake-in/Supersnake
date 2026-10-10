@@ -171,22 +171,19 @@ export function Header() {
                           <ArrowRight size={12} className="text-neutral-500" />
                         </Link>
                         <Link
-                          href="/account/pre-bookings"
-                          onClick={() => setAccountMenuOpen(false)}
-                          className="flex items-center justify-between p-2 rounded hover:bg-white/5 text-snake-green font-medium transition-colors"
-                        >
-                          <span className="flex items-center gap-1.5">
-                            <span>MY PRE-BOOKINGS</span>
-                            <span className="w-1.5 h-1.5 rounded-full bg-snake-green" />
-                          </span>
-                          <ArrowRight size={12} className="text-snake-green" />
-                        </Link>
-                        <Link
                           href="/account/orders"
                           onClick={() => setAccountMenuOpen(false)}
                           className="flex items-center justify-between p-2 rounded hover:bg-white/5 text-neutral-300 hover:text-white transition-colors"
                         >
                           <span>MY ORDERS</span>
+                          <ArrowRight size={12} className="text-neutral-500" />
+                        </Link>
+                        <Link
+                          href="/track-order"
+                          onClick={() => setAccountMenuOpen(false)}
+                          className="flex items-center justify-between p-2 rounded hover:bg-white/5 text-neutral-300 hover:text-white transition-colors"
+                        >
+                          <span>TRACK ORDER</span>
                           <ArrowRight size={12} className="text-neutral-500" />
                         </Link>
                         <Link

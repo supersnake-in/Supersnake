@@ -14,7 +14,6 @@ import {
   Sliders,
   LogOut,
   ArrowRight,
-  Calendar,
   Truck,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
@@ -23,7 +22,6 @@ import { PasskeyPromptModal } from '@/components/auth/PasskeyPromptModal';
 
 const ACCOUNT_NAV = [
   { href: '/account', label: 'OVERVIEW', icon: LayoutDashboard, exact: true },
-  { href: '/account/pre-bookings', label: 'PRE-BOOKINGS', icon: Calendar },
   { href: '/account/orders', label: 'ORDERS', icon: Package },
   { href: '/track-order', label: 'TRACK ORDER', icon: Truck },
   { href: '/account/wishlist', label: 'WISHLIST', icon: Heart },
