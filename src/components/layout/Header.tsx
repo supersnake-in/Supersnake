@@ -16,6 +16,7 @@ export function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [isDismissed, setIsDismissed] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement>(null);
   const { cartCount, wishlist, openCart, openSearch, storefrontConfig, announcementConfig } = useStore();
   const { user, profile, signOut, isAdmin } = useAuth();
@@ -23,6 +24,31 @@ export function Header() {
   const isStorefront = !pathname.startsWith('/admin') && !pathname.startsWith('/maintenance');
   const isPreLaunch = storefrontConfig?.storefrontMode === 'PRE_LAUNCH';
   const showAnnouncement = isStorefront && isAnnouncementActive(announcementConfig);
+
+  // Restore dismissal from sessionStorage if user previously closed this announcement in the current session
+  useEffect(() => {
+    if (typeof window === 'undefined' || !announcementConfig) return;
+    try {
+      const dismissKey = `supersnake_announcement_dismissed_${announcementConfig.id || announcementConfig.updatedAt || announcementConfig.message}`;
+      if (sessionStorage.getItem(dismissKey) === 'true') {
+        setIsDismissed(true);
+      }
+    } catch {
+      // Ignore private browsing sessionStorage errors
+    }
+  }, [announcementConfig?.id, announcementConfig?.updatedAt, announcementConfig?.message]);
+
+  const handleDismissAnnouncement = () => {
+    setIsDismissed(true);
+    if (typeof window !== 'undefined' && announcementConfig) {
+      try {
+        const dismissKey = `supersnake_announcement_dismissed_${announcementConfig.id || announcementConfig.updatedAt || announcementConfig.message}`;
+        sessionStorage.setItem(dismissKey, 'true');
+      } catch {
+        // Ignore private browsing sessionStorage errors
+      }
+    }
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -74,12 +100,12 @@ export function Header() {
         {showAnnouncement && (
           <div
             className={`w-full overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-auto ${
-              scrolled
-                ? 'max-h-0 opacity-0 -translate-y-2'
+              scrolled || isDismissed
+                ? 'max-h-0 opacity-0 -translate-y-2 pointer-events-none'
                 : 'max-h-12 opacity-100 translate-y-0'
             }`}
           >
-            <AnnouncementBar />
+            <AnnouncementBar onDismiss={handleDismissAnnouncement} />
           </div>
         )}
 

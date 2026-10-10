@@ -1396,9 +1396,9 @@ export default function AdminSettingsPage() {
                   backgroundColor: announcementBgColor,
                   color: announcementTextColor,
                 }}
-                className="w-full min-h-[32px] md:min-h-[34px] px-4 py-1.5 flex items-center justify-center transition-colors border-b border-white/[0.08]"
+                className="w-full min-h-[32px] md:min-h-[34px] px-4 py-1.5 flex items-center justify-center transition-colors border-b border-white/[0.08] relative"
               >
-                <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center text-[10px] sm:text-[11px] font-mono uppercase tracking-[0.18em] font-medium">
+                <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center text-[10px] sm:text-[11px] font-mono uppercase tracking-[0.18em] font-medium pr-7 sm:pr-8">
                   <span className="truncate max-w-[70vw] sm:max-w-none">
                     {announcementMessage.trim() || 'ENTER ANNOUNCEMENT MESSAGE BELOW...'}
                   </span>
@@ -1418,6 +1418,12 @@ export default function AdminSettingsPage() {
                       className="shrink-0"
                     />
                   )}
+                </div>
+                <div
+                  className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 p-1 text-current opacity-60 pointer-events-none"
+                  title="Close mark (visible on storefront)"
+                >
+                  <X size={12} strokeWidth={2.2} />
                 </div>
               </div>
 
