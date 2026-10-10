@@ -16,6 +16,7 @@ interface ShopCatalogProps {
   initialSeries?: string | 'all';
   pageTitle?: string;
   pageSubtitle?: string;
+  showSeriesQuickBar?: boolean;
 }
 
 function ShopCatalogContent({
@@ -26,6 +27,7 @@ function ShopCatalogContent({
   initialSeries = 'all',
   pageTitle = 'SHOP T-SHIRTS',
   pageSubtitle = 'The hero product. Engineered from 240–300 GSM long-staple cotton.',
+  showSeriesQuickBar = false,
 }: ShopCatalogProps) {
   const searchParams = useSearchParams();
   const seriesFromUrl = searchParams.get('series') || initialSeries;
@@ -154,102 +156,104 @@ function ShopCatalogContent({
         {/* ============================================================
             COLLECTION SERIES // CREATIVE CHAPTERS QUICK BAR
             ============================================================ */}
-        <div className="space-y-3 bg-[#080808] border border-white/[0.08] p-4 sm:p-5 rounded-sm">
-          <div className="flex items-center justify-between text-[10px] font-mono tracking-widest uppercase">
-            <span className="flex items-center gap-2 text-snake-green font-bold">
-              <Layers size={13} />
-              <span>COLLECTION SERIES // ART-DIRECTED CHAPTERS</span>
-            </span>
-            <Link
-              href="/collections"
-              className="text-neutral-400 hover:text-white flex items-center gap-1 transition-colors"
-            >
-              <span>EXPLORE ALL {collections.length} CHAPTERS</span>
-              <ArrowRight size={11} className="text-snake-green" />
-            </Link>
-          </div>
-
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-            <button
-              onClick={() => setSelectedSeries('all')}
-              className={`px-3.5 py-1.5 rounded-sm text-xs font-mono tracking-wider uppercase transition-all whitespace-nowrap shrink-0 border ${
-                selectedSeries === 'all'
-                  ? 'bg-white text-black border-white font-bold'
-                  : 'bg-neutral-900 text-neutral-400 border-white/10 hover:border-white/30 hover:text-white'
-              }`}
-            >
-              ALL CHAPTERS
-            </button>
-            {collections
-              .filter((c) => c.isActive)
-              .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
-              .map((col) => {
-                const countInView = products.filter(
-                  (p) =>
-                    (p.collectionSlug === col.slug || p.collectionId === col.id) &&
-                    (selectedGender === 'all' || p.gender === selectedGender || p.gender === 'unisex')
-                ).length;
-
-                return (
-                  <button
-                    key={col.id}
-                    onClick={() => setSelectedSeries(col.slug)}
-                    className={`px-3.5 py-1.5 rounded-sm text-xs font-mono tracking-wider uppercase transition-all whitespace-nowrap shrink-0 border flex items-center gap-2 ${
-                      selectedSeries === col.slug
-                        ? 'bg-snake-green text-black border-snake-green font-bold shadow-[0_0_15px_rgba(4,252,33,0.35)]'
-                        : 'bg-neutral-900 text-neutral-400 border-white/10 hover:border-white/30 hover:text-white'
-                    }`}
-                  >
-                    <span>{col.name}</span>
-                    <span className="text-[10px] opacity-70">({countInView})</span>
-                  </button>
-                );
-              })}
-          </div>
-        </div>
-
-        {/* ============================================================
-            SELECTED SERIES EDITORIAL HIGHLIGHT BANNER
-            ============================================================ */}
-        {selectedSeries !== 'all' && matchedSeries && (
-          <div className="p-4 sm:p-6 bg-gradient-to-r from-neutral-950 via-[#0e0e0e] to-neutral-950 border border-snake-green/30 rounded-sm flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in duration-300">
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2">
-                <span className="text-[9px] font-mono tracking-widest text-neutral-400 uppercase px-2 py-0.5 rounded bg-white/[0.04] border border-white/10">
-                  {matchedSeries.badge || 'ATELIER CHAPTER'}
+        {showSeriesQuickBar && (
+          <>
+            <div className="space-y-3 bg-[#080808] border border-white/[0.08] p-4 sm:p-5 rounded-sm">
+              <div className="flex items-center justify-between text-[10px] font-mono tracking-widest uppercase">
+                <span className="flex items-center gap-2 text-snake-green font-bold">
+                  <Layers size={13} />
+                  <span>COLLECTION SERIES // ART-DIRECTED CHAPTERS</span>
                 </span>
-                <span className="text-[10px] font-mono tracking-widest text-snake-green uppercase font-bold">
-                  {selectedGender === 'men'
-                    ? "MEN'S ATELIER EDITION"
-                    : selectedGender === 'women'
-                    ? "WOMEN'S ATELIER EDITION"
-                    : 'UNIFIED GENDER ROSTER'}
-                </span>
+                <Link
+                  href="/collections"
+                  className="text-neutral-400 hover:text-white flex items-center gap-1 transition-colors"
+                >
+                  <span>EXPLORE ALL {collections.length} CHAPTERS</span>
+                  <ArrowRight size={11} className="text-snake-green" />
+                </Link>
               </div>
-              <h3 className="text-xl sm:text-2xl font-display font-bold uppercase text-white tracking-wide">
-                {matchedSeries.name}
-              </h3>
-              <p className="text-xs font-mono text-neutral-300 max-w-2xl leading-relaxed">
-                {matchedSeries.tagline || matchedSeries.description}
-              </p>
+
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+                <button
+                  onClick={() => setSelectedSeries('all')}
+                  className={`px-3.5 py-1.5 rounded-sm text-xs font-mono tracking-wider uppercase transition-all whitespace-nowrap shrink-0 border ${
+                    selectedSeries === 'all'
+                      ? 'bg-white text-black border-white font-bold'
+                      : 'bg-neutral-900 text-neutral-400 border-white/10 hover:border-white/30 hover:text-white'
+                  }`}
+                >
+                  ALL CHAPTERS
+                </button>
+                {collections
+                  .filter((c) => c.isActive)
+                  .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
+                  .map((col) => {
+                    const countInView = products.filter(
+                      (p) =>
+                        (p.collectionSlug === col.slug || p.collectionId === col.id) &&
+                        (selectedGender === 'all' || p.gender === selectedGender || p.gender === 'unisex')
+                    ).length;
+
+                    return (
+                      <button
+                        key={col.id}
+                        onClick={() => setSelectedSeries(col.slug)}
+                        className={`px-3.5 py-1.5 rounded-sm text-xs font-mono tracking-wider uppercase transition-all whitespace-nowrap shrink-0 border flex items-center gap-2 ${
+                          selectedSeries === col.slug
+                            ? 'bg-snake-green text-black border-snake-green font-bold shadow-[0_0_15px_rgba(4,252,33,0.35)]'
+                            : 'bg-neutral-900 text-neutral-400 border-white/10 hover:border-white/30 hover:text-white'
+                        }`}
+                      >
+                        <span>{col.name}</span>
+                        <span className="text-[10px] opacity-70">({countInView})</span>
+                      </button>
+                    );
+                  })}
+              </div>
             </div>
 
-            <div className="flex items-center gap-3 shrink-0">
-              <Link
-                href={`/collections/${matchedSeries.slug}`}
-                className="px-4 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white border border-white/20 text-xs font-mono uppercase tracking-wider transition-colors flex items-center gap-2 rounded-sm"
-              >
-                <span>CHAPTER STORY</span>
-                <ArrowRight size={13} className="text-snake-green" />
-              </Link>
-              <button
-                onClick={() => setSelectedSeries('all')}
-                className="text-xs font-mono text-neutral-400 hover:text-white underline uppercase tracking-wider"
-              >
-                SHOW ALL
-              </button>
-            </div>
-          </div>
+            {/* SELECTED SERIES EDITORIAL HIGHLIGHT BANNER */}
+            {selectedSeries !== 'all' && matchedSeries && (
+              <div className="p-4 sm:p-6 bg-gradient-to-r from-neutral-950 via-[#0e0e0e] to-neutral-950 border border-snake-green/30 rounded-sm flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in duration-300">
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[9px] font-mono tracking-widest text-neutral-400 uppercase px-2 py-0.5 rounded bg-white/[0.04] border border-white/10">
+                      {matchedSeries.badge || 'ATELIER CHAPTER'}
+                    </span>
+                    <span className="text-[10px] font-mono tracking-widest text-snake-green uppercase font-bold">
+                      {selectedGender === 'men'
+                        ? "MEN'S ATELIER EDITION"
+                        : selectedGender === 'women'
+                        ? "WOMEN'S ATELIER EDITION"
+                        : 'UNIFIED GENDER ROSTER'}
+                    </span>
+                  </div>
+                  <h3 className="text-xl sm:text-2xl font-display font-bold uppercase text-white tracking-wide">
+                    {matchedSeries.name}
+                  </h3>
+                  <p className="text-xs font-mono text-neutral-300 max-w-2xl leading-relaxed">
+                    {matchedSeries.tagline || matchedSeries.description}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3 shrink-0">
+                  <Link
+                    href={`/collections/${matchedSeries.slug}`}
+                    className="px-4 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white border border-white/20 text-xs font-mono uppercase tracking-wider transition-colors flex items-center gap-2 rounded-sm"
+                  >
+                    <span>CHAPTER STORY</span>
+                    <ArrowRight size={13} className="text-snake-green" />
+                  </Link>
+                  <button
+                    onClick={() => setSelectedSeries('all')}
+                    className="text-xs font-mono text-neutral-400 hover:text-white underline uppercase tracking-wider"
+                  >
+                    SHOW ALL
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {/* Filter & Sort Bar */}
