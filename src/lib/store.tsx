@@ -629,6 +629,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                 saved.heroImage.includes('hero2.png') ||
                 saved.heroImage.includes('men-collection.png') ||
                 saved.heroImage.includes('brand-pillar') ||
+                saved.heroImage.includes('hero-object-supersnake-tee') ||
                 Boolean(defaultCol.heroImage?.startsWith('/collection-') && !saved.heroImage?.startsWith('/collection-'));
 
               return {
@@ -726,6 +727,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               col.heroImage.includes('hero2.png') ||
               col.heroImage.includes('men-collection.png') ||
               col.heroImage.includes('brand-pillar') ||
+              col.heroImage.includes('hero-object-supersnake-tee') ||
               Boolean(defaultCol.heroImage?.startsWith('/collection-') && !col.heroImage?.startsWith('/collection-'));
 
             return {
@@ -2172,6 +2174,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             col.heroImage.includes('hero2.png') ||
             col.heroImage.includes('men-collection.png') ||
             col.heroImage.includes('brand-pillar') ||
+            col.heroImage.includes('hero-object-supersnake-tee') ||
             Boolean(defaultCol.heroImage?.startsWith('/collection-') && !col.heroImage?.startsWith('/collection-'));
 
           return {

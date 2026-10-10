@@ -64,8 +64,8 @@ export const COLLECTIONS_DATA: Collection[] = [
       'Micro-density tactile snake crest, coiled serpent spine back placement, emerald and venom green contrast bar-tacks.',
     fabricSpecs:
       '260–280 GSM Organic French Terry & Heavy Jersey, Reinforced Bar-Tacks, Pre-Enzyme Wash.',
-    heroImage: '/hero-object-supersnake-tee.png',
-    cardImage: '/hero2.png',
+    heroImage: '/collection-the-serpent-hero.jpg',
+    cardImage: '/collection-the-serpent-card.jpg',
     moodPalette: [
       { name: 'Venom Green', hex: '#04fc21' },
       { name: 'Obsidian Black', hex: '#0a0a0a' },
