@@ -7,24 +7,28 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search as SearchIcon, X, ArrowRight } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { formatPrice } from '@/lib/design-tokens';
-import { Product } from '@/lib/types';
+import { Product, Collection } from '@/lib/types';
 
 export function SearchOverlay() {
-  const { products, isSearchOpen, openSearch, closeSearch } = useStore();
+  const { products, collections, isSearchOpen, openSearch, closeSearch } = useStore();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Product[]>([]);
+  const [matchingCollections, setMatchingCollections] = useState<Collection[]>([]);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const curatedSuggestions = [
-    'BLACK T-SHIRTS',
+    'THE BLACK PANTHER',
+    'THE ROYALS',
+    'THE SERPENT',
+    'THE AURA',
+    'THE SIGNATURE',
     'OVERSIZED T-SHIRTS',
+    'BLACK T-SHIRTS',
     'WHITE T-SHIRTS',
-    'NEW DROPS',
-    'MEN',
-    'WOMEN',
     '280 GSM',
+    'NEW DROPS',
   ];
 
   // Load recent searches from localStorage
@@ -96,6 +100,7 @@ export function SearchOverlay() {
     } else {
       setQuery('');
       setResults([]);
+      setMatchingCollections([]);
     }
   }, [isSearchOpen]);
 
@@ -103,23 +108,58 @@ export function SearchOverlay() {
   useEffect(() => {
     if (!query.trim()) {
       setResults([]);
+      setMatchingCollections([]);
       return;
     }
 
     const q = query.toLowerCase().trim();
+
+    // Filter collections
+    const matchedCols = (collections || []).filter((c) => {
+      const matchName = c.name.toLowerCase().includes(q);
+      const matchSlug = c.slug.toLowerCase().includes(q) || c.slug.replace(/-/g, ' ').includes(q);
+      const matchBadge = c.badge?.toLowerCase().includes(q);
+      const matchTagline = c.tagline?.toLowerCase().includes(q);
+      const matchDesc = c.description?.toLowerCase().includes(q);
+      const matchSpecs = c.fabricSpecs?.toLowerCase().includes(q);
+      const matchMood = c.artworkMood?.toLowerCase().includes(q);
+      return matchName || matchSlug || matchBadge || matchTagline || matchDesc || matchSpecs || matchMood;
+    });
+
+    const matchingColSlugs = new Set(matchedCols.map((c) => c.slug));
+
+    // Filter products
     const filtered = products.filter((p) => {
+      const matchName = p.name.toLowerCase().includes(q);
+      const matchDesc = p.description.toLowerCase().includes(q);
+      const matchFit = p.fit?.toLowerCase().includes(q);
+      const matchGender = p.gender?.toLowerCase().includes(q);
+      const matchColor = p.colors?.some((c) => c.name.toLowerCase().includes(q));
+      const matchGsm = `${p.gsm} gsm`.toLowerCase().includes(q);
+      const matchFabric = p.fabric?.toLowerCase().includes(q);
+      const matchCollectionSlug =
+        p.collectionSlug?.toLowerCase().includes(q) ||
+        (p.collectionSlug && p.collectionSlug.replace(/-/g, ' ').toLowerCase().includes(q));
+      const matchCollectionName = p.collectionName?.toLowerCase().includes(q);
+      const matchLinkedCollection = p.collectionSlug ? matchingColSlugs.has(p.collectionSlug) : false;
+
       return (
-        p.name.toLowerCase().includes(q) ||
-        p.description.toLowerCase().includes(q) ||
-        p.fit.toLowerCase().includes(q) ||
-        p.gender.toLowerCase().includes(q) ||
-        p.colors.some((c) => c.name.toLowerCase().includes(q)) ||
-        `${p.gsm} gsm`.toLowerCase().includes(q)
+        matchName ||
+        matchDesc ||
+        matchFit ||
+        matchGender ||
+        matchColor ||
+        matchGsm ||
+        matchFabric ||
+        matchCollectionSlug ||
+        matchCollectionName ||
+        matchLinkedCollection
       );
     });
 
+    setMatchingCollections(matchedCols);
     setResults(filtered);
-  }, [query, products]);
+  }, [query, products, collections]);
 
   const handleSelectTerm = (term: string) => {
     setQuery(term);
@@ -255,60 +295,133 @@ export function SearchOverlay() {
 
             {/* Results Grid */}
             {query.trim() !== '' && (
-              <div className="space-y-6 flex-1">
+              <div className="space-y-8 flex-1">
                 <div className="flex justify-between items-center text-xs font-mono tracking-widest text-neutral-400 border-b border-white/10 pb-3">
-                  <span>RESULTS ({results.length})</span>
+                  <span>RESULTS ({matchingCollections.length + results.length})</span>
                   <span>PREVIEW</span>
                 </div>
 
-                {results.length === 0 ? (
+                {matchingCollections.length === 0 && results.length === 0 ? (
                   <div className="py-16 sm:py-20 text-center space-y-3">
                     <p className="font-display text-xl sm:text-2xl tracking-wider text-white">NOTHING FOUND.</p>
                     <p className="text-xs font-mono text-neutral-500 max-w-sm mx-auto">
-                      Try searching with broader terms like &quot;oversized&quot;, &quot;black&quot;, or &quot;280 gsm&quot;.
+                      Try searching with broader terms like &quot;Black Panther&quot;, &quot;Royals&quot;, &quot;oversized&quot;, or &quot;280 gsm&quot;.
                     </p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6">
-                    {results.map((product) => (
-                      <Link
-                        key={product.id}
-                        href={`/product/${product.slug}`}
-                        onClick={() => {
-                          saveRecentSearch(query);
-                          closeSearch();
-                        }}
-                        className="group flex flex-col bg-[#0d0d0d] border border-white/5 hover:border-white/20 transition-all rounded overflow-hidden active:scale-[0.98]"
-                      >
-                        <div className="relative aspect-[4/5] bg-neutral-900 overflow-hidden">
-                          <Image
-                            src={product.images[0]?.url || ''}
-                            alt={product.name}
-                            fill
-                            sizes="(max-width: 640px) 50vw, (max-width: 768px) 50vw, 300px"
-                            unoptimized={Boolean(product.images[0]?.url?.startsWith('data:') || product.images[0]?.url?.startsWith('blob:'))}
-                            className="object-cover transition-transform duration-700 group-hover:scale-105"
-                          />
-                          <div className="absolute top-2.5 left-2.5 px-2 py-0.5 bg-black/70 backdrop-blur-sm text-[8px] sm:text-[9px] font-mono tracking-widest text-white border border-white/10 uppercase max-w-[80%] truncate">
-                            {product.tagline || `${product.gsm} GSM`}
-                          </div>
+                  <div className="space-y-8">
+                    {/* Matching Collection Chapters */}
+                    {matchingCollections.length > 0 && (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between text-xs font-mono tracking-widest text-neutral-400 border-b border-white/10 pb-2">
+                          <span className="text-snake-green font-semibold">COLLECTIONS</span>
+                          <Link
+                            href="/collections"
+                            onClick={() => {
+                              saveRecentSearch(query);
+                              closeSearch();
+                            }}
+                            className="text-[10px] text-neutral-400 hover:text-snake-green transition-colors flex items-center gap-1"
+                          >
+                            VIEW ALL COLLECTIONS <ArrowRight size={10} />
+                          </Link>
                         </div>
-                        <div className="p-3 sm:p-4 space-y-1">
-                          <h4 className="text-xs font-mono font-semibold tracking-wider text-white group-hover:text-snake-green transition-colors uppercase truncate">
-                            {product.name}
-                          </h4>
-                          <p className="text-[10px] sm:text-[11px] font-mono text-neutral-400">{product.fit} Fit</p>
-                          <div className="flex justify-between items-center pt-2">
-                            <span className="font-mono text-xs text-white font-medium">
-                              {formatPrice(product.price)}
-                            </span>
-                            <span className="text-[10px] font-mono text-snake-green flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                              VIEW <ArrowRight size={11} />
-                            </span>
-                          </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+                          {matchingCollections.map((col) => (
+                            <Link
+                              key={col.id}
+                              href={`/collections/${col.slug}`}
+                              onClick={() => {
+                                saveRecentSearch(query);
+                                closeSearch();
+                              }}
+                              className="group relative bg-[#0d0d0d] border border-white/10 hover:border-snake-green/50 transition-all rounded overflow-hidden flex flex-col p-3.5 sm:p-4 hover:bg-[#121212] active:scale-[0.98]"
+                            >
+                              <div className="relative aspect-[16/9] w-full rounded overflow-hidden bg-neutral-900 mb-3">
+                                <Image
+                                  src={col.cardImage || col.heroImage || '/placeholder.png'}
+                                  alt={col.name}
+                                  fill
+                                  sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 300px"
+                                  className="object-cover transition-transform duration-700 group-hover:scale-105"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                              </div>
+
+                              <span className="text-[10px] font-mono tracking-[0.2em] font-bold text-snake-green uppercase mb-1">
+                                {col.badge || 'SERIES'}
+                              </span>
+
+                              <h4 className="text-sm font-display font-medium uppercase tracking-tight text-white group-hover:text-snake-green transition-colors">
+                                {col.name}
+                              </h4>
+
+                              <p className="text-[11px] font-sans text-neutral-400 line-clamp-2 mt-1 flex-1">
+                                {col.tagline}
+                              </p>
+
+                              <div className="pt-3 mt-2 border-t border-white/5 flex items-center justify-between text-[11px] font-mono text-snake-green group-hover:translate-x-0.5 transition-transform">
+                                <span className="font-semibold tracking-wider">EXPLORE SERIES</span>
+                                <ArrowRight size={12} />
+                              </div>
+                            </Link>
+                          ))}
                         </div>
-                      </Link>
-                    ))}
+                      </div>
+                    )}
+
+                    {/* Matching Garments / Pieces */}
+                    {results.length > 0 && (
+                      <div className="space-y-4">
+                        {matchingCollections.length > 0 && (
+                          <div className="text-xs font-mono tracking-widest text-neutral-400 border-b border-white/10 pb-2">
+                            <span>GARMENTS ({results.length})</span>
+                          </div>
+                        )}
+                        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6">
+                          {results.map((product) => (
+                            <Link
+                              key={product.id}
+                              href={`/product/${product.slug}`}
+                              onClick={() => {
+                                saveRecentSearch(query);
+                                closeSearch();
+                              }}
+                              className="group flex flex-col bg-[#0d0d0d] border border-white/5 hover:border-white/20 transition-all rounded overflow-hidden active:scale-[0.98]"
+                            >
+                              <div className="relative aspect-[4/5] bg-neutral-900 overflow-hidden">
+                                <Image
+                                  src={product.images[0]?.url || ''}
+                                  alt={product.name}
+                                  fill
+                                  sizes="(max-width: 640px) 50vw, (max-width: 768px) 50vw, 300px"
+                                  unoptimized={Boolean(product.images[0]?.url?.startsWith('data:') || product.images[0]?.url?.startsWith('blob:'))}
+                                  className="object-cover transition-transform duration-700 group-hover:scale-105"
+                                />
+                                <div className="absolute top-2.5 left-2.5 px-2 py-0.5 bg-black/70 backdrop-blur-sm text-[8px] sm:text-[9px] font-mono tracking-widest text-white border border-white/10 uppercase max-w-[80%] truncate">
+                                  {product.tagline || `${product.gsm} GSM`}
+                                </div>
+                              </div>
+                              <div className="p-3 sm:p-4 space-y-1">
+                                <h4 className="text-xs font-mono font-semibold tracking-wider text-white group-hover:text-snake-green transition-colors uppercase truncate">
+                                  {product.name}
+                                </h4>
+                                <p className="text-[10px] sm:text-[11px] font-mono text-neutral-400">{product.fit} Fit</p>
+                                <div className="flex justify-between items-center pt-2">
+                                  <span className="font-mono text-xs text-white font-medium">
+                                    {formatPrice(product.price)}
+                                  </span>
+                                  <span className="text-[10px] font-mono text-snake-green flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                                    VIEW <ArrowRight size={11} />
+                                  </span>
+                                </div>
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
