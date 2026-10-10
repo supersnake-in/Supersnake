@@ -57,10 +57,10 @@ export function Header() {
         { label: 'CONTACT', href: '/contact' },
       ]
     : [
-        { label: 'COLLECTIONS', href: '/collections' },
         { label: 'SHOP', href: '/shop' },
         { label: 'MEN', href: '/men' },
         { label: 'WOMEN', href: '/women' },
+        { label: 'COLLECTIONS', href: '/collections' },
         { label: 'NEW DROPS', href: '/new-drops' },
       ];
 
@@ -373,10 +373,10 @@ export function Header() {
                     { label: 'CONTACT', href: '/contact' },
                   ]
                 : [
-                    { label: 'COLLECTIONS', href: '/collections' },
                     { label: 'SHOP', href: '/shop' },
                     { label: 'MEN', href: '/men' },
                     { label: 'WOMEN', href: '/women' },
+                    { label: 'COLLECTIONS', href: '/collections' },
                     { label: 'NEW DROPS', href: '/new-drops' },
                     { label: 'BESTSELLERS', href: '/bestsellers' },
                     { label: 'ABOUT', href: '/about' },
