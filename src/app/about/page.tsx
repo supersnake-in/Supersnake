@@ -106,24 +106,25 @@ export default function AboutPage() {
             02 — CAMPAIGN VISUAL (THE SUPERSNAKE AESTHETIC)
             ============================================================ */}
         <section className="relative w-full overflow-hidden rounded border border-white/10 group">
-          <div className="relative aspect-[16/10] sm:aspect-[16/9] md:aspect-[21/10] w-full bg-neutral-950 overflow-hidden">
+          <div className="relative aspect-[16/10] w-full bg-neutral-950 overflow-hidden">
             <Image
               src="/about-campaign.jpg"
               alt="SuperSnake Lookbook Campaign — Ancient Architecture Meets Modern Streetwear"
               fill
               priority
-              sizes="(max-width: 1200px) 100vw, 1200px"
-              className="object-cover object-[center_30%] transition-transform duration-1000 ease-out group-hover:scale-105"
+              quality={100}
+              unoptimized
+              className="object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.01]"
             />
-            {/* Dark luxury vignette overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-black/10" />
+            {/* Dark luxury vignette overlay — clear center for maximum image sharpness */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/25 pointer-events-none" />
             
             {/* Cinematic editorial tags */}
             <div className="absolute top-4 left-4 sm:top-6 sm:left-6 flex items-center gap-2 text-[10px] sm:text-xs font-mono tracking-widest text-snake-green uppercase bg-black/60 backdrop-blur-md px-3 py-1 rounded border border-white/10">
               <span>CAMPAIGN // 2026</span>
             </div>
 
-            <div className="absolute bottom-4 left-4 sm:bottom-6 sm:left-6 right-4 sm:right-6 flex flex-col sm:flex-row sm:items-end justify-between gap-2 text-white">
+            <div className="absolute bottom-4 left-4 sm:bottom-6 sm:left-6 right-4 sm:right-6 flex flex-col sm:flex-row sm:items-end justify-between gap-2 text-white pointer-events-none">
               <div className="space-y-1">
                 <span className="text-[10px] font-mono tracking-widest text-neutral-400 uppercase">
                   THE AESTHETIC
