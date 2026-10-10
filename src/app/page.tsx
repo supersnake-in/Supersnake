@@ -33,6 +33,28 @@ export default function HomePage() {
     }
   };
 
+  const [canScrollChaptersLeft, setCanScrollChaptersLeft] = useState(false);
+  const [canScrollChaptersRight, setCanScrollChaptersRight] = useState(true);
+
+  const checkChaptersScroll = React.useCallback(() => {
+    const el = chaptersScrollRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    setCanScrollChaptersLeft(scrollLeft > 10);
+    setCanScrollChaptersRight(scrollLeft + clientWidth < scrollWidth - 10);
+  }, []);
+
+  useEffect(() => {
+    checkChaptersScroll();
+    const timer = setTimeout(checkChaptersScroll, 120);
+    const handleResize = () => checkChaptersScroll();
+    window.addEventListener('resize', handleResize);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [checkChaptersScroll, activeCollections]);
+
   const scrollChapters = (direction: 'left' | 'right') => {
     if (chaptersScrollRef.current) {
       const scrollAmount = chaptersScrollRef.current.clientWidth * 0.75;
@@ -40,6 +62,7 @@ export default function HomePage() {
         left: direction === 'left' ? -scrollAmount : scrollAmount,
         behavior: 'smooth',
       });
+      setTimeout(checkChaptersScroll, 400);
     }
   };
 
@@ -280,29 +303,34 @@ export default function HomePage() {
 
           {/* Chapters Showcase Horizontal Carousel with Floating Side Navigation */}
           <div className="relative group/carousel">
-            {/* Floating Left Navigation Arrow */}
-            <button
-              type="button"
-              onClick={() => scrollChapters('left')}
-              aria-label="Scroll left"
-              className="absolute left-1 sm:left-2 md:-left-5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-black/85 hover:bg-black backdrop-blur-md border border-white/20 hover:border-snake-green text-white hover:text-snake-green flex items-center justify-center transition-all duration-300 shadow-[0_4px_24px_rgba(0,0,0,0.8)] active:scale-90"
-            >
-              <ChevronLeft size={18} className="sm:w-5 sm:h-5 -translate-x-0.5" />
-            </button>
+            {/* Floating Left Navigation Arrow - appears only if there is content to slide left */}
+            {canScrollChaptersLeft && (
+              <button
+                type="button"
+                onClick={() => scrollChapters('left')}
+                aria-label="Scroll left"
+                className="absolute left-1 sm:left-2 md:-left-5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-black/85 hover:bg-black backdrop-blur-md border border-white/20 hover:border-snake-green text-white hover:text-snake-green flex items-center justify-center transition-all duration-300 shadow-[0_4px_24px_rgba(0,0,0,0.8)] active:scale-90 animate-in fade-in zoom-in-95"
+              >
+                <ChevronLeft size={18} className="sm:w-5 sm:h-5 -translate-x-0.5" />
+              </button>
+            )}
 
-            {/* Floating Right Navigation Arrow */}
-            <button
-              type="button"
-              onClick={() => scrollChapters('right')}
-              aria-label="Scroll right"
-              className="absolute right-1 sm:right-2 md:-right-5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-black/85 hover:bg-black backdrop-blur-md border border-white/20 hover:border-snake-green text-white hover:text-snake-green flex items-center justify-center transition-all duration-300 shadow-[0_4px_24px_rgba(0,0,0,0.8)] active:scale-90"
-            >
-              <ChevronRight size={18} className="sm:w-5 sm:h-5 translate-x-0.5" />
-            </button>
+            {/* Floating Right Navigation Arrow - appears only if there is content to slide right */}
+            {canScrollChaptersRight && (
+              <button
+                type="button"
+                onClick={() => scrollChapters('right')}
+                aria-label="Scroll right"
+                className="absolute right-1 sm:right-2 md:-right-5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-black/85 hover:bg-black backdrop-blur-md border border-white/20 hover:border-snake-green text-white hover:text-snake-green flex items-center justify-center transition-all duration-300 shadow-[0_4px_24px_rgba(0,0,0,0.8)] active:scale-90 animate-in fade-in zoom-in-95"
+              >
+                <ChevronRight size={18} className="sm:w-5 sm:h-5 translate-x-0.5" />
+              </button>
+            )}
 
             {/* Chapters Showcase Horizontal Carousel */}
             <div
               ref={chaptersScrollRef}
+              onScroll={checkChaptersScroll}
               className="flex items-stretch gap-5 sm:gap-6 md:gap-7 overflow-x-auto pb-6 pt-1 no-scrollbar scroll-smooth snap-x snap-mandatory"
             >
             {activeCollections.map((col) => {
