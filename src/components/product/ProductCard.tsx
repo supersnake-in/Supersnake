@@ -184,6 +184,20 @@ export function ProductCard({
 
       {/* Product Metadata */}
       <div className="pt-2.5 sm:pt-3.5 pb-2 flex flex-col space-y-1">
+        {/* Collection Series Tag */}
+        {product.collectionName && (
+          <div className="flex items-center gap-1.5">
+            <Link
+              href={`/collections/${product.collectionSlug || ''}`}
+              className="inline-flex items-center gap-1 text-[9px] font-mono uppercase tracking-widest text-snake-green hover:text-white transition-colors"
+              title={`Explore ${product.collectionName} Collection`}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-snake-green" />
+              <span>{product.collectionName}</span>
+            </Link>
+          </div>
+        )}
+
         <div className="flex justify-between items-baseline gap-2">
           <Link
             href={`/product/${product.slug}`}

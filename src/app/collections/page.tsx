@@ -104,6 +104,16 @@ export default function CollectionsOverviewPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           {displayCollections.map((col, index) => {
             const pieceCount = getProductCountForCollection(col.slug);
+            const menCount = products.filter(
+              (p) =>
+                (p.collectionSlug === col.slug || p.collectionId === col.id) &&
+                (p.gender === 'men' || p.gender === 'unisex')
+            ).length;
+            const womenCount = products.filter(
+              (p) =>
+                (p.collectionSlug === col.slug || p.collectionId === col.id) &&
+                (p.gender === 'women' || p.gender === 'unisex')
+            ).length;
             const accent = col.accentColor || '#04fc21';
 
             return (
@@ -135,9 +145,16 @@ export default function CollectionsOverviewPage() {
                     <span>{col.badge || `CHAPTER 0${index + 1}`}</span>
                   </div>
 
-                  {/* Piece count pill */}
-                  <div className="absolute top-3 right-3 z-10 px-2 py-0.5 bg-black/60 backdrop-blur-md border border-white/10 text-[9px] font-mono text-neutral-300 rounded-sm">
-                    {pieceCount > 0 ? `${pieceCount} PIECES` : 'DROPPING SOON'}
+                  {/* Piece count pill with Men & Women breakdown */}
+                  <div className="absolute top-3 right-3 z-10 px-2 py-0.5 bg-black/75 backdrop-blur-md border border-white/10 text-[9px] font-mono text-neutral-300 rounded-sm flex items-center gap-1.5">
+                    <span className="text-snake-green font-bold">{pieceCount} PIECES</span>
+                    <span className="text-neutral-500 hidden sm:inline">•</span>
+                    <span className="text-neutral-400 hidden sm:inline">{menCount}M / {womenCount}W</span>
+                  </div>
+
+                  {/* Gender Department Pill */}
+                  <div className="absolute bottom-3 left-3 z-10 px-2 py-0.5 bg-black/60 backdrop-blur-md text-[8px] font-mono tracking-widest uppercase text-neutral-300 border border-white/10 rounded-sm">
+                    MEN & WOMEN ATELIER
                   </div>
                 </div>
 

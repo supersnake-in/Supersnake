@@ -13,6 +13,7 @@ import {
   Layers,
   Info,
   Package,
+  Users,
 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { ProductCard } from '@/components/product/ProductCard';
@@ -29,6 +30,7 @@ export default function DedicatedCollectionPage() {
   const { collections, products, storefrontConfig } = useStore();
   const [selectedProductForPreBooking, setSelectedProductForPreBooking] = useState<Product | null>(null);
   const [isPreBookingModalOpen, setIsPreBookingModalOpen] = useState(false);
+  const [activeGender, setActiveGender] = useState<'ALL' | 'MEN' | 'WOMEN'>('ALL');
 
   const isPreLaunch = storefrontConfig?.storefrontMode === 'PRE_LAUNCH';
 
@@ -46,13 +48,35 @@ export default function DedicatedCollectionPage() {
       (p) =>
         p.collectionSlug === collection.slug ||
         p.collectionId === collection.id ||
-        (collection.slug === 'the-signature' && p.isSignature) ||
-        (collection.slug === 'the-serpent' && (p.slug === 'the-serpent-tee' || p.slug === 'the-venom-edition')) ||
+        (collection.slug === 'the-signature' && (p.isSignature || p.slug === 'the-signature-tee' || p.slug === 'the-signature-womens-architectural-tee')) ||
+        (collection.slug === 'the-serpent' && (p.slug === 'the-serpent-tee' || p.slug === 'the-venom-edition' || p.slug === 'the-serpent-silk-cotton-crop')) ||
         (collection.slug === 'the-nocturne' && (p.slug === 'the-monolith-oversized' || p.slug === 'the-shadow-raw-hem')) ||
         (collection.slug === 'the-aura' && (p.slug === 'the-chalk-minimalist' || p.slug === 'the-kinetic-silk-cotton')) ||
-        (collection.slug === 'the-royals' && p.slug === 'the-meridian-cropped')
+        (collection.slug === 'the-royals' && (p.slug === 'the-meridian-cropped' || p.slug === 'the-royal-serpent-crest')) ||
+        (collection.slug === 'the-black-panther' && (p.slug === 'the-panther-embossed-heavyweight' || p.slug === 'the-panther-minimal-refined-tee'))
     );
   }, [products, collection]);
+
+  // Breakdown counts
+  const menCount = useMemo(() => {
+    return seriesProducts.filter((p) => p.gender === 'men' || p.gender === 'unisex').length;
+  }, [seriesProducts]);
+
+  const womenCount = useMemo(() => {
+    return seriesProducts.filter((p) => p.gender === 'women' || p.gender === 'unisex').length;
+  }, [seriesProducts]);
+
+  // Filtered by selected gender tab
+  const displayedProducts = useMemo(() => {
+    if (activeGender === 'ALL') return seriesProducts;
+    if (activeGender === 'MEN') {
+      return seriesProducts.filter((p) => p.gender === 'men' || p.gender === 'unisex');
+    }
+    if (activeGender === 'WOMEN') {
+      return seriesProducts.filter((p) => p.gender === 'women' || p.gender === 'unisex');
+    }
+    return seriesProducts;
+  }, [seriesProducts, activeGender]);
 
   // Sibling collections for navigation
   const otherCollections = useMemo(() => {
@@ -130,12 +154,19 @@ export default function DedicatedCollectionPage() {
             <span className="text-white font-semibold">{collection.name}</span>
           </div>
 
-          {/* Series Badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/60 border border-white/15 backdrop-blur-md">
-            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: accent }} />
-            <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-neutral-200">
-              {collection.badge || 'ATELIER SERIES'}
-            </span>
+          {/* Series Badges */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/60 border border-white/15 backdrop-blur-md">
+              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: accent }} />
+              <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-neutral-200">
+                {collection.badge || 'ATELIER SERIES'}
+              </span>
+            </div>
+
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-snake-green/10 border border-snake-green/30 text-[10px] font-mono text-snake-green tracking-widest uppercase">
+              <Users size={11} />
+              <span>MEN & WOMEN UNIFIED CHAPTER</span>
+            </div>
           </div>
 
           {/* Title & Tagline */}
@@ -159,7 +190,7 @@ export default function DedicatedCollectionPage() {
               <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-400">
                 SERIES PALETTE:
               </span>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 {collection.moodPalette.map((item, idx) => (
                   <div
                     key={idx}
@@ -203,10 +234,113 @@ export default function DedicatedCollectionPage() {
       </section>
 
       {/* ============================================================
-          02 — GARMENTS IN THIS SERIES
+          02 — DUAL SILHOUETTE & DESIGN PHILOSOPHY DOSSIER
+          ============================================================ */}
+      <section className="py-12 sm:py-16 px-4 sm:px-6 md:px-12 border-b border-white/10 bg-[#060606]">
+        <div className="max-w-7xl mx-auto space-y-8">
+          <div className="text-center max-w-2xl mx-auto space-y-2">
+            <span className="text-[10px] font-mono tracking-widest text-snake-green uppercase block">
+              DESIGN ARCHITECTURE // SHARED IDENTITY, TAILORED SILHOUETTES
+            </span>
+            <h2 className="text-xl sm:text-3xl font-display font-medium uppercase text-white tracking-tight">
+              HOW {collection.name} MANIFESTS FOR MEN & WOMEN
+            </h2>
+            <p className="text-xs font-mono text-neutral-400 leading-relaxed">
+              Every SuperSnake series retains its signature narrative, color universe, and immortal logo, while garments are engineered around the distinct proportions, artwork placement, and fit preferences of each audience.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+            {/* Men's Expression */}
+            <div className="p-6 bg-neutral-950/80 border border-white/10 rounded-sm space-y-4 hover:border-snake-green/40 transition-colors">
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <span className="text-[10px] font-mono tracking-widest text-snake-green uppercase font-bold">
+                  MEN’S INTERPRETATION
+                </span>
+                <span className="text-[10px] font-mono text-neutral-500 uppercase">
+                  {menCount} PIECES
+                </span>
+              </div>
+              <h3 className="text-base font-display font-bold uppercase text-white tracking-wide">
+                MONOLITHIC ESSENCE & BOLD EMBLEMS
+              </h3>
+              <ul className="text-xs font-mono text-neutral-300 space-y-2 leading-relaxed">
+                <li className="flex items-start gap-2">
+                  <span className="text-snake-green font-bold">▪</span>
+                  <span><strong>Silhouette:</strong> Boxy and oversized heavyweight cuts with dropped shoulders and architectural drape.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-snake-green font-bold">▪</span>
+                  <span><strong>Artwork & Placement:</strong> Prominent tonal chest crests, spinal back accents, and muscular proportions.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-snake-green font-bold">▪</span>
+                  <span><strong>Fabric Structure:</strong> 280–300 GSM dense Supima® & French Terry with 1-inch zero-sag collar.</span>
+                </li>
+              </ul>
+              <div className="pt-2">
+                <button
+                  onClick={() => setActiveGender('MEN')}
+                  className={`px-4 py-2 text-[10px] font-mono uppercase tracking-widest rounded-sm border transition-all ${
+                    activeGender === 'MEN'
+                      ? 'bg-snake-green text-black border-snake-green font-bold'
+                      : 'bg-black text-white border-white/20 hover:border-white'
+                  }`}
+                >
+                  VIEW MEN’S PIECES ({menCount})
+                </button>
+              </div>
+            </div>
+
+            {/* Women's Expression */}
+            <div className="p-6 bg-neutral-950/80 border border-white/10 rounded-sm space-y-4 hover:border-snake-green/40 transition-colors">
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <span className="text-[10px] font-mono tracking-widest text-neutral-300 uppercase font-bold">
+                  WOMEN’S INTERPRETATION
+                </span>
+                <span className="text-[10px] font-mono text-neutral-500 uppercase">
+                  {womenCount} PIECES
+                </span>
+              </div>
+              <h3 className="text-base font-display font-bold uppercase text-white tracking-wide">
+                REFINED MINIMALISM & SCULPTED CROPS
+              </h3>
+              <ul className="text-xs font-mono text-neutral-300 space-y-2 leading-relaxed">
+                <li className="flex items-start gap-2">
+                  <span className="text-neutral-400 font-bold">▪</span>
+                  <span><strong>Silhouette:</strong> Sculpted cropped boxy contours, fluid relaxed silhouettes, and high-waist geometry.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-neutral-400 font-bold">▪</span>
+                  <span><strong>Artwork & Placement:</strong> Refined micro-scale emblems, nape embroidery, and tonal restraint.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-neutral-400 font-bold">▪</span>
+                  <span><strong>Fabric Structure:</strong> 240–280 GSM long-staple Supima® & mulberry silk blends with non-see-through density.</span>
+                </li>
+              </ul>
+              <div className="pt-2">
+                <button
+                  onClick={() => setActiveGender('WOMEN')}
+                  className={`px-4 py-2 text-[10px] font-mono uppercase tracking-widest rounded-sm border transition-all ${
+                    activeGender === 'WOMEN'
+                      ? 'bg-snake-green text-black border-snake-green font-bold'
+                      : 'bg-black text-white border-white/20 hover:border-white'
+                  }`}
+                >
+                  VIEW WOMEN’S PIECES ({womenCount})
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ============================================================
+          03 — GARMENTS IN THIS SERIES (WITH AUDIENCE TABS)
           ============================================================ */}
       <section className="max-w-7xl mx-auto py-16 sm:py-20 px-4 sm:px-6 md:px-12">
-        <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 mb-10 pb-4 border-b border-white/10">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 pb-4 border-b border-white/10">
           <div>
             <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-snake-green block mb-1">
               THE GARMENT ROSTER
@@ -216,14 +350,44 @@ export default function DedicatedCollectionPage() {
             </h2>
           </div>
 
-          <span className="text-xs font-mono text-neutral-400">
-            {seriesProducts.length} {seriesProducts.length === 1 ? 'PIECE ALLOCATED' : 'PIECES ALLOCATED'}
-          </span>
+          {/* Gender Filter Tabs */}
+          <div className="flex items-center gap-2 p-1 bg-neutral-900 border border-white/10 rounded-sm overflow-x-auto">
+            <button
+              onClick={() => setActiveGender('ALL')}
+              className={`px-3.5 py-1.5 text-xs font-mono uppercase tracking-wider rounded-sm transition-all whitespace-nowrap ${
+                activeGender === 'ALL'
+                  ? 'bg-white text-black font-bold'
+                  : 'text-neutral-400 hover:text-white'
+              }`}
+            >
+              ALL PIECES ({seriesProducts.length})
+            </button>
+            <button
+              onClick={() => setActiveGender('MEN')}
+              className={`px-3.5 py-1.5 text-xs font-mono uppercase tracking-wider rounded-sm transition-all whitespace-nowrap ${
+                activeGender === 'MEN'
+                  ? 'bg-snake-green text-black font-bold'
+                  : 'text-neutral-400 hover:text-white'
+              }`}
+            >
+              MEN ({menCount})
+            </button>
+            <button
+              onClick={() => setActiveGender('WOMEN')}
+              className={`px-3.5 py-1.5 text-xs font-mono uppercase tracking-wider rounded-sm transition-all whitespace-nowrap ${
+                activeGender === 'WOMEN'
+                  ? 'bg-snake-green text-black font-bold'
+                  : 'text-neutral-400 hover:text-white'
+              }`}
+            >
+              WOMEN ({womenCount})
+            </button>
+          </div>
         </div>
 
-        {seriesProducts.length > 0 ? (
+        {displayedProducts.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
-            {seriesProducts.map((prod) => (
+            {displayedProducts.map((prod) => (
               <ProductCard
                 key={prod.id}
                 product={prod}
@@ -239,23 +403,26 @@ export default function DedicatedCollectionPage() {
               NEXT DROP IN PRODUCTION
             </h3>
             <p className="text-xs font-mono text-neutral-400 leading-relaxed">
-              Garments for {collection.name} are currently undergoing precision weaving and sampling in the atelier.
-              Explore our core signature pieces or pre-book early drops below.
+              {activeGender === 'MEN'
+                ? `Men's editions for ${collection.name} are currently in sampling.`
+                : activeGender === 'WOMEN'
+                ? `Women's editions for ${collection.name} are currently in sampling.`
+                : `Garments for ${collection.name} are currently in sampling.`}
             </p>
             <div className="pt-2">
-              <Link
-                href="/#pre-book-grid"
+              <button
+                onClick={() => setActiveGender('ALL')}
                 className="px-6 py-2.5 bg-white hover:bg-snake-green text-black font-mono text-xs uppercase tracking-widest font-bold transition-colors inline-block"
               >
-                VIEW THE FIRST DROP
-              </Link>
+                SHOW ALL CHAPTER GARMENTS
+              </button>
             </div>
           </div>
         )}
       </section>
 
       {/* ============================================================
-          03 — EXPLORE OTHER CHAPTERS
+          04 — EXPLORE OTHER CHAPTERS
           ============================================================ */}
       <section className="max-w-7xl mx-auto py-16 px-4 sm:px-6 md:px-12 border-t border-white/10">
         <div className="flex items-center justify-between mb-8">
@@ -298,10 +465,10 @@ export default function DedicatedCollectionPage() {
                 <span className="text-[9px] font-mono tracking-widest text-neutral-400 uppercase block truncate">
                   {other.badge}
                 </span>
-                <h4 className="text-sm font-display font-medium text-white uppercase group-hover:text-snake-green transition-colors">
+                <h4 className="text-sm font-display font-bold uppercase text-white group-hover:text-snake-green transition-colors">
                   {other.name}
                 </h4>
-                <p className="text-[10px] font-mono text-neutral-400 line-clamp-1">
+                <p className="text-[11px] font-mono text-neutral-500 line-clamp-1">
                   {other.tagline}
                 </p>
               </div>

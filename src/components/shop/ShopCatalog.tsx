@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { SlidersHorizontal, X, ArrowUpDown } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { SlidersHorizontal, X, ArrowUpDown, Layers, ArrowRight, Sparkles } from 'lucide-react';
 import { Product, FitType, Size, Gender } from '@/lib/types';
 import { ProductCard } from '@/components/product/ProductCard';
 import { useStore } from '@/lib/store';
@@ -12,27 +13,47 @@ interface ShopCatalogProps {
   initialIsNew?: boolean;
   initialIsBestseller?: boolean;
   initialFit?: FitType | 'all';
+  initialSeries?: string | 'all';
   pageTitle?: string;
   pageSubtitle?: string;
 }
 
-export function ShopCatalog({
+function ShopCatalogContent({
   initialGender = 'all',
   initialIsNew = false,
   initialIsBestseller = false,
   initialFit = 'all',
+  initialSeries = 'all',
   pageTitle = 'SHOP T-SHIRTS',
   pageSubtitle = 'The hero product. Engineered from 240–300 GSM long-staple cotton.',
 }: ShopCatalogProps) {
-  const { products } = useStore();
+  const searchParams = useSearchParams();
+  const seriesFromUrl = searchParams.get('series') || initialSeries;
+
+  const { products, collections } = useStore();
   const [selectedGender, setSelectedGender] = useState<Gender | 'all'>(initialGender);
   const [selectedFit, setSelectedFit] = useState<FitType | 'all'>(initialFit);
+  const [selectedSeries, setSelectedSeries] = useState<string | 'all'>(seriesFromUrl);
   const [selectedSize, setSelectedSize] = useState<Size | 'all'>('all');
   const [selectedColor, setSelectedColor] = useState<string | 'all'>('all');
   const [sortBy, setSortBy] = useState<'featured' | 'price-asc' | 'price-desc' | 'rating'>('featured');
   const [onlyNew, setOnlyNew] = useState(initialIsNew);
   const [onlyBestsellers, setOnlyBestsellers] = useState(initialIsBestseller);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+
+  // Sync if URL query changes
+  useEffect(() => {
+    const qSeries = searchParams.get('series');
+    if (qSeries) {
+      setSelectedSeries(qSeries);
+    }
+  }, [searchParams]);
+
+  // Active series object if selected
+  const matchedSeries = useMemo(() => {
+    if (selectedSeries === 'all') return null;
+    return collections.find((c) => c.slug === selectedSeries || c.id === selectedSeries);
+  }, [collections, selectedSeries]);
 
   // Available unique colors
   const allColors = useMemo(() => {
@@ -43,32 +64,41 @@ export function ShopCatalog({
 
   // Filtered Products
   const filteredProducts = useMemo(() => {
-    return products.filter((p) => {
-      // Gender filter
-      if (selectedGender !== 'all') {
-        if (p.gender !== selectedGender && p.gender !== 'unisex') return false;
-      }
-      // Fit filter
-      if (selectedFit !== 'all' && p.fit !== selectedFit) return false;
-      // Size filter
-      if (selectedSize !== 'all' && !p.sizes.includes(selectedSize)) return false;
-      // Color filter
-      if (selectedColor !== 'all' && !p.colors.some((c) => c.name === selectedColor)) return false;
-      // New filter
-      if (onlyNew && !p.isNew) return false;
-      // Bestseller filter
-      if (onlyBestsellers && !p.isBestseller) return false;
+    return products
+      .filter((p) => {
+        // Gender filter
+        if (selectedGender !== 'all') {
+          if (p.gender !== selectedGender && p.gender !== 'unisex') return false;
+        }
+        // Series filter
+        if (selectedSeries !== 'all') {
+          const matchesColSlug = p.collectionSlug === selectedSeries;
+          const matchesColId = p.collectionId === selectedSeries;
+          if (!matchesColSlug && !matchesColId) return false;
+        }
+        // Fit filter
+        if (selectedFit !== 'all' && p.fit !== selectedFit) return false;
+        // Size filter
+        if (selectedSize !== 'all' && !p.sizes.includes(selectedSize)) return false;
+        // Color filter
+        if (selectedColor !== 'all' && !p.colors.some((c) => c.name === selectedColor)) return false;
+        // New filter
+        if (onlyNew && !p.isNew) return false;
+        // Bestseller filter
+        if (onlyBestsellers && !p.isBestseller) return false;
 
-      return true;
-    }).sort((a, b) => {
-      if (sortBy === 'price-asc') return a.price - b.price;
-      if (sortBy === 'price-desc') return b.price - a.price;
-      if (sortBy === 'rating') return b.rating - a.rating;
-      return 0; // featured default
-    });
-  }, [products, selectedGender, selectedFit, selectedSize, selectedColor, onlyNew, onlyBestsellers, sortBy]);
+        return true;
+      })
+      .sort((a, b) => {
+        if (sortBy === 'price-asc') return a.price - b.price;
+        if (sortBy === 'price-desc') return b.price - a.price;
+        if (sortBy === 'rating') return b.rating - a.rating;
+        return 0; // featured default
+      });
+  }, [products, selectedGender, selectedSeries, selectedFit, selectedSize, selectedColor, onlyNew, onlyBestsellers, sortBy]);
 
   const activeFilterCount =
+    (selectedSeries !== 'all' ? 1 : 0) +
     (selectedFit !== 'all' ? 1 : 0) +
     (selectedSize !== 'all' ? 1 : 0) +
     (selectedColor !== 'all' ? 1 : 0) +
@@ -76,6 +106,7 @@ export function ShopCatalog({
     (onlyBestsellers ? 1 : 0);
 
   const resetFilters = () => {
+    setSelectedSeries('all');
     setSelectedFit('all');
     setSelectedSize('all');
     setSelectedColor('all');
@@ -84,15 +115,15 @@ export function ShopCatalog({
   };
 
   return (
-    <div className="bg-black text-white min-h-screen pt-32 pb-24 px-6 md:px-12">
-      <div className="max-w-7xl mx-auto space-y-10">
+    <div className="bg-black text-white min-h-screen pt-32 pb-24 px-4 sm:px-6 md:px-12">
+      <div className="max-w-7xl mx-auto space-y-8 sm:space-y-10">
         {/* Page Header */}
         <div className="border-b border-white/10 pb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-2">
-            <span className="text-[10px] font-mono tracking-mega text-snake-green uppercase">
+            <span className="text-[10px] font-mono tracking-widest text-snake-green uppercase">
               SUPERSNAKE ATELIER
             </span>
-            <h1 className="text-4xl md:text-6xl font-display font-bold uppercase tracking-tight text-white">
+            <h1 className="text-3xl sm:text-4xl md:text-6xl font-display font-bold uppercase tracking-tight text-white">
               {pageTitle}
             </h1>
             <p className="text-xs md:text-sm font-mono text-neutral-400 max-w-lg">
@@ -102,14 +133,14 @@ export function ShopCatalog({
 
           {/* Quick Gender Filter Pills */}
           {initialGender !== 'unisex' && (
-            <div className="flex items-center gap-2 p-1 bg-neutral-900 border border-white/10 rounded-full">
+            <div className="flex items-center gap-1.5 p-1 bg-neutral-900 border border-white/10 rounded-full self-start md:self-auto">
               {(['all', 'men', 'women'] as const).map((g) => (
                 <button
                   key={g}
                   onClick={() => setSelectedGender(g)}
                   className={`px-4 py-1.5 rounded-full text-xs font-mono tracking-wider uppercase transition-all ${
                     selectedGender === g
-                      ? 'bg-snake-green text-black font-semibold'
+                      ? 'bg-snake-green text-black font-bold shadow-[0_0_12px_rgba(4,252,33,0.3)]'
                       : 'text-neutral-400 hover:text-white'
                   }`}
                 >
@@ -119,6 +150,107 @@ export function ShopCatalog({
             </div>
           )}
         </div>
+
+        {/* ============================================================
+            COLLECTION SERIES // CREATIVE CHAPTERS QUICK BAR
+            ============================================================ */}
+        <div className="space-y-3 bg-[#080808] border border-white/[0.08] p-4 sm:p-5 rounded-sm">
+          <div className="flex items-center justify-between text-[10px] font-mono tracking-widest uppercase">
+            <span className="flex items-center gap-2 text-snake-green font-bold">
+              <Layers size={13} />
+              <span>COLLECTION SERIES // ART-DIRECTED CHAPTERS</span>
+            </span>
+            <Link
+              href="/collections"
+              className="text-neutral-400 hover:text-white flex items-center gap-1 transition-colors"
+            >
+              <span>EXPLORE ALL {collections.length} CHAPTERS</span>
+              <ArrowRight size={11} className="text-snake-green" />
+            </Link>
+          </div>
+
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+            <button
+              onClick={() => setSelectedSeries('all')}
+              className={`px-3.5 py-1.5 rounded-sm text-xs font-mono tracking-wider uppercase transition-all whitespace-nowrap shrink-0 border ${
+                selectedSeries === 'all'
+                  ? 'bg-white text-black border-white font-bold'
+                  : 'bg-neutral-900 text-neutral-400 border-white/10 hover:border-white/30 hover:text-white'
+              }`}
+            >
+              ALL CHAPTERS
+            </button>
+            {collections
+              .filter((c) => c.isActive)
+              .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
+              .map((col) => {
+                const countInView = products.filter(
+                  (p) =>
+                    (p.collectionSlug === col.slug || p.collectionId === col.id) &&
+                    (selectedGender === 'all' || p.gender === selectedGender || p.gender === 'unisex')
+                ).length;
+
+                return (
+                  <button
+                    key={col.id}
+                    onClick={() => setSelectedSeries(col.slug)}
+                    className={`px-3.5 py-1.5 rounded-sm text-xs font-mono tracking-wider uppercase transition-all whitespace-nowrap shrink-0 border flex items-center gap-2 ${
+                      selectedSeries === col.slug
+                        ? 'bg-snake-green text-black border-snake-green font-bold shadow-[0_0_15px_rgba(4,252,33,0.35)]'
+                        : 'bg-neutral-900 text-neutral-400 border-white/10 hover:border-white/30 hover:text-white'
+                    }`}
+                  >
+                    <span>{col.name}</span>
+                    <span className="text-[10px] opacity-70">({countInView})</span>
+                  </button>
+                );
+              })}
+          </div>
+        </div>
+
+        {/* ============================================================
+            SELECTED SERIES EDITORIAL HIGHLIGHT BANNER
+            ============================================================ */}
+        {selectedSeries !== 'all' && matchedSeries && (
+          <div className="p-4 sm:p-6 bg-gradient-to-r from-neutral-950 via-[#0e0e0e] to-neutral-950 border border-snake-green/30 rounded-sm flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in duration-300">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] font-mono tracking-widest text-neutral-400 uppercase px-2 py-0.5 rounded bg-white/[0.04] border border-white/10">
+                  {matchedSeries.badge || 'ATELIER CHAPTER'}
+                </span>
+                <span className="text-[10px] font-mono tracking-widest text-snake-green uppercase font-bold">
+                  {selectedGender === 'men'
+                    ? "MEN'S ATELIER EDITION"
+                    : selectedGender === 'women'
+                    ? "WOMEN'S ATELIER EDITION"
+                    : 'UNIFIED GENDER ROSTER'}
+                </span>
+              </div>
+              <h3 className="text-xl sm:text-2xl font-display font-bold uppercase text-white tracking-wide">
+                {matchedSeries.name}
+              </h3>
+              <p className="text-xs font-mono text-neutral-300 max-w-2xl leading-relaxed">
+                {matchedSeries.tagline || matchedSeries.description}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 shrink-0">
+              <Link
+                href={`/collections/${matchedSeries.slug}`}
+                className="px-4 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white border border-white/20 text-xs font-mono uppercase tracking-wider transition-colors flex items-center gap-2 rounded-sm"
+              >
+                <span>CHAPTER STORY</span>
+                <ArrowRight size={13} className="text-snake-green" />
+              </Link>
+              <button
+                onClick={() => setSelectedSeries('all')}
+                className="text-xs font-mono text-neutral-400 hover:text-white underline uppercase tracking-wider"
+              >
+                SHOW ALL
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Filter & Sort Bar */}
         <div className="flex flex-wrap items-center justify-between gap-4 py-4 border-b border-white/[0.06] text-xs font-mono">
@@ -177,7 +309,6 @@ export function ShopCatalog({
               />
 
               <div className="relative z-10 w-full bg-[#0e0e0e] border-t border-white/15 rounded-t-2xl p-5 max-h-[85vh] overflow-y-auto space-y-6 pb-[max(1.5rem,calc(env(safe-area-inset-bottom,0px)+1rem))] text-xs font-mono animate-in slide-in-from-bottom duration-300">
-                {/* Pull handle */}
                 <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-2" />
 
                 <div className="flex justify-between items-center border-b border-white/10 pb-3">
@@ -191,6 +322,38 @@ export function ShopCatalog({
                   >
                     <X size={18} />
                   </button>
+                </div>
+
+                {/* Mobile Series Filter */}
+                <div className="space-y-2">
+                  <p className="text-neutral-400 font-semibold tracking-wider uppercase text-[11px]">
+                    COLLECTION SERIES
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    <button
+                      onClick={() => setSelectedSeries('all')}
+                      className={`px-3 py-1.5 border rounded text-[11px] transition-all ${
+                        selectedSeries === 'all'
+                          ? 'border-snake-green bg-snake-green/10 text-white font-bold'
+                          : 'border-white/10 text-neutral-400'
+                      }`}
+                    >
+                      ALL
+                    </button>
+                    {collections.filter(c => c.isActive).map((c) => (
+                      <button
+                        key={c.id}
+                        onClick={() => setSelectedSeries(c.slug)}
+                        className={`px-3 py-1.5 border rounded text-[11px] transition-all ${
+                          selectedSeries === c.slug
+                            ? 'border-snake-green bg-snake-green/10 text-white font-bold'
+                            : 'border-white/10 text-neutral-400'
+                        }`}
+                      >
+                        {c.name}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Mobile Sort options */}
@@ -321,9 +484,39 @@ export function ShopCatalog({
               </div>
             </div>
 
-            {/* DESKTOP INLINE TRAY (LOCKED & UNTOUCHED FOR md: AND ABOVE) */}
-            <div className="hidden md:block p-6 bg-[#0c0c0c] border border-white/10 rounded-lg space-y-6 animate-in fade-in slide-in-from-top-2 duration-300 text-xs font-mono">
+            {/* DESKTOP INLINE TRAY */}
+            <div className="hidden md:block p-6 bg-[#0c0c0c] border border-white/10 rounded-sm space-y-6 animate-in fade-in slide-in-from-top-2 duration-300 text-xs font-mono">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                {/* Series */}
+                <div className="space-y-2.5">
+                  <p className="text-neutral-400 font-semibold tracking-wider uppercase">SERIES</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    <button
+                      onClick={() => setSelectedSeries('all')}
+                      className={`px-3 py-1 border rounded text-[11px] transition-all ${
+                        selectedSeries === 'all'
+                          ? 'border-snake-green bg-snake-green/10 text-white font-bold'
+                          : 'border-white/10 text-neutral-400 hover:border-white/30 hover:text-white'
+                      }`}
+                    >
+                      ALL
+                    </button>
+                    {collections.filter(c => c.isActive).map((c) => (
+                      <button
+                        key={c.id}
+                        onClick={() => setSelectedSeries(c.slug)}
+                        className={`px-3 py-1 border rounded text-[11px] transition-all ${
+                          selectedSeries === c.slug
+                            ? 'border-snake-green bg-snake-green/10 text-white font-bold'
+                            : 'border-white/10 text-neutral-400 hover:border-white/30 hover:text-white'
+                        }`}
+                      >
+                        {c.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Fit */}
                 <div className="space-y-2.5">
                   <p className="text-neutral-400 font-semibold tracking-wider uppercase">FIT</p>
@@ -383,31 +576,6 @@ export function ShopCatalog({
                     ))}
                   </div>
                 </div>
-
-                {/* Badges */}
-                <div className="space-y-2.5">
-                  <p className="text-neutral-400 font-semibold tracking-wider uppercase">EDITIONS</p>
-                  <div className="flex flex-col space-y-2">
-                    <label className="flex items-center gap-2 cursor-pointer text-neutral-300 hover:text-white">
-                      <input
-                        type="checkbox"
-                        checked={onlyNew}
-                        onChange={(e) => setOnlyNew(e.target.checked)}
-                        className="accent-snake-green rounded"
-                      />
-                      <span>NEW DROPS ONLY</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer text-neutral-300 hover:text-white">
-                      <input
-                        type="checkbox"
-                        checked={onlyBestsellers}
-                        onChange={(e) => setOnlyBestsellers(e.target.checked)}
-                        className="accent-snake-green rounded"
-                      />
-                      <span>BESTSELLERS ONLY</span>
-                    </label>
-                  </div>
-                </div>
               </div>
             </div>
           </>
@@ -424,14 +592,14 @@ export function ShopCatalog({
             ))}
           </div>
         ) : filteredProducts.length === 0 ? (
-          <div className="py-28 text-center space-y-4">
-            <p className="font-display text-2xl tracking-wider text-white">NO STYLES MATCH YOUR FILTERS.</p>
-            <p className="text-xs font-mono text-neutral-500">
-              Try resetting your fit, size, or color preferences.
+          <div className="py-24 text-center space-y-4 bg-neutral-950 border border-white/10 rounded-sm p-8">
+            <p className="font-display text-xl tracking-wider text-white">NO STYLES MATCH YOUR SELECTION.</p>
+            <p className="text-xs font-mono text-neutral-400 max-w-md mx-auto">
+              There are no garments currently assigned with this combination of series, fit, and category.
             </p>
             <button
               onClick={resetFilters}
-              className="px-6 py-2.5 bg-neutral-900 border border-white/20 text-xs font-mono text-snake-green uppercase tracking-widest hover:border-snake-green transition-all"
+              className="px-6 py-2.5 bg-neutral-900 border border-white/20 text-xs font-mono text-snake-green uppercase tracking-widest hover:border-snake-green transition-all rounded-sm"
             >
               RESET ALL FILTERS
             </button>
@@ -445,5 +613,13 @@ export function ShopCatalog({
         )}
       </div>
     </div>
+  );
+}
+
+export function ShopCatalog(props: ShopCatalogProps) {
+  return (
+    <Suspense fallback={null}>
+      <ShopCatalogContent {...props} />
+    </Suspense>
   );
 }

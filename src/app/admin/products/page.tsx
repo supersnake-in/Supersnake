@@ -47,6 +47,7 @@ export default function AdminProductsPage() {
   const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGender, setSelectedGender] = useState('all');
+  const [selectedSeriesFilter, setSelectedSeriesFilter] = useState('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [selectedCollectionId, setSelectedCollectionId] = useState<string>('');
@@ -136,7 +137,11 @@ export default function AdminProductsPage() {
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.slug.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesGender = selectedGender === 'all' || p.gender === selectedGender;
-    return matchesSearch && matchesGender;
+    const matchesSeries =
+      selectedSeriesFilter === 'all' ||
+      p.collectionSlug === selectedSeriesFilter ||
+      p.collectionId === selectedSeriesFilter;
+    return matchesSearch && matchesGender && matchesSeries;
   });
 
   // Handle File Upload with Automatic Client-Side Compression
@@ -547,18 +552,36 @@ export default function AdminProductsPage() {
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-neutral-500">GENDER:</span>
-          <select
-            value={selectedGender}
-            onChange={(e) => setSelectedGender(e.target.value)}
-            className="bg-[#0d0d0d] border border-neutral-800 text-neutral-300 rounded px-3 py-2 focus:outline-none focus:border-snake-green cursor-pointer"
-          >
-            <option value="all">ALL COLLECTIONS</option>
-            <option value="men">MEN ONLY</option>
-            <option value="women">WOMEN ONLY</option>
-            <option value="unisex">UNISEX</option>
-          </select>
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-1.5">
+            <span className="text-neutral-500">GENDER:</span>
+            <select
+              value={selectedGender}
+              onChange={(e) => setSelectedGender(e.target.value)}
+              className="bg-[#0d0d0d] border border-neutral-800 text-neutral-300 rounded px-3 py-2 focus:outline-none focus:border-snake-green cursor-pointer"
+            >
+              <option value="all">ALL DEPARTMENTS</option>
+              <option value="men">MEN ONLY</option>
+              <option value="women">WOMEN ONLY</option>
+              <option value="unisex">UNISEX</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <span className="text-neutral-500">SERIES:</span>
+            <select
+              value={selectedSeriesFilter}
+              onChange={(e) => setSelectedSeriesFilter(e.target.value)}
+              className="bg-[#0d0d0d] border border-neutral-800 text-neutral-300 rounded px-3 py-2 focus:outline-none focus:border-snake-green cursor-pointer"
+            >
+              <option value="all">ALL SERIES CHAPTERS</option>
+              {collections.map((col) => (
+                <option key={col.id} value={col.slug}>
+                  {col.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -1183,98 +1206,157 @@ export default function AdminProductsPage() {
                   </div>
                 </div>
 
-                {/* SECTION 6: GSM, FIT, GENDER & COLLECTION SERIES */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center">
-                      <label className="text-neutral-400 uppercase font-semibold text-[11px]">
-                        GSM DENSITY *
-                      </label>
-                      <span className="text-[10px] text-snake-green font-bold">{gsm} GSM</span>
-                    </div>
-                    <input
-                      type="number"
-                      required
-                      value={gsm}
-                      onChange={(e) => setGsm(Number(e.target.value))}
-                      className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green"
-                    />
-                    <div className="flex flex-wrap gap-1 pt-1">
-                      {[220, 240, 260, 280, 300, 320, 400].map((weight) => (
+                {/* SECTION 6: CATEGORIZATION, AUDIENCE & SERIES */}
+                <div className="space-y-4 p-4 bg-neutral-950 border border-neutral-800 rounded-lg">
+                  <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
+                    <label className="text-white font-bold uppercase tracking-wider flex items-center gap-1.5 text-[11px]">
+                      <Layers size={14} className="text-snake-green" />
+                      GARMENT CATEGORIZATION & SERIES ASSIGNMENT *
+                    </label>
+                    <span className="text-[10px] text-neutral-400 font-mono">
+                      Department • Series • Fit Architecture
+                    </span>
+                  </div>
+
+                  {/* 1. Target Audience / Gender Buttons */}
+                  <div>
+                    <label className="text-neutral-400 uppercase font-semibold text-[11px] block mb-1.5">
+                      DEPARTMENT / AUDIENCE *
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      {[
+                        { id: 'men', label: 'MEN’S ATELIER', desc: 'Heavyweight Boxy & Monolithic Oversized' },
+                        { id: 'women', label: 'WOMEN’S ATELIER', desc: 'Sculpted Boxy Crops & Feminine Contours' },
+                        { id: 'unisex', label: 'UNISEX ARCHIVE', desc: 'Universal Architectural Drape' },
+                      ].map((item) => (
                         <button
-                          key={weight}
+                          key={item.id}
                           type="button"
-                          onClick={() => setGsm(weight)}
-                          className={`px-1.5 py-0.5 text-[9px] rounded border transition-colors ${
-                            gsm === weight
-                              ? 'bg-snake-green text-black border-snake-green font-bold'
-                              : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white'
+                          onClick={() => setGender(item.id as any)}
+                          className={`p-2.5 rounded text-left border transition-all ${
+                            gender === item.id
+                              ? 'bg-snake-green/10 border-snake-green text-white shadow-[0_0_12px_rgba(4,252,33,0.15)]'
+                              : 'bg-black border-neutral-800 text-neutral-400 hover:border-neutral-700'
                           }`}
                         >
-                          {weight}
+                          <span className={`block font-bold text-xs uppercase ${gender === item.id ? 'text-snake-green' : 'text-white'}`}>
+                            {item.label}
+                          </span>
+                          <span className="block text-[9px] text-neutral-500 truncate mt-0.5 font-mono">
+                            {item.desc}
+                          </span>
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="text-neutral-400 uppercase font-semibold text-[11px]">
-                      FIT / SUB-CATEGORY *
-                    </label>
-                    <select
-                      value={fit}
-                      onChange={(e) => setFit(e.target.value as any)}
-                      className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green cursor-pointer"
-                    >
-                      <option value="Boxy">Boxy Fit</option>
-                      <option value="Oversized">Oversized Fit</option>
-                      <option value="Relaxed">Relaxed Fit</option>
-                      <option value="Classic">Classic Fit</option>
-                      <option value="Slim">Slim Fit</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-neutral-400 uppercase font-semibold text-[11px]">
-                      GENDER / DEPARTMENT *
-                    </label>
-                    <select
-                      value={gender}
-                      onChange={(e) => setGender(e.target.value as any)}
-                      className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green cursor-pointer"
-                    >
-                      <option value="unisex">Unisex Collection</option>
-                      <option value="men">Men Collection</option>
-                      <option value="women">Women Collection</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1">
+                  {/* 2. Collection Series Selector with Live Visual Preview */}
+                  <div className="space-y-1.5 pt-1">
                     <div className="flex items-center justify-between">
                       <label className="text-neutral-400 uppercase font-semibold text-[11px] flex items-center gap-1">
-                        <Layers size={11} className="text-snake-green" />
-                        SERIES / CHAPTER
+                        COLLECTION SERIES / CREATIVE CHAPTER *
                       </label>
                       <Link
                         href="/admin/collections"
                         target="_blank"
-                        className="text-[9px] text-snake-green hover:underline uppercase"
+                        className="text-[10px] text-snake-green hover:underline uppercase font-mono font-bold flex items-center gap-1"
                       >
-                        + NEW
+                        <span>+ MANAGE / CREATE SERIES</span>
+                        <ArrowRight size={11} />
                       </Link>
                     </div>
                     <select
                       value={selectedCollectionId}
                       onChange={(e) => setSelectedCollectionId(e.target.value)}
-                      className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green cursor-pointer font-mono text-[11px]"
+                      className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green cursor-pointer font-mono text-xs"
                     >
-                      <option value="">No Series / Core Piece</option>
+                      <option value="">No Series / Core Foundation Piece</option>
                       {collections.map((col) => (
                         <option key={col.id} value={col.id}>
-                          {col.name}
+                          {col.name} {col.badge ? `// ${col.badge}` : ''}
                         </option>
                       ))}
                     </select>
+
+                    {/* Series Live Info Badge */}
+                    {selectedCollectionId && (() => {
+                      const selectedCol = collections.find(c => c.id === selectedCollectionId || c.slug === selectedCollectionId);
+                      if (!selectedCol) return null;
+                      return (
+                        <div className="mt-2 p-3 bg-black border border-neutral-800 rounded flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-mono">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: selectedCol.accentColor || '#04fc21' }} />
+                            <div>
+                              <span className="text-white font-bold uppercase">{selectedCol.name}</span>
+                              <span className="text-[10px] text-neutral-500 block truncate max-w-sm">{selectedCol.tagline}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className="text-[9px] text-neutral-500 uppercase">PALETTE:</span>
+                            {selectedCol.moodPalette?.map((swatch, sIdx) => (
+                              <span
+                                key={sIdx}
+                                className="w-3 h-3 rounded-full border border-white/20"
+                                style={{ backgroundColor: swatch.hex }}
+                                title={swatch.name}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* 3. GSM & Fit */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                    <div className="space-y-1">
+                      <div className="flex justify-between items-center">
+                        <label className="text-neutral-400 uppercase font-semibold text-[11px]">
+                          GSM DENSITY *
+                        </label>
+                        <span className="text-[10px] text-snake-green font-bold">{gsm} GSM</span>
+                      </div>
+                      <input
+                        type="number"
+                        required
+                        value={gsm}
+                        onChange={(e) => setGsm(Number(e.target.value))}
+                        className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green"
+                      />
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        {[220, 240, 260, 280, 300, 320, 400].map((weight) => (
+                          <button
+                            key={weight}
+                            type="button"
+                            onClick={() => setGsm(weight)}
+                            className={`px-1.5 py-0.5 text-[9px] rounded border transition-colors ${
+                              gsm === weight
+                                ? 'bg-snake-green text-black border-snake-green font-bold'
+                                : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white'
+                            }`}
+                          >
+                            {weight}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-neutral-400 uppercase font-semibold text-[11px]">
+                        FIT SILHOUETTE *
+                      </label>
+                      <select
+                        value={fit}
+                        onChange={(e) => setFit(e.target.value as any)}
+                        className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green cursor-pointer"
+                      >
+                        <option value="Boxy">Boxy Fit (Architectural Drop)</option>
+                        <option value="Oversized">Oversized Fit (Monolithic Streetwear)</option>
+                        <option value="Relaxed">Relaxed Fit (Effortless Everyday)</option>
+                        <option value="Classic">Classic Fit (Tailored Contour)</option>
+                        <option value="Slim">Slim Fit (Sculpted Contour)</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
 
