@@ -65,7 +65,11 @@ export default function AdminSettingsPage() {
   const [saved, setSaved] = useState(false);
   const [storeName, setStoreName] = useState(BRAND.name);
   const [supportEmail, setSupportEmail] = useState('support@supersnake.in');
-  const [freeShippingThreshold, setFreeShippingThreshold] = useState<number>(storeThreshold || 1999);
+  const [freeShippingThreshold, setFreeShippingThreshold] = useState<number>(
+    typeof storeThreshold === 'number' && !isNaN(storeThreshold) && storeThreshold >= 0
+      ? storeThreshold
+      : 1999
+  );
   const [deliveryDays, setDeliveryDays] = useState('4-7 Business Days');
   const [courierPartner, setCourierPartner] = useState('Authorised Courier Partners');
   const [studioLocation, setStudioLocation] = useState('Bengaluru, Karnataka, India');
@@ -388,7 +392,9 @@ export default function AdminSettingsPage() {
         const parsed = JSON.parse(savedSettings);
         if (parsed.storeName) setStoreName(parsed.storeName);
         if (parsed.supportEmail) setSupportEmail(parsed.supportEmail);
-        if (parsed.freeShippingThreshold) setFreeShippingThreshold(Number(parsed.freeShippingThreshold));
+        if (parsed.freeShippingThreshold !== undefined && parsed.freeShippingThreshold !== null && !isNaN(Number(parsed.freeShippingThreshold)) && Number(parsed.freeShippingThreshold) >= 0) {
+          setFreeShippingThreshold(Number(parsed.freeShippingThreshold));
+        }
         if (parsed.deliveryDays) setDeliveryDays(parsed.deliveryDays);
         if (parsed.courierPartner) setCourierPartner(parsed.courierPartner);
         if (parsed.studioLocation) setStudioLocation(parsed.studioLocation);
@@ -397,7 +403,7 @@ export default function AdminSettingsPage() {
         if (parsed.grievanceOfficer) setGrievanceOfficer(parsed.grievanceOfficer);
         if (parsed.grievanceEmail) setGrievanceEmail(parsed.grievanceEmail);
         if (parsed.jurisdiction) setJurisdiction(parsed.jurisdiction);
-      } else if (storeThreshold) {
+      } else if (typeof storeThreshold === 'number' && !isNaN(storeThreshold) && storeThreshold >= 0) {
         setFreeShippingThreshold(storeThreshold);
       }
     } catch (e) {}
@@ -1881,10 +1887,22 @@ CREATE POLICY "Allow admin all announcement_config" ON public.announcement_confi
               <label className="text-neutral-400 uppercase">FREE SHIPPING THRESHOLD (₹)</label>
               <input
                 type="number"
+                min="0"
                 value={freeShippingThreshold}
-                onChange={(e) => setFreeShippingThreshold(Number(e.target.value))}
+                onChange={(e) => {
+                  const val = Math.max(0, Number(e.target.value));
+                  setFreeShippingThreshold(val);
+                  updateFreeShippingThreshold(val);
+                }}
                 className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green"
               />
+              <span className="text-[10px] text-neutral-400 block font-mono">
+                {freeShippingThreshold === 0 ? (
+                  <span className="text-snake-green font-bold">⚡ FREE DELIVERY ON ALL ORDERS (₹0 MINIMUM)</span>
+                ) : (
+                  <span>Free delivery for orders above ₹{freeShippingThreshold.toLocaleString('en-IN')}</span>
+                )}
+              </span>
             </div>
             <div className="space-y-1">
               <label className="text-neutral-400 uppercase">TRANSIT TIMELINE</label>

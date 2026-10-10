@@ -31,7 +31,10 @@ export default function BagPage() {
   };
 
   const finalTotal = Math.max(0, cartTotal - couponDiscount);
-  const freeShippingLeft = Math.max(0, freeShippingThreshold - cartTotal);
+  const isZeroThreshold = typeof freeShippingThreshold === 'number' && freeShippingThreshold <= 0;
+  const effectiveThreshold = isZeroThreshold ? 0 : (Number(freeShippingThreshold) || BRAND.freeShippingThreshold);
+  const isFreeUnlocked = isZeroThreshold || cartTotal >= effectiveThreshold;
+  const freeShippingLeft = isFreeUnlocked ? 0 : Math.max(0, effectiveThreshold - cartTotal);
 
   return (
     <div className="bg-black text-white min-h-screen pt-32 pb-24 px-6 md:px-12">
@@ -79,8 +82,14 @@ export default function BagPage() {
               {/* Free shipping alert */}
               <div className="p-4 bg-neutral-950 border border-white/10 rounded flex items-center justify-between text-xs font-mono">
                 <span className="text-neutral-300">
-                  {freeShippingLeft === 0 ? (
-                    <span className="text-snake-green font-semibold">✓ FREE SHIPPING UNLOCKED</span>
+                  {isZeroThreshold ? (
+                    <span className="text-snake-green font-bold tracking-wider inline-flex items-center gap-2">
+                      <Truck size={14} className="text-snake-green" /> FREE DELIVERY ON ALL ORDERS
+                    </span>
+                  ) : freeShippingLeft === 0 ? (
+                    <span className="text-snake-green font-semibold inline-flex items-center gap-1.5">
+                      <Truck size={14} className="text-snake-green" /> FREE SHIPPING UNLOCKED
+                    </span>
                   ) : (
                     <>Shop for <span className="text-white font-bold">{formatPrice(freeShippingLeft)}</span> more to get free shipping.</>
                   )}

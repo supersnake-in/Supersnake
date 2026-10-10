@@ -11,8 +11,15 @@ import { formatPrice, BRAND } from '@/lib/design-tokens';
 export function CartDrawer() {
   const { cart, isCartOpen, closeCart, removeFromCart, updateQuantity, cartTotal, products, freeShippingThreshold = BRAND.freeShippingThreshold } = useStore();
 
-  const freeShippingLeft = Math.max(0, freeShippingThreshold - cartTotal);
-  const progressPercent = Math.min(100, (cartTotal / freeShippingThreshold) * 100);
+  const isZeroThreshold = typeof freeShippingThreshold === 'number' && freeShippingThreshold <= 0;
+  const effectiveThreshold = isZeroThreshold ? 0 : (Number(freeShippingThreshold) || BRAND.freeShippingThreshold);
+  const isFreeUnlocked = isZeroThreshold || cartTotal >= effectiveThreshold;
+  const freeShippingLeft = isFreeUnlocked ? 0 : Math.max(0, effectiveThreshold - cartTotal);
+  const progressPercent = isFreeUnlocked
+    ? 100
+    : effectiveThreshold > 0
+    ? Math.min(100, Math.max(0, (cartTotal / effectiveThreshold) * 100))
+    : 100;
 
   return (
     <AnimatePresence>
@@ -56,22 +63,33 @@ export function CartDrawer() {
 
             {/* Free Shipping Progress */}
             <div className="p-4 bg-neutral-950/80 border-b border-white/5 space-y-2">
-              <div className="flex justify-between text-xs font-mono">
+              <div className="flex justify-between items-center text-xs font-mono">
                 <span className="text-neutral-300">
-                  {freeShippingLeft === 0 ? (
-                    <span className="text-snake-green font-semibold">✓ FREE SHIPPING UNLOCKED</span>
+                  {isZeroThreshold ? (
+                    <span className="inline-flex items-center gap-1.5 text-snake-green font-bold tracking-wider">
+                      <Truck size={14} className="text-snake-green shrink-0" />
+                      <span>FREE DELIVERY ON ALL ORDERS</span>
+                    </span>
+                  ) : freeShippingLeft === 0 ? (
+                    <span className="inline-flex items-center gap-1.5 text-snake-green font-bold tracking-wider">
+                      <span>✓ FREE SHIPPING UNLOCKED</span>
+                    </span>
                   ) : (
-                    <>Shop for <span className="text-white font-bold">{formatPrice(freeShippingLeft)}</span> more to get free shipping</>
+                    <>
+                      Shop for <span className="text-white font-bold">{formatPrice(freeShippingLeft)}</span> more to get free shipping
+                    </>
                   )}
                 </span>
-                <span className="text-neutral-500">{Math.round(progressPercent)}%</span>
+                <span className={isFreeUnlocked ? 'text-snake-green font-bold' : 'text-neutral-500'}>
+                  {Math.round(progressPercent)}%
+                </span>
               </div>
-              <div className="h-1 w-full bg-neutral-800 rounded-full overflow-hidden">
+              <div className="h-1.5 w-full bg-neutral-800/80 rounded-full overflow-hidden">
                 <motion.div
-                  className="h-full bg-snake-green"
+                  className="h-full bg-snake-green shadow-[0_0_8px_rgba(4,252,33,0.4)]"
                   initial={{ width: 0 }}
                   animate={{ width: `${progressPercent}%` }}
-                  transition={{ duration: 0.5 }}
+                  transition={{ duration: 0.5, ease: 'easeOut' }}
                 />
               </div>
             </div>

@@ -427,7 +427,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [isLoaded, setIsLoaded] = useState(false);
 
   const updateFreeShippingThreshold = (threshold: number) => {
-    const valid = Number(threshold) > 0 ? Number(threshold) : BRAND.freeShippingThreshold;
+    const num = Number(threshold);
+    const valid = !isNaN(num) && num >= 0 ? num : BRAND.freeShippingThreshold;
     setFreeShippingThresholdState(valid);
     try {
       localStorage.setItem('supersnake_free_shipping_threshold', String(valid));
@@ -936,15 +937,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     // Free shipping threshold sync from localStorage
     try {
       const savedThreshold = localStorage.getItem('supersnake_free_shipping_threshold');
-      if (savedThreshold && !isNaN(Number(savedThreshold)) && Number(savedThreshold) > 0) {
+      if (savedThreshold !== null && !isNaN(Number(savedThreshold)) && Number(savedThreshold) >= 0) {
         setFreeShippingThresholdState(Number(savedThreshold));
       }
     } catch (e) {}
 
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'supersnake_free_shipping_threshold' && e.newValue) {
+      if (e.key === 'supersnake_free_shipping_threshold' && e.newValue !== null) {
         const val = Number(e.newValue);
-        if (!isNaN(val) && val > 0) {
+        if (!isNaN(val) && val >= 0) {
           setFreeShippingThresholdState(val);
         }
       }
@@ -994,7 +995,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const handleCustomChange = () => {
       try {
         const saved = localStorage.getItem('supersnake_free_shipping_threshold');
-        if (saved && !isNaN(Number(saved)) && Number(saved) > 0) {
+        if (saved !== null && !isNaN(Number(saved)) && Number(saved) >= 0) {
           setFreeShippingThresholdState(Number(saved));
         }
       } catch (e) {}

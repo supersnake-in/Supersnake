@@ -32,7 +32,10 @@ function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { cart, cartTotal, createOrder, updateOrder, clearCart, isLoaded, products, setCart, setCartItem, freeShippingThreshold = BRAND.freeShippingThreshold, syncAbandonedCart } = useStore();
-  const amountNeededForFreeShipping = Math.max(0, freeShippingThreshold - cartTotal);
+  const isZeroThreshold = typeof freeShippingThreshold === 'number' && freeShippingThreshold <= 0;
+  const effectiveThreshold = isZeroThreshold ? 0 : (Number(freeShippingThreshold) || BRAND.freeShippingThreshold);
+  const isFreeShipping = isZeroThreshold || cartTotal >= effectiveThreshold;
+  const amountNeededForFreeShipping = isFreeShipping ? 0 : Math.max(0, effectiveThreshold - cartTotal);
   const { user, profile, checkEmailExists, sendEmailOtp, verifyEmailOtp, authenticateWithOtp, signIn, signInWithOtp, signInWithGoogle, signUp } = useAuth();
 
   const [step, setStep] = useState<1 | 2>(1);
@@ -342,7 +345,8 @@ function CheckoutContent() {
     setPaymentError(null);
 
     const cleanPhone = formData.phone.trim().replace(/\D/g, '').slice(-10);
-    const totalOrderAmount = cartTotal + (cartTotal >= freeShippingThreshold ? 0 : 150);
+    const shippingFee = isFreeShipping ? 0 : 150;
+    const totalOrderAmount = cartTotal + shippingFee;
     const amountInPaise = Math.round(totalOrderAmount * 100);
 
     try {
@@ -368,7 +372,7 @@ function CheckoutContent() {
         })),
         subtotal: cartTotal,
         discount: 0,
-        shipping: cartTotal >= freeShippingThreshold ? 0 : 150,
+        shipping: shippingFee,
         tax: Math.round(cartTotal * 0.05),
         total: totalOrderAmount,
         customer: {
@@ -661,7 +665,17 @@ function CheckoutContent() {
         </div>
 
         {/* Free Shipping Alert if order value is less than threshold */}
-        {amountNeededForFreeShipping > 0 && (
+        {isZeroThreshold ? (
+          <div className="mb-6 p-3 sm:p-3.5 bg-[#0c0c0c] border border-snake-green/30 rounded-lg flex items-center justify-between text-xs font-mono">
+            <div className="flex items-center gap-2.5 text-snake-green font-bold tracking-wider">
+              <Truck size={15} className="text-snake-green shrink-0" />
+              <span>FREE DELIVERY ON ALL ORDERS</span>
+            </div>
+            <span className="text-[10px] font-mono text-neutral-500 uppercase tracking-wider hidden sm:inline">
+              STANDARD: 2–4 DAYS
+            </span>
+          </div>
+        ) : amountNeededForFreeShipping > 0 ? (
           <div className="mb-6 p-3 sm:p-3.5 bg-[#0c0c0c] border border-snake-green/30 rounded-lg flex items-center justify-between text-xs font-mono">
             <div className="flex items-center gap-2.5 text-neutral-300">
               <Truck size={15} className="text-snake-green shrink-0" />
@@ -675,6 +689,16 @@ function CheckoutContent() {
             >
               SHOP MORE →
             </Link>
+          </div>
+        ) : (
+          <div className="mb-6 p-3 sm:p-3.5 bg-[#0c0c0c] border border-snake-green/30 rounded-lg flex items-center justify-between text-xs font-mono">
+            <div className="flex items-center gap-2.5 text-snake-green font-semibold">
+              <Truck size={15} className="text-snake-green shrink-0" />
+              <span>FREE SHIPPING UNLOCKED</span>
+            </div>
+            <span className="text-[10px] font-mono text-neutral-500 uppercase tracking-wider hidden sm:inline">
+              STANDARD: 2–4 DAYS
+            </span>
           </div>
         )}
 
@@ -694,7 +718,7 @@ function CheckoutContent() {
               {showMobileSummary ? <ChevronUp size={14} className="text-neutral-400" /> : <ChevronDown size={14} className="text-neutral-400" />}
             </div>
             <span className="text-white font-bold text-sm">
-              {formatPrice(cartTotal + (cartTotal >= freeShippingThreshold ? 0 : 150))}
+              {formatPrice(cartTotal + (isFreeShipping ? 0 : 150))}
             </span>
           </button>
 
@@ -735,7 +759,12 @@ function CheckoutContent() {
               </div>
 
               {/* Free Shipping Alert inside mobile summary */}
-              {amountNeededForFreeShipping > 0 && (
+              {isZeroThreshold ? (
+                <div className="p-2.5 bg-neutral-950/90 border border-snake-green/30 rounded flex items-center gap-2 text-[11px] font-mono text-snake-green font-bold tracking-wider">
+                  <Truck size={13} className="text-snake-green shrink-0" />
+                  <span>FREE DELIVERY ON ALL ORDERS</span>
+                </div>
+              ) : amountNeededForFreeShipping > 0 ? (
                 <div className="p-2.5 bg-neutral-950/90 border border-snake-green/30 rounded flex items-center justify-between text-[11px] font-mono">
                   <div className="flex items-center gap-2 text-neutral-300">
                     <Truck size={13} className="text-snake-green shrink-0" />
@@ -750,6 +779,11 @@ function CheckoutContent() {
                     ADD ITEMS →
                   </Link>
                 </div>
+              ) : (
+                <div className="p-2.5 bg-neutral-950/90 border border-snake-green/30 rounded flex items-center gap-2 text-[11px] font-mono text-snake-green font-semibold">
+                  <Truck size={13} className="text-snake-green shrink-0" />
+                  <span>FREE SHIPPING UNLOCKED</span>
+                </div>
               )}
 
               <div className="space-y-2 pt-3 border-t border-white/10 text-xs font-mono">
@@ -759,14 +793,14 @@ function CheckoutContent() {
                 </div>
                 <div className="flex justify-between text-neutral-400">
                   <span>SHIPPING</span>
-                  <span className={cartTotal >= freeShippingThreshold ? 'text-snake-green font-medium' : 'text-white'}>
-                    {cartTotal >= freeShippingThreshold ? 'FREE' : formatPrice(150)}
+                  <span className={isFreeShipping ? 'text-snake-green font-medium' : 'text-white'}>
+                    {isFreeShipping ? 'FREE' : formatPrice(150)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm font-semibold text-white pt-2 border-t border-white/10">
                   <span>TOTAL DUE</span>
                   <span className="text-base text-white">
-                    {formatPrice(cartTotal + (cartTotal >= freeShippingThreshold ? 0 : 150))}
+                    {formatPrice(cartTotal + (isFreeShipping ? 0 : 150))}
                   </span>
                 </div>
               </div>
@@ -1451,7 +1485,12 @@ function CheckoutContent() {
             </div>
 
             {/* Free Shipping Alert in Desktop Order Summary */}
-            {amountNeededForFreeShipping > 0 && (
+            {isZeroThreshold ? (
+              <div className="p-3 bg-neutral-950/90 border border-snake-green/30 rounded flex items-center gap-2 text-xs font-mono text-snake-green font-bold tracking-wider">
+                <Truck size={14} className="text-snake-green shrink-0" />
+                <span>FREE DELIVERY ON ALL ORDERS</span>
+              </div>
+            ) : amountNeededForFreeShipping > 0 ? (
               <div className="p-3 bg-neutral-950/90 border border-snake-green/30 rounded flex items-center justify-between text-xs font-mono">
                 <div className="flex items-center gap-2 text-neutral-300">
                   <Truck size={14} className="text-snake-green shrink-0" />
@@ -1466,6 +1505,11 @@ function CheckoutContent() {
                   ADD ITEMS →
                 </Link>
               </div>
+            ) : (
+              <div className="p-3 bg-neutral-950/90 border border-snake-green/30 rounded flex items-center gap-2 text-xs font-mono text-snake-green font-semibold">
+                <Truck size={14} className="text-snake-green shrink-0" />
+                <span>FREE SHIPPING UNLOCKED</span>
+              </div>
             )}
 
             {/* Calculations */}
@@ -1476,14 +1520,14 @@ function CheckoutContent() {
               </div>
               <div className="flex justify-between text-neutral-400">
                 <span>SHIPPING</span>
-                <span className={cartTotal >= freeShippingThreshold ? 'text-snake-green font-medium' : 'text-white'}>
-                  {cartTotal >= freeShippingThreshold ? 'FREE' : formatPrice(150)}
+                <span className={isFreeShipping ? 'text-snake-green font-medium' : 'text-white'}>
+                  {isFreeShipping ? 'FREE' : formatPrice(150)}
                 </span>
               </div>
               <div className="flex justify-between text-sm font-semibold text-white pt-3 border-t border-white/10">
                 <span>TOTAL DUE</span>
                 <span className="text-base text-white">
-                  {formatPrice(cartTotal + (cartTotal >= freeShippingThreshold ? 0 : 150))}
+                  {formatPrice(cartTotal + (isFreeShipping ? 0 : 150))}
                 </span>
               </div>
             </div>
