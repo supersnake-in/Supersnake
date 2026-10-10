@@ -619,6 +619,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               const isStaleCard =
                 !saved.cardImage ||
                 saved.cardImage.includes('men-collection.png') ||
+                saved.cardImage.includes('women-collection.png') ||
                 saved.cardImage.includes('hero2.png') ||
                 saved.cardImage.includes('signature-tee-spotlight.png') ||
                 saved.cardImage.includes('brand-pillar') ||
@@ -717,6 +718,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             const isStaleCard =
               !col.cardImage ||
               col.cardImage.includes('men-collection.png') ||
+              col.cardImage.includes('women-collection.png') ||
               col.cardImage.includes('hero2.png') ||
               col.cardImage.includes('signature-tee-spotlight.png') ||
               col.cardImage.includes('brand-pillar') ||
@@ -2164,6 +2166,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           const isStaleCard =
             !col.cardImage ||
             col.cardImage.includes('men-collection.png') ||
+            col.cardImage.includes('women-collection.png') ||
             col.cardImage.includes('hero2.png') ||
             col.cardImage.includes('signature-tee-spotlight.png') ||
             col.cardImage.includes('brand-pillar') ||

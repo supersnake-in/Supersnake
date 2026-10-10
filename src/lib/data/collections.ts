@@ -90,8 +90,8 @@ export const COLLECTIONS_DATA: Collection[] = [
       'Invisible Japanese blind hems, tone-on-tone micro-branding at nape, zero-exterior stitch noise.',
     fabricSpecs:
       '240–280 GSM Unbleached Organic Supima® Cotton, Ultra-Soft Silicone Wash, Fluid Relaxed Silhouette.',
-    heroImage: '/brand-pillar-fit.png',
-    cardImage: '/women-collection.png',
+    heroImage: '/collection-the-aura-hero.jpg',
+    cardImage: '/collection-the-aura-card.jpg',
     moodPalette: [
       { name: 'Chalk White', hex: '#f2f2f2' },
       { name: 'Bone Ivory', hex: '#e6dfd5' },
