@@ -171,12 +171,17 @@ export async function registerPasskey(friendlyName?: string): Promise<{
     // Store non-sensitive UI metadata in public.user_passkeys for display
     try {
       if (data && sessionData.session.user.id) {
-        await supabase.from('user_passkeys').insert({
+        const payload: any = {
           user_id: sessionData.session.user.id,
           credential_id: (data as any)?.id || 'cred_' + Date.now(),
           friendly_name: defaultName,
           created_at: new Date().toISOString(),
-        });
+        };
+        const { error } = await supabase.from('user_passkeys').insert(payload);
+        if (error && (error.code === '42703' || error.message?.includes('does not exist'))) {
+          delete payload.friendly_name;
+          await supabase.from('user_passkeys').insert(payload);
+        }
       }
     } catch (dbErr) {
       // Metadata insert is non-blocking

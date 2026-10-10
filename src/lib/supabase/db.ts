@@ -989,11 +989,21 @@ export async function saveHomepageConfigToSupabase(config: HomepageConfig): Prom
  */
 export async function fetchSubscribersFromSupabase(limit: number = 50): Promise<NewsletterSubscriber[] | null> {
   try {
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('newsletter_subscribers')
       .select('id, email, source, created_at')
       .order('created_at', { ascending: false })
       .limit(limit);
+
+    if (error && (error.code === '42703' || error.message?.includes('does not exist'))) {
+      const fallback = await supabase
+        .from('newsletter_subscribers')
+        .select('id, email, subscribed_at')
+        .order('subscribed_at', { ascending: false })
+        .limit(limit);
+      data = fallback.data as any;
+      error = fallback.error;
+    }
 
     if (error || !data) {
       return null;
@@ -1002,7 +1012,7 @@ export async function fetchSubscribersFromSupabase(limit: number = 50): Promise<
     return data.map((row: any) => ({
       id: row.id || `sub-${row.email}`,
       email: row.email,
-      createdAt: row.created_at || new Date().toISOString(),
+      createdAt: row.created_at || row.subscribed_at || new Date().toISOString(),
       source: row.source || 'Footer Snake Pit Roster',
     }));
   } catch (err) {
@@ -1893,7 +1903,17 @@ export async function createPreBookingInSupabase(booking: PreBooking): Promise<b
       updated_at: booking.updatedAt,
     };
 
-    const { error } = await supabase.from('pre_bookings').insert(payload);
+    let { error } = await supabase.from('pre_bookings').insert(payload);
+    if (error && (error.code === '42703' || error.message?.includes('does not exist'))) {
+      const safePayload: any = { ...payload };
+      delete safePayload.payment_method;
+      delete safePayload.razorpay_payment_id;
+      delete safePayload.razorpay_order_id;
+      delete safePayload.paid_at;
+      const retry = await supabase.from('pre_bookings').insert(safePayload);
+      error = retry.error;
+    }
+
     if (error) {
       console.warn('Error inserting pre_booking in Supabase:', error.message);
       return false;
