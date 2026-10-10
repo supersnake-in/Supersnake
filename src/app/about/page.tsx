@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Metadata } from 'next';
-import { ArrowRight, Compass, Layers, Sparkles, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Sparkles, Truck, RotateCcw, ShieldCheck, Ruler } from 'lucide-react';
 import { SuperSnakeLogo } from '@/components/brand/SuperSnakeLogo';
 
 export const metadata: Metadata = {
@@ -28,10 +28,10 @@ export const metadata: Metadata = {
   },
 };
 
-const CHAPTERS_SHOWCASE = [
+const CHAPTERS = [
   {
     name: 'THE BLACK PANTHER',
-    badge: 'CHAPTER 01 // AUTOMOTIVE DIVISION',
+    badge: 'CHAPTER 01',
     tagline: 'The raw appeal of automobiles.',
     description: 'High-octane motorsport engineering, track-spec aerodynamics, and supercar velocity tailored for the street.',
     image: '/collection-black-panther-card.jpg',
@@ -39,7 +39,7 @@ const CHAPTERS_SHOWCASE = [
   },
   {
     name: 'THE ROYALS',
-    badge: 'CHAPTER 02 // IMPERIAL ARCHIVE',
+    badge: 'CHAPTER 02',
     tagline: 'Understated luxury and refined simplicity.',
     description: 'Dynastic heritage, sovereign prestige, and subtle heraldic crests commanding respect through quiet restraint.',
     image: '/collection-the-royals-card.jpg',
@@ -47,7 +47,7 @@ const CHAPTERS_SHOWCASE = [
   },
   {
     name: 'THE SERPENT',
-    badge: 'CHAPTER 03 // PRIMAL IDENTITY',
+    badge: 'CHAPTER 03',
     tagline: 'Art without restraint.',
     description: 'Hypnotic poise, raw instinct, and foundational serpent scale iconography that defines our visual core.',
     image: '/collection-the-serpent-card.jpg',
@@ -55,7 +55,7 @@ const CHAPTERS_SHOWCASE = [
   },
   {
     name: 'THE AURA',
-    badge: 'CHAPTER 04 // QUIET LUXURY',
+    badge: 'CHAPTER 04',
     tagline: 'Minimalism with meaning.',
     description: 'Radical simplicity, organic earth tones, and clean silhouettes designed to be felt before they are seen.',
     image: '/collection-the-aura-card.jpg',
@@ -63,7 +63,7 @@ const CHAPTERS_SHOWCASE = [
   },
   {
     name: 'THE SIGNATURE',
-    badge: 'CHAPTER 05 // CORE FOUNDATION',
+    badge: 'CHAPTER 05',
     tagline: 'The unmistakable SuperSnake identity.',
     description: 'The permanent cornerstone featuring the master brand symbol, engineered for presence in everyday wear.',
     image: '/hero-object-supersnake-tee.png',
@@ -74,12 +74,12 @@ const CHAPTERS_SHOWCASE = [
 export default function AboutPage() {
   return (
     <div className="bg-black text-white min-h-screen pt-28 sm:pt-36 pb-24 px-4 sm:px-6 md:px-12 font-sans selection:bg-snake-green selection:text-black">
-      <div className="max-w-6xl mx-auto space-y-20 sm:space-y-28 md:space-y-36">
+      <div className="max-w-6xl mx-auto space-y-20 sm:space-y-28 md:space-y-32">
         
         {/* ============================================================
-            01 — HERO BRAND MANIFESTO
+            01 — BRAND MANIFESTO
             ============================================================ */}
-        <div className="space-y-6 text-center max-w-3xl mx-auto">
+        <section className="space-y-6 text-center max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-snake-green/30 bg-snake-green/5 text-[10px] sm:text-xs font-mono tracking-[0.25em] text-snake-green uppercase">
             <Sparkles size={12} />
             <span>BRAND MANIFESTO</span>
@@ -100,93 +100,142 @@ export default function AboutPage() {
               We bring these different perspectives together through a distinct design language, built around one unmistakable identity.
             </p>
           </div>
-        </div>
+        </section>
 
         {/* ============================================================
-            02 — THE THREE PILLARS (DESIGN, CHARACTER, EXPERIENCE)
+            02 — CAMPAIGN VISUAL (THE SUPERSNAKE AESTHETIC)
             ============================================================ */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
-          {/* Pillar 01 */}
-          <div className="bg-[#0a0a0a] border border-white/10 hover:border-snake-green/40 transition-colors p-6 sm:p-8 rounded-sm space-y-4 flex flex-col justify-between">
-            <div className="space-y-3">
-              <span className="text-xs font-mono text-snake-green tracking-widest font-semibold">
-                01 / DESIGN
-              </span>
-              <h3 className="text-lg sm:text-xl font-display font-medium text-white uppercase tracking-tight">
-                EVERY DETAIL HAS A PURPOSE
-              </h3>
-              <p className="text-xs font-mono text-neutral-400 leading-relaxed">
-                From clean silhouettes to expressive graphics, every design begins with a visual direction. We explore different aesthetics, compositions, and ideas to create pieces that reflect individuality rather than follow a single definition of style.
-              </p>
+        <section className="relative w-full overflow-hidden rounded border border-white/10 group">
+          <div className="relative aspect-[16/9] md:aspect-[21/9] w-full bg-neutral-950 overflow-hidden">
+            <Image
+              src="/collection-the-serpent-card.jpg"
+              alt="SuperSnake Lookbook Campaign — The Serpent Series"
+              fill
+              priority
+              sizes="(max-width: 1200px) 100vw, 1200px"
+              className="object-cover object-center transition-transform duration-1000 ease-out group-hover:scale-105"
+            />
+            {/* Dark luxury vignette overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-black/20" />
+            
+            {/* Cinematic editorial tags */}
+            <div className="absolute top-4 left-4 sm:top-6 sm:left-6 flex items-center gap-2 text-[10px] sm:text-xs font-mono tracking-widest text-snake-green uppercase bg-black/60 backdrop-blur-md px-3 py-1 rounded border border-white/10">
+              <span>CAMPAIGN // 2026</span>
             </div>
-            <div className="pt-4 border-t border-white/5 flex items-center gap-2 text-[10px] font-mono text-neutral-500 uppercase tracking-widest">
-              <span>VISUAL PURPOSE</span>
-            </div>
-          </div>
 
-          {/* Pillar 02 */}
-          <div className="bg-[#0a0a0a] border border-white/10 hover:border-snake-green/40 transition-colors p-6 sm:p-8 rounded-sm space-y-4 flex flex-col justify-between">
-            <div className="space-y-3">
-              <span className="text-xs font-mono text-snake-green tracking-widest font-semibold">
-                02 / CHARACTER
+            <div className="absolute bottom-4 left-4 sm:bottom-6 sm:left-6 right-4 sm:right-6 flex flex-col sm:flex-row sm:items-end justify-between gap-2 text-white">
+              <div className="space-y-1">
+                <span className="text-[10px] font-mono tracking-widest text-neutral-400 uppercase">
+                  THE AESTHETIC
+                </span>
+                <p className="text-sm sm:text-lg font-display uppercase tracking-wider text-white">
+                  REALISTIC DRAPE. BOLD ICONOGRAPHY. DRAMATIC PRESENCE.
+                </p>
+              </div>
+              <span className="text-[10px] font-mono tracking-widest text-neutral-400 uppercase">
+                BENGALURU // INDIA
               </span>
-              <h3 className="text-lg sm:text-xl font-display font-medium text-white uppercase tracking-tight">
-                FIVE CHAPTERS. ONE IDENTITY.
-              </h3>
-              <p className="text-xs font-mono text-neutral-400 leading-relaxed">
-                SuperSnake Chapters brings together five distinct expressions of the brand: Black Panther, Royals, Serpent, Aura, and Signature. Each has its own character, visual language, and perspective.
-              </p>
-              <p className="text-xs font-mono text-snake-green font-semibold pt-1">
-                Different moods. Different expressions. One SuperSnake.
-              </p>
-            </div>
-            <div className="pt-4 border-t border-white/5 flex items-center gap-2 text-[10px] font-mono text-neutral-500 uppercase tracking-widest">
-              <span>DIVERSE PERSPECTIVES</span>
             </div>
           </div>
-
-          {/* Pillar 03 */}
-          <div className="bg-[#0a0a0a] border border-white/10 hover:border-snake-green/40 transition-colors p-6 sm:p-8 rounded-sm space-y-4 flex flex-col justify-between">
-            <div className="space-y-3">
-              <span className="text-xs font-mono text-snake-green tracking-widest font-semibold">
-                03 / THE EXPERIENCE
-              </span>
-              <h3 className="text-lg sm:text-xl font-display font-medium text-white uppercase tracking-tight">
-                MADE TO BE YOURS
-              </h3>
-              <p className="text-xs font-mono text-neutral-400 leading-relaxed">
-                We bring our designs to life through a curated online clothing experience, working with third-party production and fulfilment partners to print and deliver customer orders.
-              </p>
-              <p className="text-xs font-mono text-neutral-400 leading-relaxed">
-                Our focus is on distinctive design, clear product information, and making it easy to find pieces that reflect your style.
-              </p>
-            </div>
-            <div className="pt-4 border-t border-white/5 flex items-center gap-2 text-[10px] font-mono text-neutral-500 uppercase tracking-widest">
-              <span>CURATED DELIVERY</span>
-            </div>
-          </div>
-        </div>
+        </section>
 
         {/* ============================================================
-            03 — THE FIVE CHAPTERS (EDITORIAL UNIVERSE)
+            03 — OUR PHILOSOPHY (DESIGN, CHARACTER, INDIVIDUALITY)
             ============================================================ */}
-        <div className="space-y-8 sm:space-y-12">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-6">
-            <div className="space-y-2">
+        <section className="space-y-8">
+          <div className="border-b border-white/10 pb-4">
+            <span className="text-xs font-mono tracking-[0.25em] text-snake-green uppercase font-semibold">
+              03 // OUR PHILOSOPHY
+            </span>
+            <h2 className="text-2xl sm:text-4xl font-display font-medium uppercase tracking-tight text-white mt-1">
+              DESIGN, CHARACTER &amp; INDIVIDUALITY
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+            {/* Pillar 01 */}
+            <div className="bg-[#0a0a0a] border border-white/10 hover:border-snake-green/40 transition-colors p-6 sm:p-8 rounded-sm space-y-4 flex flex-col justify-between">
+              <div className="space-y-3">
+                <span className="text-xs font-mono text-snake-green tracking-widest font-semibold">
+                  01 / VISUAL IDENTITY
+                </span>
+                <h3 className="text-lg sm:text-xl font-display font-medium text-white uppercase tracking-tight">
+                  EVERY DETAIL HAS A PURPOSE
+                </h3>
+                <p className="text-xs font-mono text-neutral-400 leading-relaxed">
+                  From clean silhouettes to expressive graphics, every design begins with a visual direction. We explore different aesthetics, compositions, and ideas to create pieces that reflect individuality rather than follow a single definition of style.
+                </p>
+              </div>
+              <div className="pt-4 border-t border-white/5 text-[10px] font-mono text-neutral-500 uppercase tracking-widest">
+                PURPOSEFUL AESTHETICS
+              </div>
+            </div>
+
+            {/* Pillar 02 */}
+            <div className="bg-[#0a0a0a] border border-white/10 hover:border-snake-green/40 transition-colors p-6 sm:p-8 rounded-sm space-y-4 flex flex-col justify-between">
+              <div className="space-y-3">
+                <span className="text-xs font-mono text-snake-green tracking-widest font-semibold">
+                  02 / CHARACTER
+                </span>
+                <h3 className="text-lg sm:text-xl font-display font-medium text-white uppercase tracking-tight">
+                  FIVE CHAPTERS. ONE IDENTITY.
+                </h3>
+                <p className="text-xs font-mono text-neutral-400 leading-relaxed">
+                  SuperSnake Chapters brings together five distinct expressions of the brand: Black Panther, Royals, Serpent, Aura, and Signature. Each has its own character, visual language, and perspective.
+                </p>
+                <p className="text-xs font-mono text-snake-green font-semibold pt-1">
+                  Different moods. Different expressions. One SuperSnake.
+                </p>
+              </div>
+              <div className="pt-4 border-t border-white/5 text-[10px] font-mono text-neutral-500 uppercase tracking-widest">
+                DISTINCT PERSPECTIVES
+              </div>
+            </div>
+
+            {/* Pillar 03 */}
+            <div className="bg-[#0a0a0a] border border-white/10 hover:border-snake-green/40 transition-colors p-6 sm:p-8 rounded-sm space-y-4 flex flex-col justify-between">
+              <div className="space-y-3">
+                <span className="text-xs font-mono text-snake-green tracking-widest font-semibold">
+                  03 / FREEDOM
+                </span>
+                <h3 className="text-lg sm:text-xl font-display font-medium text-white uppercase tracking-tight">
+                  NO SINGLE DEFINITION
+                </h3>
+                <p className="text-xs font-mono text-neutral-400 leading-relaxed">
+                  We reject the idea that clothing should force you into one rigid box. Whether you are drawn to high-velocity supercar art, heraldic crests, or radical unbranded minimalism—SuperSnake gives you the freedom to wear what resonates with your instinct.
+                </p>
+              </div>
+              <div className="pt-4 border-t border-white/5 text-[10px] font-mono text-neutral-500 uppercase tracking-widest">
+                INDIVIDUAL EXPRESSION
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ============================================================
+            04 — SUPERSNAKE CHAPTERS
+            ============================================================ */}
+        <section className="space-y-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-4">
+            <div>
               <span className="text-xs font-mono tracking-[0.25em] text-snake-green uppercase font-semibold">
-                THE UNIVERSE
+                04 // THE ARCHIVE
               </span>
-              <h2 className="text-2xl sm:text-4xl md:text-5xl font-display font-medium uppercase tracking-tight text-white">
+              <h2 className="text-2xl sm:text-4xl font-display font-medium uppercase tracking-tight text-white mt-1">
                 THE SUPERSNAKE CHAPTERS
               </h2>
             </div>
-            <p className="text-xs font-mono text-neutral-400 max-w-md">
-              Five distinct aesthetic philosophies. Find the expression that matches your instinct.
-            </p>
+            <Link
+              href="/collections"
+              className="text-xs font-mono text-neutral-400 hover:text-snake-green transition-colors flex items-center gap-1.5 uppercase"
+            >
+              <span>VIEW ALL COLLECTIONS</span>
+              <ArrowRight size={13} />
+            </Link>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-            {CHAPTERS_SHOWCASE.map((ch, idx) => (
+            {CHAPTERS.map((ch) => (
               <Link
                 key={ch.name}
                 href={ch.href}
@@ -225,7 +274,7 @@ export default function AboutPage() {
               </Link>
             ))}
 
-            {/* Final Exploration Card */}
+            {/* Complete Directory Link Card */}
             <Link
               href="/collections"
               className="group relative bg-gradient-to-br from-neutral-950 to-neutral-900 border border-snake-green/30 hover:border-snake-green transition-all duration-300 rounded overflow-hidden flex flex-col justify-between p-6 sm:p-8"
@@ -239,7 +288,7 @@ export default function AboutPage() {
                   EXPLORE ALL FIVE CHAPTERS
                 </h4>
                 <p className="text-xs font-mono text-neutral-400 leading-relaxed">
-                  Compare palettes, fabric drapes, and graphic signatures side-by-side in our collection directory.
+                  Compare palettes, silhouettes, and aesthetic expressions side-by-side in our collection directory.
                 </p>
               </div>
 
@@ -249,82 +298,109 @@ export default function AboutPage() {
               </div>
             </Link>
           </div>
-        </div>
+        </section>
 
         {/* ============================================================
-            04 — GARMENT ARCHITECTURE & VERIFIED BENCHMARKS
+            05 — PRODUCTION & EXPERIENCE (TRANSPARENT EXPECTATIONS)
             ============================================================ */}
-        <div className="bg-[#0a0a0a] border border-white/10 p-6 sm:p-10 rounded-sm space-y-6">
+        <section className="bg-[#0a0a0a] border border-white/10 p-6 sm:p-10 rounded-sm space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/5 pb-4">
-            <h3 className="text-sm sm:text-base font-display font-medium text-white uppercase tracking-wider">
-              GARMENT ARCHITECTURE &amp; STANDARDS
-            </h3>
+            <div>
+              <span className="text-[10px] font-mono text-snake-green tracking-widest uppercase font-semibold">
+                05 // PRODUCTION &amp; EXPERIENCE
+              </span>
+              <h3 className="text-lg sm:text-xl font-display font-medium text-white uppercase tracking-tight mt-0.5">
+                HOW ORDERS ARE MADE &amp; FULFILLED
+              </h3>
+            </div>
             <span className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest">
-              PRODUCT-SPECIFIC BENCHMARKS
+              TRANSPARENT EXPECTATIONS
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 text-xs font-mono sm:divide-x sm:divide-white/5">
-            <div className="space-y-1.5">
-              <span className="text-neutral-500 uppercase tracking-widest text-[10px]">FABRIC WEIGHT</span>
-              <p className="text-white font-medium text-sm">200–290 GSM</p>
-              <p className="text-[10px] text-neutral-400 leading-relaxed">
-                Heavyweight combed cotton &amp; French Terry calibrated per piece.
-              </p>
-            </div>
-            <div className="sm:pl-6 space-y-1.5">
-              <span className="text-neutral-500 uppercase tracking-widest text-[10px]">COLLAR INTEGRITY</span>
-              <p className="text-white font-medium text-sm">1-Inch Reinforced Rib</p>
-              <p className="text-[10px] text-neutral-400 leading-relaxed">
-                Dense ribbing engineered to prevent distortion and bacon-neck.
-              </p>
-            </div>
-            <div className="sm:pl-6 space-y-1.5">
-              <span className="text-neutral-500 uppercase tracking-widest text-[10px]">SILHOUETTE</span>
-              <p className="text-white font-medium text-sm">Boxy &amp; Structured</p>
-              <p className="text-[10px] text-neutral-400 leading-relaxed">
-                Dropped shoulders and tailored drapes built for clean presence.
-              </p>
-            </div>
-            <div className="sm:pl-6 space-y-1.5">
-              <span className="text-neutral-500 uppercase tracking-widest text-[10px]">PRODUCTION</span>
-              <p className="text-white font-medium text-sm">Curated &amp; Direct</p>
-              <p className="text-[10px] text-neutral-400 leading-relaxed">
-                High-precision DTG &amp; screen printing with dedicated QA checks.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* ============================================================
-            05 — THE CREED & CLOSING CALL TO ACTION
-            ============================================================ */}
-        <div className="border-t border-white/10 pt-16 sm:pt-24 text-center space-y-8 max-w-3xl mx-auto">
-          <div className="space-y-3">
-            <span className="text-[10px] font-mono tracking-[0.3em] text-snake-green uppercase">
-              YOUR STYLE. YOUR INSTINCT.
-            </span>
-            <h2 className="text-3xl sm:text-5xl font-display font-medium text-white uppercase tracking-tight">
-              YOU DON&apos;T HAVE TO FIT ONE AESTHETIC.
-            </h2>
-            <p className="text-xs sm:text-base font-mono text-neutral-400 max-w-xl mx-auto leading-relaxed pt-2">
-              You don&apos;t have to follow one definition of style. Find your chapter. Make it your own.
+          <div className="space-y-4 text-xs font-mono text-neutral-400 leading-relaxed max-w-3xl">
+            <p>
+              We bring our designs to life through a curated direct-to-consumer experience. To ensure reliable quality and prompt dispatch, we work closely with specialized third-party production and fulfillment partners who print, quality-inspect, and package each garment on demand.
+            </p>
+            <p>
+              Our focus is on distinctive design language, clear and honest product specifications, and setting accurate expectations every step of the way.
             </p>
           </div>
 
-          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+          {/* Policy & Trust Quick Links */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-white/5">
+            <Link
+              href="/shipping"
+              className="flex items-center justify-between p-3 bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 hover:border-white/20 rounded text-xs font-mono transition-all group"
+            >
+              <div className="flex items-center gap-2 text-neutral-300 group-hover:text-white">
+                <Truck size={14} className="text-snake-green shrink-0" />
+                <span>SHIPPING &amp; DELIVERY</span>
+              </div>
+              <ArrowRight size={11} className="text-neutral-500 group-hover:text-snake-green transition-colors" />
+            </Link>
+
+            <Link
+              href="/returns"
+              className="flex items-center justify-between p-3 bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 hover:border-white/20 rounded text-xs font-mono transition-all group"
+            >
+              <div className="flex items-center gap-2 text-neutral-300 group-hover:text-white">
+                <RotateCcw size={14} className="text-snake-green shrink-0" />
+                <span>RETURNS &amp; DEFECTS</span>
+              </div>
+              <ArrowRight size={11} className="text-neutral-500 group-hover:text-snake-green transition-colors" />
+            </Link>
+
+            <Link
+              href="/care-guide"
+              className="flex items-center justify-between p-3 bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 hover:border-white/20 rounded text-xs font-mono transition-all group"
+            >
+              <div className="flex items-center gap-2 text-neutral-300 group-hover:text-white">
+                <ShieldCheck size={14} className="text-snake-green shrink-0" />
+                <span>CARE &amp; WASH GUIDE</span>
+              </div>
+              <ArrowRight size={11} className="text-neutral-500 group-hover:text-snake-green transition-colors" />
+            </Link>
+
+            <Link
+              href="/size-guide"
+              className="flex items-center justify-between p-3 bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 hover:border-white/20 rounded text-xs font-mono transition-all group"
+            >
+              <div className="flex items-center gap-2 text-neutral-300 group-hover:text-white">
+                <Ruler size={14} className="text-snake-green shrink-0" />
+                <span>SIZE &amp; FIT GUIDE</span>
+              </div>
+              <ArrowRight size={11} className="text-neutral-500 group-hover:text-snake-green transition-colors" />
+            </Link>
+          </div>
+        </section>
+
+        {/* ============================================================
+            06 — POWERFUL CLOSING STATEMENT
+            ============================================================ */}
+        <section className="border-t border-white/10 pt-16 sm:pt-24 text-center space-y-8 max-w-3xl mx-auto">
+          <div className="space-y-4">
+            <span className="text-[10px] font-mono tracking-[0.3em] text-snake-green uppercase">
+              YOUR STYLE. YOUR INSTINCT.
+            </span>
+            <h2 className="text-3xl sm:text-5xl md:text-6xl font-display font-medium text-white uppercase tracking-tight leading-tight">
+              DIFFERENT EXPRESSIONS. ONE IDENTITY.
+            </h2>
+            <p className="text-sm sm:text-lg font-mono text-neutral-300 tracking-wider uppercase pt-2">
+              WEAR YOUR INSTINCT.
+            </p>
+            <p className="text-xs sm:text-sm font-mono text-neutral-400 max-w-lg mx-auto leading-relaxed">
+              You don&apos;t have to fit one aesthetic. You don&apos;t have to follow one definition of style. Find your chapter and make it your own.
+            </p>
+          </div>
+
+          <div className="pt-4 flex items-center justify-center">
             <Link
               href="/collections"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 bg-white hover:bg-snake-green text-black font-mono text-xs uppercase tracking-widest font-semibold transition-colors group"
+              className="inline-flex items-center justify-center gap-3 px-8 sm:px-10 py-4 bg-white hover:bg-snake-green text-black font-mono text-xs uppercase tracking-widest font-semibold transition-colors group shadow-[0_0_30px_rgba(255,255,255,0.1)] hover:shadow-[0_0_30px_rgba(4,252,33,0.3)]"
             >
               <span>EXPLORE THE CHAPTERS</span>
               <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-            </Link>
-            <Link
-              href="/shop"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 border border-white/20 hover:border-white text-white font-mono text-xs uppercase tracking-widest transition-colors"
-            >
-              <span>BROWSE ALL PIECES</span>
             </Link>
           </div>
 
@@ -332,7 +408,7 @@ export default function AboutPage() {
             <SuperSnakeLogo size="sm" showText={false} withLink={false} />
             <span className="tracking-widest uppercase">SUPERSNAKE // WEAR YOUR INSTINCT.</span>
           </div>
-        </div>
+        </section>
 
       </div>
     </div>
