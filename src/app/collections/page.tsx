@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Sparkles, ArrowRight, Layers, ShieldCheck, Shirt, Check } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { SuperSnakeLogo } from '@/components/brand/SuperSnakeLogo';
 import { Collection } from '@/lib/types';
@@ -48,24 +48,6 @@ export default function CollectionsOverviewPage() {
             Every garment belongs to a distinct art-directed series with its own theme, mood, color palette,
             and personality—connected by the immortal SUPER SNAKE identity. Explore the chapters, find your style, and collect your signature.
           </p>
-
-          {/* Value Badges */}
-          <div className="pt-4 flex flex-wrap items-center justify-center gap-4 text-[10px] font-mono text-neutral-400">
-            <div className="flex items-center gap-1.5">
-              <Check size={12} className="text-snake-green" />
-              <span>240–300 GSM HEAVYWEIGHT</span>
-            </div>
-            <div className="w-1 h-1 rounded-full bg-neutral-700 hidden sm:block" />
-            <div className="flex items-center gap-1.5">
-              <Check size={12} className="text-snake-green" />
-              <span>AUTHENTIC MASTER SYMBOL</span>
-            </div>
-            <div className="w-1 h-1 rounded-full bg-neutral-700 hidden sm:block" />
-            <div className="flex items-center gap-1.5">
-              <Check size={12} className="text-snake-green" />
-              <span>COLLECTIBLE ATELIER DROPS</span>
-            </div>
-          </div>
 
           {/* Filter Tabs */}
           <div className="pt-6 flex items-center justify-center gap-2">
