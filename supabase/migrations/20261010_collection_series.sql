@@ -35,12 +35,14 @@ ALTER TABLE public.products
 ALTER TABLE public.collections ENABLE ROW LEVEL SECURITY;
 
 -- Allow public read access to active collections
+DROP POLICY IF EXISTS "Public can view active collections" ON public.collections;
 CREATE POLICY "Public can view active collections"
   ON public.collections
   FOR SELECT
   USING (true);
 
 -- Allow admins and service role full mutation access
+DROP POLICY IF EXISTS "Admins have full access to collections" ON public.collections;
 CREATE POLICY "Admins have full access to collections"
   ON public.collections
   FOR ALL
