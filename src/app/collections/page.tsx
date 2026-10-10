@@ -192,10 +192,10 @@ export default function CollectionsOverviewPage() {
                     {/* Explore CTA */}
                     <Link
                       href={`/collections/${col.slug}`}
-                      className="w-full py-2.5 px-4 bg-white/[0.04] hover:bg-white text-white hover:text-black border border-white/10 hover:border-white font-mono text-xs uppercase tracking-widest font-semibold transition-all duration-300 flex items-center justify-center gap-2 group-hover:shadow-lg"
+                      className="w-full py-3 px-5 bg-snake-green hover:bg-white text-black font-mono text-xs uppercase tracking-[0.2em] font-extrabold transition-all duration-300 flex items-center justify-center gap-2 rounded-sm shadow-[0_0_20px_rgba(4,252,33,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.4)] active:scale-[0.98]"
                     >
                       <span>EXPLORE SERIES</span>
-                      <ArrowRight size={13} className="transition-transform group-hover:translate-x-1" />
+                      <ArrowRight size={13} className="transition-transform duration-300 group-hover:translate-x-1.5" />
                     </Link>
                   </div>
                 </div>
