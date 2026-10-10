@@ -267,42 +267,44 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="flex items-center justify-between md:justify-end gap-3 sm:gap-4 shrink-0 pt-0.5 md:pt-0">
+            <div className="shrink-0 pt-1 md:pt-0">
               <Link
                 href="/collections"
-                className="inline-flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-mono tracking-wider sm:tracking-widest text-white hover:text-snake-green uppercase transition-colors shrink-0 group order-1 md:order-2"
+                className="inline-flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-mono tracking-wider sm:tracking-widest text-white hover:text-snake-green uppercase transition-colors shrink-0 group"
               >
                 <span>EXPLORE ALL CHAPTERS</span>
                 <ArrowRight size={13} className="text-snake-green group-hover:translate-x-1 transition-transform" />
               </Link>
-
-              {/* Horizontal Scroll Navigation Controls */}
-              <div className="flex items-center gap-1 border border-white/10 p-1 rounded bg-black/40 order-2 md:order-1">
-                <button
-                  type="button"
-                  onClick={() => scrollChapters('left')}
-                  aria-label="Scroll left"
-                  className="p-1.5 text-neutral-400 hover:text-white hover:bg-white/10 rounded transition-colors active:scale-95"
-                >
-                  <ChevronLeft size={16} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => scrollChapters('right')}
-                  aria-label="Scroll right"
-                  className="p-1.5 text-neutral-400 hover:text-white hover:bg-white/10 rounded transition-colors active:scale-95"
-                >
-                  <ChevronRight size={16} />
-                </button>
-              </div>
             </div>
           </div>
 
-          {/* Chapters Showcase Horizontal Carousel */}
-          <div
-            ref={chaptersScrollRef}
-            className="flex items-stretch gap-5 sm:gap-6 md:gap-7 overflow-x-auto pb-6 pt-1 no-scrollbar scroll-smooth snap-x snap-mandatory"
-          >
+          {/* Chapters Showcase Horizontal Carousel with Floating Side Navigation */}
+          <div className="relative group/carousel">
+            {/* Floating Left Navigation Arrow */}
+            <button
+              type="button"
+              onClick={() => scrollChapters('left')}
+              aria-label="Scroll left"
+              className="absolute left-1 sm:left-2 md:-left-5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-black/85 hover:bg-black backdrop-blur-md border border-white/20 hover:border-snake-green text-white hover:text-snake-green flex items-center justify-center transition-all duration-300 shadow-[0_4px_24px_rgba(0,0,0,0.8)] active:scale-90"
+            >
+              <ChevronLeft size={18} className="sm:w-5 sm:h-5 -translate-x-0.5" />
+            </button>
+
+            {/* Floating Right Navigation Arrow */}
+            <button
+              type="button"
+              onClick={() => scrollChapters('right')}
+              aria-label="Scroll right"
+              className="absolute right-1 sm:right-2 md:-right-5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-black/85 hover:bg-black backdrop-blur-md border border-white/20 hover:border-snake-green text-white hover:text-snake-green flex items-center justify-center transition-all duration-300 shadow-[0_4px_24px_rgba(0,0,0,0.8)] active:scale-90"
+            >
+              <ChevronRight size={18} className="sm:w-5 sm:h-5 translate-x-0.5" />
+            </button>
+
+            {/* Chapters Showcase Horizontal Carousel */}
+            <div
+              ref={chaptersScrollRef}
+              className="flex items-stretch gap-5 sm:gap-6 md:gap-7 overflow-x-auto pb-6 pt-1 no-scrollbar scroll-smooth snap-x snap-mandatory"
+            >
             {activeCollections.map((col) => {
               return (
                 <Link
@@ -371,7 +373,8 @@ export default function HomePage() {
             })}
           </div>
         </div>
-      </section>
+      </div>
+    </section>
 
       {/* ============================================================
           04 — MEN / WOMEN (EDITORIAL SPLIT SCREEN)
