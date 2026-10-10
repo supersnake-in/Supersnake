@@ -108,7 +108,7 @@ export default function PreLaunchPage() {
       {/* ============================================================
           01 — PRE-LAUNCH HERO SECTION
           ============================================================ */}
-      <section className="relative min-h-[92vh] sm:min-h-screen w-full overflow-hidden flex flex-col justify-end pt-32 pb-16 px-4 sm:px-6 md:px-12">
+      <section id="hero" className="relative min-h-[92vh] sm:min-h-screen w-full overflow-hidden flex flex-col justify-end pt-32 pb-16 px-4 sm:px-6 md:px-12">
         {/* Background Visual Layer */}
         <div className="absolute inset-0 z-0 bg-black overflow-hidden pointer-events-none">
           <Image

@@ -13,7 +13,8 @@ import { AnnouncementBar } from './AnnouncementBar';
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();
-  const [scrolled, setScrolled] = useState(false);
+  const [announcementCollapsed, setAnnouncementCollapsed] = useState(false);
+  const [navScrolled, setNavScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
@@ -52,12 +53,30 @@ export function Header() {
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
+      const scrollY = window.scrollY;
+
+      // 1. Collapse announcement bar when scrolling away from top (20px)
+      setAnnouncementCollapsed(scrollY > 20);
+
+      // 2. Activate navigation bar background on scrolling 1/6th of hero section
+      const heroEl = document.getElementById('hero');
+      const heroHeight = heroEl ? heroEl.offsetHeight : window.innerHeight;
+      const heroThreshold = heroHeight / 6;
+
+      const hasHero = Boolean(heroEl) || pathname === '/' || pathname === '/pre-launch';
+      const bgThreshold = hasHero ? heroThreshold : 20;
+
+      setNavScrolled(scrollY > bgThreshold);
     };
+
     window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleScroll, { passive: true });
     handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+    };
+  }, [pathname]);
 
   // Close mobile menu and account menu on route change
   useEffect(() => {
@@ -100,7 +119,7 @@ export function Header() {
         {showAnnouncement && (
           <div
             className={`w-full overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-auto ${
-              scrolled || isDismissed
+              announcementCollapsed || isDismissed
                 ? 'max-h-0 opacity-0 -translate-y-2 pointer-events-none'
                 : 'max-h-12 opacity-100 translate-y-0'
             }`}
@@ -111,7 +130,7 @@ export function Header() {
 
         <div
           className={`w-full pointer-events-auto transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-            scrolled
+            navScrolled
               ? 'bg-black/85 backdrop-blur-md py-3.5 border-b border-white/[0.08] shadow-[0_4px_24px_rgba(0,0,0,0.5)]'
               : 'bg-gradient-to-b from-black/80 via-black/40 to-transparent py-5'
           }`}

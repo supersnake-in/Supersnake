@@ -99,6 +99,7 @@ export default function HomePage() {
           ============================================================ */}
       <section
         ref={heroRef}
+        id="hero"
         className="relative bg-black min-h-[100dvh] lg:min-h-screen w-full overflow-hidden flex flex-col justify-end pt-28 sm:pt-32 lg:pt-36 pb-8 sm:pb-12 md:pb-16 px-4 sm:px-6 md:px-12"
       >
         {/* Instant Fallback / Loading Base Layer: visible while admin images load or if network is slow */}
