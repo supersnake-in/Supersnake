@@ -70,7 +70,7 @@ export function Header() {
     <>
       <header
         style={{
-          top: showAnnouncement ? (scrolled ? '0px' : '32px') : '0px',
+          top: showAnnouncement ? (scrolled ? '0px' : '36px') : '0px',
         }}
         className={`fixed inset-x-0 z-40 transition-all duration-300 ${
           scrolled

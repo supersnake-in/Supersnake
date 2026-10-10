@@ -896,12 +896,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           .catch(() => {});
       });
 
-    // Fetch consolidated announcement configuration (30s edge cached)
-    fetch('/api/announcement')
+    // Fetch consolidated announcement configuration (fresh, un-cached)
+    fetch(`/api/announcement?t=${Date.now()}`, {
+      cache: 'no-store',
+      headers: {
+        'Pragma': 'no-cache',
+        'Cache-Control': 'no-cache',
+      },
+    })
       .then(async (res) => {
         if (res.ok) {
           const data = await res.json();
-          if (data && data.config) {
+          if (data && data.success && data.config) {
             setAnnouncementConfig((prev) => {
               const merged = { ...prev, ...data.config };
               try {
@@ -909,10 +915,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               } catch (e) {}
               return merged;
             });
+            return;
           }
         }
+        throw new Error('API announcement fallback');
       })
-      .catch(() => {});
+      .catch(() => {
+        fetchAnnouncementConfigFromSupabase(true)
+          .then((dbConfig) => {
+            if (dbConfig) {
+              setAnnouncementConfig(dbConfig);
+              try {
+                localStorage.setItem('supersnake_announcement_config', JSON.stringify(dbConfig));
+              } catch (e) {}
+            }
+          })
+          .catch(() => {});
+      });
 
     // Free shipping threshold sync from localStorage
     try {
@@ -2114,10 +2133,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const refreshAnnouncementConfig = async (): Promise<AnnouncementConfig> => {
     try {
-      const res = await fetch('/api/announcement');
+      const res = await fetch(`/api/announcement?t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: {
+          'Pragma': 'no-cache',
+          'Cache-Control': 'no-cache',
+        },
+      });
       if (res.ok) {
         const data = await res.json();
-        if (data && data.config) {
+        if (data && data.success && data.config) {
           const merged = { ...announcementConfig, ...data.config };
           setAnnouncementConfig(merged);
           try {
@@ -2129,7 +2154,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {}
 
     try {
-      const dbConfig = await fetchAnnouncementConfigFromSupabase();
+      const dbConfig = await fetchAnnouncementConfigFromSupabase(true);
       if (dbConfig) {
         setAnnouncementConfig(dbConfig);
         try {

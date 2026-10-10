@@ -2143,7 +2143,7 @@ export async function fetchAnnouncementConfigFromSupabase(
   forceRefresh: boolean = false
 ): Promise<AnnouncementConfig | null> {
   const now = Date.now();
-  if (!forceRefresh && cachedAnnouncementConfig && now - announcementConfigCacheTime < 30000) {
+  if (!forceRefresh && cachedAnnouncementConfig && now - announcementConfigCacheTime < 2000) {
     return cachedAnnouncementConfig;
   }
 
@@ -2173,7 +2173,13 @@ export async function fetchAnnouncementConfigFromSupabase(
       announcementConfigCacheTime = now;
       return cachedAnnouncementConfig;
     }
-  } catch (err) {}
+
+    if (error) {
+      console.warn('Notice querying announcement_config from Supabase:', error.message);
+    }
+  } catch (err: any) {
+    console.warn('Error fetching announcement_config from Supabase:', err?.message || err);
+  }
 
   return cachedAnnouncementConfig;
 }

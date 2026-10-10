@@ -7,23 +7,41 @@ export const revalidate = 0;
 
 export async function GET() {
   try {
-    const config = await fetchAnnouncementConfigFromSupabase();
-    const effective = config || DEFAULT_ANNOUNCEMENT_CONFIG;
-    const isPublished = isAnnouncementActive(effective);
+    const config = await fetchAnnouncementConfigFromSupabase(true);
+    if (!config) {
+      return NextResponse.json(
+        {
+          success: false,
+          config: null,
+          isPublished: false,
+          error: 'Announcement config unavailable',
+        },
+        {
+          status: 503,
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+            Pragma: 'no-cache',
+            Expires: '0',
+          },
+        }
+      );
+    }
+
+    const isPublished = isAnnouncementActive(config);
 
     // Sanitize public payload: strip admin identity and metadata
     const publicPayload = {
-      id: effective.id,
-      isEnabled: effective.isEnabled,
+      id: config.id,
+      isEnabled: config.isEnabled,
       isPublished,
-      message: effective.message,
-      destinationUrl: effective.destinationUrl || null,
-      ctaLabel: effective.ctaLabel || null,
-      bgColor: effective.bgColor,
-      textColor: effective.textColor,
-      accentColor: effective.accentColor || null,
-      startTime: effective.startTime || null,
-      endTime: effective.endTime || null,
+      message: config.message,
+      destinationUrl: config.destinationUrl || null,
+      ctaLabel: config.ctaLabel || null,
+      bgColor: config.bgColor,
+      textColor: config.textColor,
+      accentColor: config.accentColor || null,
+      startTime: config.startTime || null,
+      endTime: config.endTime || null,
     };
 
     return NextResponse.json(
@@ -34,7 +52,10 @@ export async function GET() {
       },
       {
         headers: {
-          'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          Pragma: 'no-cache',
+          Expires: '0',
+          'Surrogate-Control': 'no-store',
         },
       }
     );
@@ -42,10 +63,15 @@ export async function GET() {
     return NextResponse.json(
       {
         success: false,
-        config: DEFAULT_ANNOUNCEMENT_CONFIG,
+        config: null,
         isPublished: false,
       },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+        },
+      }
     );
   }
 }
