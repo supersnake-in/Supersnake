@@ -20,9 +20,6 @@ const DEFAULT_CONFIG: StorefrontConfig = {
   updatedBy: 'system',
 };
 
-let cachedConfig = { ...DEFAULT_CONFIG };
-let lastFetch = 0;
-
 /**
  * Check if the current time has passed the configured launch datetime
  */
@@ -38,39 +35,30 @@ function isPastLaunchDate(launchDate: string, launchTime: string): boolean {
 }
 
 export async function GET() {
-  const now = Date.now();
-  if (now - lastFetch > 30000 || lastFetch === 0) {
-    try {
-      const config = await fetchStorefrontConfigFromSupabase();
-      if (config) {
-        cachedConfig = {
-          ...config,
-          snowEffectEnabled: typeof config.snowEffectEnabled === 'boolean'
-            ? config.snowEffectEnabled
-            : (cachedConfig.snowEffectEnabled ?? false),
-        };
-        lastFetch = now;
-      }
-    } catch (e) {}
-  }
+  let config: StorefrontConfig | null = null;
+  try {
+    config = await fetchStorefrontConfigFromSupabase();
+  } catch (e) {}
+
+  const currentConfig: StorefrontConfig = config || { ...DEFAULT_CONFIG };
 
   // Automatic launch check
-  let effectiveMode: StorefrontMode = cachedConfig.storefrontMode;
+  let effectiveMode: StorefrontMode = currentConfig.storefrontMode;
   if (
     effectiveMode === 'PRE_LAUNCH' &&
-    cachedConfig.automaticLaunch &&
-    isPastLaunchDate(cachedConfig.launchDate, cachedConfig.launchTime)
+    currentConfig.automaticLaunch &&
+    isPastLaunchDate(currentConfig.launchDate, currentConfig.launchTime)
   ) {
     effectiveMode = 'LIVE';
   }
 
   return NextResponse.json(
     {
-      ...cachedConfig,
+      ...currentConfig,
       storefrontMode: effectiveMode,
-      configuredMode: cachedConfig.storefrontMode,
-      freeShippingThreshold: typeof cachedConfig.freeShippingThreshold === 'number'
-        ? cachedConfig.freeShippingThreshold
+      configuredMode: currentConfig.storefrontMode,
+      freeShippingThreshold: typeof currentConfig.freeShippingThreshold === 'number'
+        ? currentConfig.freeShippingThreshold
         : 1999,
     },
     {

@@ -1552,7 +1552,8 @@ let storefrontConfigCacheTime = 0;
  */
 export async function fetchStorefrontConfigFromSupabase(forceRefresh: boolean = false): Promise<StorefrontConfig | null> {
   const now = Date.now();
-  if (!forceRefresh && cachedStorefrontConfig && now - storefrontConfigCacheTime < 30000) {
+  // Short 5-second cache to protect PostgREST while syncing near-instantly across browsers
+  if (!forceRefresh && cachedStorefrontConfig && now - storefrontConfigCacheTime < 5000) {
     return cachedStorefrontConfig;
   }
 
