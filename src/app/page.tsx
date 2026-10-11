@@ -3,7 +3,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { ArrowRight, ArrowDown, Sparkles, Instagram, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ProductCard } from '@/components/product/ProductCard';
 import { SuperSnakeLogo } from '@/components/brand/SuperSnakeLogo';
@@ -66,21 +66,115 @@ export default function HomePage() {
     }
   };
 
-  // Hero Background Images & 3-second auto-scroll
+  // Hero Background Images & Preloading Logic
   const heroImages = cleanHeroImages(homepageConfig?.heroImages);
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [loadedSlides, setLoadedSlides] = useState<Record<number, boolean>>({});
+  const [previousImageIndex, setPreviousImageIndex] = useState(-1);
+  const [allHeroImagesLoaded, setAllHeroImagesLoaded] = useState(false);
+  const loadedSlidesMapRef = useRef<Set<number>>(new Set());
+  const transitionTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Preload all hero images so the fallback image stays visible until 100% of images are loaded
   useEffect(() => {
-    if (heroImages.length <= 1) return;
+    if (typeof window === 'undefined') return;
+
+    let cancelled = false;
+    loadedSlidesMapRef.current.clear();
+
+    const urls = heroImages.filter(Boolean);
+
+    // If only 1 image and it's the fallback image, mark ready immediately
+    if (urls.length <= 1 && urls[0] === '/hero2.png') {
+      setAllHeroImagesLoaded(true);
+      return;
+    }
+
+    // Reset loading state for incoming custom images
+    setAllHeroImagesLoaded(false);
+    setCurrentImageIndex(0);
+    setPreviousImageIndex(-1);
+
+    const total = urls.length;
+    const checkAllLoaded = () => {
+      if (cancelled) return;
+      if (loadedSlidesMapRef.current.size >= total) {
+        setAllHeroImagesLoaded(true);
+      }
+    };
+
+    // Parallel preloading in browser background
+    urls.forEach((src, idx) => {
+      const img = new window.Image();
+      img.src = src;
+      if (img.complete && img.naturalWidth > 0) {
+        loadedSlidesMapRef.current.add(idx);
+        checkAllLoaded();
+      } else {
+        img.onload = () => {
+          loadedSlidesMapRef.current.add(idx);
+          checkAllLoaded();
+        };
+        img.onerror = () => {
+          // Gracefully count unreachable images so the slideshow doesn't freeze permanently
+          loadedSlidesMapRef.current.add(idx);
+          checkAllLoaded();
+        };
+      }
+    });
+
+    // Safety timeout: Ensure carousel never blocks forever if a remote CDN is sluggish
+    const safetyTimeout = setTimeout(() => {
+      if (!cancelled) {
+        setAllHeroImagesLoaded(true);
+      }
+    }, 6000);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(safetyTimeout);
+    };
+  }, [heroImages]);
+
+  const handleSlideLoaded = (idx: number) => {
+    loadedSlidesMapRef.current.add(idx);
+    if (loadedSlidesMapRef.current.size >= heroImages.length) {
+      setAllHeroImagesLoaded(true);
+    }
+  };
+
+  const goToSlide = (nextIndex: number) => {
+    if (nextIndex === currentImageIndex || !allHeroImagesLoaded) return;
+    setPreviousImageIndex(currentImageIndex);
+    setCurrentImageIndex(nextIndex);
+
+    if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+    transitionTimerRef.current = setTimeout(() => {
+      setPreviousImageIndex(-1);
+    }, 1100);
+  };
+
+  // Only start the auto-scroll interval once ALL images have completely loaded!
+  useEffect(() => {
+    if (!allHeroImagesLoaded || heroImages.length <= 1) return;
+
     const intervalTime = (homepageConfig?.heroIntervalSeconds || 3) * 1000;
     const interval = setInterval(() => {
-      setCurrentImageIndex((prev) => (prev + 1) % heroImages.length);
+      setCurrentImageIndex((prev) => {
+        setPreviousImageIndex(prev);
+        if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+        transitionTimerRef.current = setTimeout(() => {
+          setPreviousImageIndex(-1);
+        }, 1100);
+        return (prev + 1) % heroImages.length;
+      });
     }, intervalTime);
 
-    return () => clearInterval(interval);
-  }, [heroImages.length, homepageConfig?.heroIntervalSeconds]);
+    return () => {
+      clearInterval(interval);
+      if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+    };
+  }, [allHeroImagesLoaded, heroImages.length, homepageConfig?.heroIntervalSeconds]);
 
   // Parallax / Scroll transforms
   const { scrollYProgress } = useScroll({
@@ -102,53 +196,71 @@ export default function HomePage() {
         id="hero"
         className="relative bg-black min-h-[100dvh] lg:min-h-screen w-full overflow-hidden flex flex-col justify-end pt-28 sm:pt-32 lg:pt-36 pb-8 sm:pb-12 md:pb-16 px-4 sm:px-6 md:px-12"
       >
-        {/* Instant Fallback / Loading Base Layer: visible while admin images load or if network is slow */}
-        <div className="absolute inset-0 z-0 bg-black overflow-hidden pointer-events-none">
-          <Image
-            src="/hero2.png"
-            alt="SuperSnake Hero Backdrop"
-            fill
-            priority
-            className="object-cover object-[center_35%] lg:object-center"
-          />
-          {/* Subtle black gradient & vignette overlay matching hero aesthetic */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent pointer-events-none" />
-          <div className="absolute inset-0 [background:radial-gradient(ellipse_at_center,transparent_50%,rgba(0,0,0,0.4)_100%)] pointer-events-none" />
-        </div>
-
-        {/* Background Image Carousel with 3-second auto-scroll & smooth crossfade */}
+        {/* ============================================================
+            HERO BACKDROP: Seamless Preloading & Zero-Flicker Crossfade
+            Fallback (/hero2.png) stays 100% visible until ALL slides load.
+            Once loaded, fallback dissolves away and slides crossfade seamlessly.
+            ============================================================ */}
         <motion.div
           style={{ scale: heroImageScale }}
-          className="absolute inset-0 z-[1] will-change-transform overflow-hidden"
+          className="absolute inset-0 z-0 will-change-transform overflow-hidden"
         >
-          <AnimatePresence mode="popLayout">
-            <motion.div
-              key={currentImageIndex}
-              initial={{ opacity: 0, scale: 1.04 }}
-              animate={{ opacity: loadedSlides[currentImageIndex] ? 1 : 0, scale: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-              className="absolute inset-0 z-0"
-            >
-              <Image
-                src={heroImages[currentImageIndex] || heroImages[0]}
-                alt={`SuperSnake Heavyweight Campaign ${currentImageIndex + 1}`}
-                fill
-                priority={currentImageIndex === 0}
-                unoptimized={
-                  heroImages[currentImageIndex]?.startsWith('data:') ||
-                  !heroImages[currentImageIndex]?.includes('unsplash.com')
-                }
-                onLoad={() => {
-                  setLoadedSlides((prev) => ({ ...prev, [currentImageIndex]: true }));
-                }}
-                className="object-cover object-[center_35%] lg:object-center"
-              />
-              {/* Subtle black gradient & vignette overlay for text legibility */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent pointer-events-none" />
-              <div className="absolute inset-0 [background:radial-gradient(ellipse_at_center,transparent_50%,rgba(0,0,0,0.4)_100%)] pointer-events-none" />
-            </motion.div>
-          </AnimatePresence>
+          {/* Stacked Persistent Slide Layers: Mounted in DOM so images never unmount or re-fetch */}
+          {heroImages.map((src, idx) => {
+            const isCurrent = idx === currentImageIndex;
+            const isPrevious = idx === previousImageIndex;
+
+            return (
+              <div
+                key={`${src}-${idx}`}
+                className={`absolute inset-0 will-change-transform transition-opacity duration-1000 ease-in-out ${
+                  isCurrent
+                    ? 'z-[2] opacity-100'
+                    : isPrevious
+                    ? 'z-[1] opacity-100'
+                    : 'z-0 opacity-0 pointer-events-none'
+                }`}
+              >
+                <Image
+                  src={src}
+                  alt={`SuperSnake Heavyweight Campaign ${idx + 1}`}
+                  fill
+                  priority={idx === 0}
+                  unoptimized={
+                    src?.startsWith('data:') ||
+                    !src?.includes('unsplash.com')
+                  }
+                  onLoad={() => handleSlideLoaded(idx)}
+                  onError={() => handleSlideLoaded(idx)}
+                  className="object-cover object-[center_35%] lg:object-center"
+                />
+                {/* Subtle black gradient & vignette overlay for text legibility */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent pointer-events-none" />
+                <div className="absolute inset-0 [background:radial-gradient(ellipse_at_center,transparent_50%,rgba(0,0,0,0.4)_100%)] pointer-events-none" />
+              </div>
+            );
+          })}
+
+          {/* Instant Fallback / Loading Base Layer:
+              Stays completely solid (opacity-100) until all slides are 100% loaded.
+              Then smoothly dissolves away without any black flash or flickering. */}
+          <div
+            aria-hidden={allHeroImagesLoaded}
+            className={`absolute inset-0 z-[10] bg-black overflow-hidden pointer-events-none transition-opacity duration-1000 ease-in-out ${
+              allHeroImagesLoaded ? 'opacity-0' : 'opacity-100'
+            }`}
+          >
+            <Image
+              src="/hero2.png"
+              alt="SuperSnake Hero Backdrop"
+              fill
+              priority
+              className="object-cover object-[center_35%] lg:object-center"
+            />
+            {/* Subtle black gradient & vignette overlay matching hero aesthetic */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent pointer-events-none" />
+            <div className="absolute inset-0 [background:radial-gradient(ellipse_at_center,transparent_50%,rgba(0,0,0,0.4)_100%)] pointer-events-none" />
+          </div>
         </motion.div>
 
         {/* Hero Content */}
@@ -211,11 +323,16 @@ export default function HomePage() {
         {/* Carousel slide indicators and scroll arrow (hidden on mobile, visible on sm and up) */}
         <div className="absolute bottom-6 sm:bottom-8 right-4 sm:right-6 md:right-12 z-20 hidden sm:flex items-center gap-4">
           {heroImages.length > 1 && (
-            <div className="flex items-center gap-1.5 bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
+            <div
+              className={`flex items-center gap-1.5 bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 transition-opacity duration-500 ${
+                allHeroImagesLoaded ? 'opacity-100' : 'opacity-40'
+              }`}
+            >
               {heroImages.map((_, idx) => (
                 <button
                   key={idx}
-                  onClick={() => setCurrentImageIndex(idx)}
+                  onClick={() => goToSlide(idx)}
+                  disabled={!allHeroImagesLoaded}
                   aria-label={`Go to slide ${idx + 1}`}
                   className={`h-1.5 rounded-full transition-all duration-500 ${
                     idx === currentImageIndex
