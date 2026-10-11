@@ -66,115 +66,133 @@ export default function HomePage() {
     }
   };
 
-  // Hero Background Images & Preloading Logic
-  const heroImages = cleanHeroImages(homepageConfig?.heroImages);
+  // Hero Background Images & Stable Memoization
+  const rawHeroImages = homepageConfig?.heroImages;
+  const heroImagesKey = React.useMemo(() => {
+    return cleanHeroImages(rawHeroImages).join('|||');
+  }, [rawHeroImages]);
 
+  const heroImages = React.useMemo(() => {
+    return heroImagesKey.split('|||').filter(Boolean);
+  }, [heroImagesKey]);
+
+  const heroCount = heroImages.length;
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [previousImageIndex, setPreviousImageIndex] = useState(-1);
   const [allHeroImagesLoaded, setAllHeroImagesLoaded] = useState(false);
-  const loadedSlidesMapRef = useRef<Set<number>>(new Set());
+  const currentImageIndexRef = useRef(0);
+  currentImageIndexRef.current = currentImageIndex;
+
+  const loadedCountRef = useRef<Set<string>>(new Set());
   const transitionTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Preload all hero images so the fallback image stays visible until 100% of images are loaded
+  // Preload all hero images on mount or when heroImagesKey genuinely changes
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    let cancelled = false;
-    loadedSlidesMapRef.current.clear();
-
-    const urls = heroImages.filter(Boolean);
-
     // If only 1 image and it's the fallback image, mark ready immediately
-    if (urls.length <= 1 && urls[0] === '/hero2.png') {
+    if (heroImages.length <= 1 && heroImages[0] === '/hero2.png') {
       setAllHeroImagesLoaded(true);
       return;
     }
 
-    // Reset loading state for incoming custom images
+    let isCancelled = false;
+    loadedCountRef.current.clear();
     setAllHeroImagesLoaded(false);
     setCurrentImageIndex(0);
     setPreviousImageIndex(-1);
 
-    const total = urls.length;
-    const checkAllLoaded = () => {
-      if (cancelled) return;
-      if (loadedSlidesMapRef.current.size >= total) {
+    const checkDone = () => {
+      if (isCancelled) return;
+      if (loadedCountRef.current.size >= heroImages.length) {
         setAllHeroImagesLoaded(true);
       }
     };
 
-    // Parallel preloading in browser background
-    urls.forEach((src, idx) => {
+    heroImages.forEach((url) => {
+      if (!url) return;
       const img = new window.Image();
-      img.src = src;
+      img.src = url;
       if (img.complete && img.naturalWidth > 0) {
-        loadedSlidesMapRef.current.add(idx);
-        checkAllLoaded();
+        loadedCountRef.current.add(url);
+        checkDone();
       } else {
         img.onload = () => {
-          loadedSlidesMapRef.current.add(idx);
-          checkAllLoaded();
+          loadedCountRef.current.add(url);
+          checkDone();
         };
         img.onerror = () => {
-          // Gracefully count unreachable images so the slideshow doesn't freeze permanently
-          loadedSlidesMapRef.current.add(idx);
-          checkAllLoaded();
+          loadedCountRef.current.add(url);
+          checkDone();
         };
       }
     });
 
-    // Safety timeout: Ensure carousel never blocks forever if a remote CDN is sluggish
-    const safetyTimeout = setTimeout(() => {
-      if (!cancelled) {
+    // Safety timeout: Unlock transitions after 2s so carousel never stalls on slow CDNs
+    const safetyTimer = setTimeout(() => {
+      if (!isCancelled) {
         setAllHeroImagesLoaded(true);
       }
-    }, 6000);
+    }, 2000);
 
     return () => {
-      cancelled = true;
-      clearTimeout(safetyTimeout);
+      isCancelled = true;
+      clearTimeout(safetyTimer);
     };
-  }, [heroImages]);
+  }, [heroImagesKey]);
 
-  const handleSlideLoaded = (idx: number) => {
-    loadedSlidesMapRef.current.add(idx);
-    if (loadedSlidesMapRef.current.size >= heroImages.length) {
+  const handleSlideLoaded = (url: string) => {
+    loadedCountRef.current.add(url);
+    if (loadedCountRef.current.size >= heroImages.length) {
       setAllHeroImagesLoaded(true);
     }
   };
 
-  const goToSlide = (nextIndex: number) => {
-    if (nextIndex === currentImageIndex || !allHeroImagesLoaded) return;
-    setPreviousImageIndex(currentImageIndex);
-    setCurrentImageIndex(nextIndex);
+  const goToSlide = React.useCallback(
+    (nextIdx: number) => {
+      if (nextIdx === currentImageIndexRef.current || !allHeroImagesLoaded) return;
+      const prevIdx = currentImageIndexRef.current;
+      setPreviousImageIndex(prevIdx);
+      setCurrentImageIndex(nextIdx);
+
+      if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+      transitionTimerRef.current = setTimeout(() => {
+        setPreviousImageIndex(-1);
+      }, 1100);
+    },
+    [allHeroImagesLoaded]
+  );
+
+  const nextSlide = React.useCallback(() => {
+    if (heroCount <= 1 || !allHeroImagesLoaded) return;
+    const prevIdx = currentImageIndexRef.current;
+    const nextIdx = (prevIdx + 1) % heroCount;
+    setPreviousImageIndex(prevIdx);
+    setCurrentImageIndex(nextIdx);
 
     if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
     transitionTimerRef.current = setTimeout(() => {
       setPreviousImageIndex(-1);
     }, 1100);
-  };
+  }, [heroCount, allHeroImagesLoaded]);
 
-  // Only start the auto-scroll interval once ALL images have completely loaded!
+  // Auto-scroll interval: starts when allHeroImagesLoaded is true and multiple slides exist
   useEffect(() => {
-    if (!allHeroImagesLoaded || heroImages.length <= 1) return;
+    if (!allHeroImagesLoaded || heroCount <= 1) return;
 
-    const intervalTime = (homepageConfig?.heroIntervalSeconds || 3) * 1000;
-    const interval = setInterval(() => {
-      setCurrentImageIndex((prev) => {
-        setPreviousImageIndex(prev);
-        if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
-        transitionTimerRef.current = setTimeout(() => {
-          setPreviousImageIndex(-1);
-        }, 1100);
-        return (prev + 1) % heroImages.length;
-      });
-    }, intervalTime);
+    const rawInterval = Number(homepageConfig?.heroIntervalSeconds);
+    const intervalSeconds = !isNaN(rawInterval) && rawInterval >= 2 ? rawInterval : 3;
+    const intervalMs = intervalSeconds * 1000;
+
+    const intervalId = setInterval(() => {
+      nextSlide();
+    }, intervalMs);
 
     return () => {
-      clearInterval(interval);
+      clearInterval(intervalId);
       if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
     };
-  }, [allHeroImagesLoaded, heroImages.length, homepageConfig?.heroIntervalSeconds]);
+  }, [allHeroImagesLoaded, heroCount, homepageConfig?.heroIntervalSeconds, nextSlide]);
 
   // Parallax / Scroll transforms
   const { scrollYProgress } = useScroll({
@@ -225,13 +243,13 @@ export default function HomePage() {
                   src={src}
                   alt={`SuperSnake Heavyweight Campaign ${idx + 1}`}
                   fill
-                  priority={idx === 0}
+                  priority
                   unoptimized={
                     src?.startsWith('data:') ||
                     !src?.includes('unsplash.com')
                   }
-                  onLoad={() => handleSlideLoaded(idx)}
-                  onError={() => handleSlideLoaded(idx)}
+                  onLoad={() => handleSlideLoaded(src)}
+                  onError={() => handleSlideLoaded(src)}
                   className="object-cover object-[center_35%] lg:object-center"
                 />
                 {/* Subtle black gradient & vignette overlay for text legibility */}
