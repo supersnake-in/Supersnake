@@ -296,6 +296,7 @@ export interface StorefrontConfig {
   maintenanceMessage: string;
   estimatedRestoreTime: string | null;
   snowEffectEnabled?: boolean;
+  freeShippingThreshold?: number;
   updatedAt: string;
   updatedBy: string;
 }

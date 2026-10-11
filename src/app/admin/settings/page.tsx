@@ -554,7 +554,7 @@ export default function AdminSettingsPage() {
     setMaintenanceMessage(preset);
   };
 
-  const handleSaveGeneralSettings = (e: React.FormEvent) => {
+  const handleSaveGeneralSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     updateFreeShippingThreshold(freeShippingThreshold);
     try {
@@ -574,6 +574,15 @@ export default function AdminSettingsPage() {
           jurisdiction,
         })
       );
+      // Synchronize threshold to server / Supabase so all browsers and customers see it
+      await fetch('/api/admin/storefront-mode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          adminEmail: user?.email || 'supersnake.in@gmail.com',
+          freeShippingThreshold,
+        }),
+      });
     } catch (err) {}
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
@@ -1893,6 +1902,16 @@ CREATE POLICY "Allow admin all announcement_config" ON public.announcement_confi
                   const val = Math.max(0, Number(e.target.value));
                   setFreeShippingThreshold(val);
                   updateFreeShippingThreshold(val);
+                }}
+                onBlur={() => {
+                  fetch('/api/admin/storefront-mode', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      adminEmail: user?.email || 'supersnake.in@gmail.com',
+                      freeShippingThreshold,
+                    }),
+                  }).catch(() => {});
                 }}
                 className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green"
               />

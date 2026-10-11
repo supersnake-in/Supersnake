@@ -863,6 +863,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               maintenanceMessage: cfg.maintenanceMessage || prev.maintenanceMessage,
               estimatedRestoreTime: cfg.estimatedRestoreTime || prev.estimatedRestoreTime,
             }));
+            if (cfg && cfg.freeShippingThreshold !== undefined && cfg.freeShippingThreshold !== null) {
+              const val = Number(cfg.freeShippingThreshold);
+              if (!isNaN(val) && val >= 0) {
+                setFreeShippingThresholdState(val);
+                try {
+                  localStorage.setItem('supersnake_free_shipping_threshold', String(val));
+                } catch (e) {}
+              }
+            }
             return;
           }
         }

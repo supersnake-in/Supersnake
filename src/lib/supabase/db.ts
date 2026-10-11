@@ -1557,22 +1557,32 @@ export async function fetchStorefrontConfigFromSupabase(forceRefresh: boolean = 
   }
 
   try {
-    // 1. Try selecting with snow_effect_enabled
+    // 1. Try selecting with free_shipping_threshold and snow_effect_enabled
     let { data, error } = await supabase
       .from('storefront_config')
-      .select('id, storefront_mode, launch_date, launch_time, launch_timezone, automatic_launch, pre_launch_product_limit, maintenance_message, estimated_restore_time, snow_effect_enabled, updated_at, updated_by')
+      .select('id, storefront_mode, launch_date, launch_time, launch_timezone, automatic_launch, pre_launch_product_limit, maintenance_message, estimated_restore_time, snow_effect_enabled, free_shipping_threshold, updated_at, updated_by')
       .eq('id', 'default')
       .maybeSingle();
 
     // If column doesn't exist yet in Supabase schema cache, gracefully retry without it
-    if (error && (error.code === 'PGRST204' || error.message?.includes('snow_effect_enabled'))) {
+    if (error && (error.code === 'PGRST204' || error.message?.includes('free_shipping_threshold') || error.message?.includes('snow_effect_enabled'))) {
       const fallback = await supabase
         .from('storefront_config')
-        .select('id, storefront_mode, launch_date, launch_time, launch_timezone, automatic_launch, pre_launch_product_limit, maintenance_message, estimated_restore_time, updated_at, updated_by')
+        .select('id, storefront_mode, launch_date, launch_time, launch_timezone, automatic_launch, pre_launch_product_limit, maintenance_message, estimated_restore_time, snow_effect_enabled, updated_at, updated_by')
         .eq('id', 'default')
         .maybeSingle();
-      data = fallback.data as any;
-      error = fallback.error;
+      if (!fallback.error && fallback.data) {
+        data = fallback.data as any;
+        error = null;
+      } else {
+        const minimalFallback = await supabase
+          .from('storefront_config')
+          .select('id, storefront_mode, launch_date, launch_time, launch_timezone, automatic_launch, pre_launch_product_limit, maintenance_message, estimated_restore_time, updated_at, updated_by')
+          .eq('id', 'default')
+          .maybeSingle();
+        data = minimalFallback.data as any;
+        error = minimalFallback.error;
+      }
     }
 
     if (!error && data) {
@@ -1589,6 +1599,9 @@ export async function fetchStorefrontConfigFromSupabase(forceRefresh: boolean = 
         snowEffectEnabled: (data as any).snow_effect_enabled !== undefined 
           ? Boolean((data as any).snow_effect_enabled) 
           : (cachedStorefrontConfig?.snowEffectEnabled ?? false),
+        freeShippingThreshold: (data as any).free_shipping_threshold !== undefined && (data as any).free_shipping_threshold !== null
+          ? Number((data as any).free_shipping_threshold)
+          : (cachedStorefrontConfig?.freeShippingThreshold ?? 1999),
         updatedAt: data.updated_at || new Date().toISOString(),
         updatedBy: data.updated_by || 'system',
       };
@@ -1618,6 +1631,7 @@ export async function fetchStorefrontConfigFromSupabase(forceRefresh: boolean = 
         maintenanceMessage: mData.maintenance_message || '',
         estimatedRestoreTime: mData.estimated_restore_time || null,
         snowEffectEnabled: Boolean((mData as any).snow_effect_enabled || cachedStorefrontConfig?.snowEffectEnabled || false),
+        freeShippingThreshold: cachedStorefrontConfig?.freeShippingThreshold ?? 1999,
         updatedAt: mData.updated_at || new Date().toISOString(),
         updatedBy: mData.updated_by || 'system',
       };
@@ -1640,6 +1654,9 @@ export async function updateStorefrontConfigInSupabase(
   if (config.snowEffectEnabled !== undefined && cachedStorefrontConfig) {
     cachedStorefrontConfig.snowEffectEnabled = Boolean(config.snowEffectEnabled);
   }
+  if (config.freeShippingThreshold !== undefined && cachedStorefrontConfig) {
+    cachedStorefrontConfig.freeShippingThreshold = Number(config.freeShippingThreshold);
+  }
   cachedStorefrontConfig = null;
   cachedMaintenanceConfig = null;
 
@@ -1658,15 +1675,19 @@ export async function updateStorefrontConfigInSupabase(
     if (config.maintenanceMessage !== undefined) payload.maintenance_message = config.maintenanceMessage;
     if (config.estimatedRestoreTime !== undefined) payload.estimated_restore_time = config.estimatedRestoreTime || null;
     if (config.snowEffectEnabled !== undefined) payload.snow_effect_enabled = Boolean(config.snowEffectEnabled);
+    if (config.freeShippingThreshold !== undefined && config.freeShippingThreshold !== null) {
+      payload.free_shipping_threshold = Number(config.freeShippingThreshold);
+    }
 
     // 1. Try upserting into storefront_config
     let { error: sfError } = await supabase
       .from('storefront_config')
       .upsert({ id: 'default', ...payload }, { onConflict: 'id' });
 
-    // If snow_effect_enabled column is missing in schema, retry without it so other fields succeed
-    if (sfError && (sfError.code === 'PGRST204' || sfError.message?.includes('snow_effect_enabled'))) {
+    // If free_shipping_threshold or snow_effect_enabled column is missing in schema, retry without it so other fields succeed
+    if (sfError && (sfError.code === 'PGRST204' || sfError.message?.includes('free_shipping_threshold') || sfError.message?.includes('snow_effect_enabled'))) {
       const safePayload = { ...payload };
+      delete safePayload.free_shipping_threshold;
       delete safePayload.snow_effect_enabled;
       const retryRes = await supabase
         .from('storefront_config')

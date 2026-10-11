@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
       maintenanceMessage,
       estimatedRestoreTime,
       snowEffectEnabled,
+      freeShippingThreshold,
       adminEmail,
     } = body;
 
@@ -62,6 +63,9 @@ export async function POST(req: NextRequest) {
     if (typeof snowEffectEnabled === 'boolean') {
       updates.snowEffectEnabled = snowEffectEnabled;
     }
+    if (freeShippingThreshold !== undefined && freeShippingThreshold !== null && !isNaN(Number(freeShippingThreshold)) && Number(freeShippingThreshold) >= 0) {
+      updates.freeShippingThreshold = Number(freeShippingThreshold);
+    }
 
     const success = await updateStorefrontConfigInSupabase(updates, adminEmail.trim().toLowerCase());
     const updated = await fetchStorefrontConfigFromSupabase(true);
@@ -71,6 +75,9 @@ export async function POST(req: NextRequest) {
       snowEffectEnabled: updates.snowEffectEnabled !== undefined
         ? updates.snowEffectEnabled
         : (updated?.snowEffectEnabled ?? false),
+      freeShippingThreshold: updates.freeShippingThreshold !== undefined
+        ? updates.freeShippingThreshold
+        : (updated?.freeShippingThreshold ?? 1999),
     } as StorefrontConfig;
 
     return NextResponse.json(

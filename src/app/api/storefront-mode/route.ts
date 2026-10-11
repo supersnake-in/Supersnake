@@ -69,10 +69,14 @@ export async function GET() {
       ...cachedConfig,
       storefrontMode: effectiveMode,
       configuredMode: cachedConfig.storefrontMode,
+      freeShippingThreshold: typeof cachedConfig.freeShippingThreshold === 'number'
+        ? cachedConfig.freeShippingThreshold
+        : 1999,
     },
     {
       headers: {
-        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        Pragma: 'no-cache',
       },
     }
   );
