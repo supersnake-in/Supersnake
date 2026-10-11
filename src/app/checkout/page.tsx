@@ -409,6 +409,9 @@ function CheckoutContent() {
         },
         body: JSON.stringify({
           amount: amountInPaise,
+          shippingFee: shippingFee,
+          freeShippingThreshold: freeShippingThreshold,
+          isFreeShipping: isFreeShipping,
           currency: 'INR',
           customer: {
             name: formData.fullName,

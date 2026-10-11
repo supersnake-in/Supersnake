@@ -6,7 +6,19 @@ import { requiresPhoneVerification } from '@/lib/order-verification';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { amount: clientAmount, currency = 'INR', customer, shippingAddress, items, orderId, couponCode, isPreBooking } = body;
+    const {
+      amount: clientAmount,
+      currency = 'INR',
+      customer,
+      shippingAddress,
+      items,
+      orderId,
+      couponCode,
+      isPreBooking,
+      shippingFee,
+      freeShippingThreshold,
+      isFreeShipping,
+    } = body;
 
     // 1. Validate Customer Information
     if (!customer?.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email.trim())) {
@@ -60,7 +72,26 @@ export async function POST(request: Request) {
         return sum + (itemPrice * itemQty);
       }, 0);
 
-      const shipping = isPreBooking ? 0 : (subtotal >= 2999 ? 0 : 150);
+      // Determine threshold from request or fallback to default
+      let threshold = 1999;
+      if (
+        freeShippingThreshold !== undefined &&
+        freeShippingThreshold !== null &&
+        !isNaN(Number(freeShippingThreshold)) &&
+        Number(freeShippingThreshold) >= 0
+      ) {
+        threshold = Number(freeShippingThreshold);
+      }
+
+      // Check if shipping is free based on pre-booking, threshold, or explicit shipping status
+      const isShippingFree =
+        Boolean(isPreBooking) ||
+        Boolean(isFreeShipping) ||
+        (typeof shippingFee === 'number' && shippingFee === 0) ||
+        threshold === 0 ||
+        subtotal >= threshold;
+
+      const shipping = isShippingFree ? 0 : 150;
       const totalInRupees = subtotal + shipping;
       calculatedAmount = Math.round(totalInRupees * 100);
     }
