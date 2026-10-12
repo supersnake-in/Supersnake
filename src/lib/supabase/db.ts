@@ -17,6 +17,8 @@ import {
   PreBookingStatus,
   Collection,
   AnnouncementConfig,
+  Size,
+  sortSizes,
 } from '../types';
 import { PRODUCTS } from '../data/products';
 
@@ -76,11 +78,12 @@ export function mapProductRowToProduct(row: any): Product {
 
   // Extract sizes from row.sizes if saved directly, otherwise derive from variants
   const variantSizes = Array.from(new Set(variants.map((v) => v.size)));
-  const sizes = Array.isArray(row.sizes) && row.sizes.length > 0
+  const rawSizes = Array.isArray(row.sizes) && row.sizes.length > 0
     ? row.sizes
     : variantSizes.length > 0
       ? (variantSizes as any)
       : ['S', 'M', 'L', 'XL'];
+  const sizes = sortSizes(rawSizes) as Size[];
 
   return {
     id: row.id,

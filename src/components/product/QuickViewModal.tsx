@@ -7,18 +7,20 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, ArrowRight, Check } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { formatPrice } from '@/lib/design-tokens';
-import { Size } from '@/lib/types';
+import { Size, sortSizes } from '@/lib/types';
 
 export function QuickViewModal() {
   const { quickViewProduct, closeQuickView, addToCart } = useStore();
   const [selectedColor, setSelectedColor] = useState<{ name: string; hex: string } | null>(null);
+  const sortedSizes = React.useMemo(() => sortSizes(quickViewProduct?.sizes || []), [quickViewProduct?.sizes]);
   const [selectedSize, setSelectedSize] = useState<Size>('L');
 
   // Reset or set defaults when product changes
   React.useEffect(() => {
     if (quickViewProduct) {
+      const sorted = sortSizes(quickViewProduct.sizes || []);
       setSelectedColor(quickViewProduct.colors[0] || null);
-      setSelectedSize(quickViewProduct.sizes[2] || quickViewProduct.sizes[0] || 'L');
+      setSelectedSize(sorted.find((s) => s === 'M' || s === 'L') || sorted[0] || 'L');
     }
   }, [quickViewProduct]);
 
@@ -143,7 +145,7 @@ export function QuickViewModal() {
                   <span className="text-snake-green">IN STOCK</span>
                 </div>
                 <div className="grid grid-cols-6 gap-1.5">
-                  {quickViewProduct.sizes.map((s) => {
+                  {sortedSizes.map((s) => {
                     const isSelected = selectedSize === s;
                     return (
                       <button

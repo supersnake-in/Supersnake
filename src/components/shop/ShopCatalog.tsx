@@ -19,6 +19,8 @@ interface ShopCatalogProps {
   showSeriesQuickBar?: boolean;
 }
 
+const ALL_CATALOG_SIZES: (Size | 'all')[] = ['all', 'XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL', '6XL'];
+
 function ShopCatalogContent({
   initialGender = 'all',
   initialIsNew = false,
@@ -409,7 +411,7 @@ function ShopCatalogContent({
                 <div className="space-y-2">
                   <p className="text-neutral-400 font-semibold tracking-wider uppercase text-[11px]">SIZE</p>
                   <div className="flex flex-wrap gap-1.5">
-                    {(['all', 'XS', 'S', 'M', 'L', 'XL', 'XXL'] as const).map((s) => (
+                    {ALL_CATALOG_SIZES.map((s) => (
                       <button
                         key={s}
                         onClick={() => setSelectedSize(s)}
@@ -545,7 +547,7 @@ function ShopCatalogContent({
                 <div className="space-y-2.5">
                   <p className="text-neutral-400 font-semibold tracking-wider uppercase">SIZE</p>
                   <div className="flex flex-wrap gap-1.5">
-                    {(['all', 'XS', 'S', 'M', 'L', 'XL', 'XXL'] as const).map((s) => (
+                    {ALL_CATALOG_SIZES.map((s) => (
                       <button
                         key={s}
                         onClick={() => setSelectedSize(s)}

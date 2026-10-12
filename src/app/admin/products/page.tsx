@@ -23,7 +23,7 @@ import {
   Layers,
 } from 'lucide-react';
 import { useStore } from '@/lib/store';
-import { Product, Size, Gender, FitType } from '@/lib/types';
+import { Product, Size, Gender, FitType, sortSizes } from '@/lib/types';
 import { formatPrice } from '@/lib/design-tokens';
 import { sanitizeString, sanitizeSlug, sanitizeNumber, isValidImageSource } from '@/lib/security';
 import { compressImage } from '@/lib/image-compression';
@@ -502,7 +502,7 @@ export default function AdminProductsPage() {
         angle: img.angle,
       })),
       colors: selectedColors,
-      sizes: selectedSizes,
+      sizes: sortSizes(selectedSizes),
       variants,
       isNew: isNewProduct,
       isBestseller: isBestsellerProduct,
@@ -818,7 +818,7 @@ export default function AdminProductsPage() {
 
                 <td className="py-3 px-4 text-neutral-300">
                   <div className="flex gap-1">
-                    {prod.sizes.map((s) => (
+                    {sortSizes(prod.sizes).map((s) => (
                       <span key={s} className="px-1.5 py-0.5 bg-neutral-900 border border-neutral-800 rounded text-[9px] font-bold">
                         {s}
                       </span>

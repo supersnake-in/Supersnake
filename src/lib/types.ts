@@ -4,6 +4,38 @@ export type FitType = 'Oversized' | 'Relaxed' | 'Boxy' | 'Classic' | 'Slim';
 
 export type Size = 'XXS' | 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | '3XL' | '4XL' | '5XL' | '6XL';
 
+export const SIZE_ORDER: Record<string, number> = {
+  XXS: 1,
+  '2XS': 1,
+  XS: 2,
+  S: 3,
+  M: 4,
+  L: 5,
+  XL: 6,
+  XXL: 7,
+  '2XL': 7,
+  XXXL: 8,
+  '3XL': 8,
+  XXXXL: 9,
+  '4XL': 9,
+  XXXXXL: 10,
+  '5XL': 10,
+  XXXXXXL: 11,
+  '6XL': 11,
+};
+
+export function sortSizes<T extends string>(sizes: T[]): T[] {
+  if (!Array.isArray(sizes)) return [];
+  return [...sizes].sort((a, b) => {
+    const keyA = (a || '').toUpperCase().trim();
+    const keyB = (b || '').toUpperCase().trim();
+    const orderA = SIZE_ORDER[keyA] ?? 99;
+    const orderB = SIZE_ORDER[keyB] ?? 99;
+    if (orderA !== orderB) return orderA - orderB;
+    return a.localeCompare(b);
+  });
+}
+
 export interface ProductVariant {
   id: string;
   sku: string;

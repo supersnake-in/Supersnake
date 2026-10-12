@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { formatPrice, BRAND } from '@/lib/design-tokens';
-import { Size, ProductImage, Product } from '@/lib/types';
+import { Size, ProductImage, Product, sortSizes } from '@/lib/types';
 import { SizeGuideModal } from '@/components/product/SizeGuideModal';
 import { ProductCard } from '@/components/product/ProductCard';
 import { PreBookingModal } from '@/components/pre-booking/PreBookingModal';
@@ -50,7 +50,11 @@ export function ProductDetailClient({ initialProduct, slug }: ProductDetailClien
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [selectedColor, setSelectedColor] = useState(product.colors[0] || { name: 'Obsidian Black', hex: '#0a0a0a' });
-  const [selectedSize, setSelectedSize] = useState<Size>(product.sizes[2] || product.sizes[0] || 'L');
+  const sortedSizes = useMemo(() => sortSizes(product?.sizes || []), [product?.sizes]);
+  const [selectedSize, setSelectedSize] = useState<Size>(() => {
+    const sorted = sortSizes(product?.sizes || []);
+    return sorted.find((s) => s === 'M' || s === 'L') || sorted[0] || 'L';
+  });
   const [quantity, setQuantity] = useState(1);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -536,7 +540,7 @@ export function ProductDetailClient({ initialProduct, slug }: ProductDetailClien
                 </button>
               </div>
               <div className="grid grid-cols-6 gap-2">
-                {product.sizes.map((size) => {
+                {sortedSizes.map((size) => {
                   const isSelected = selectedSize === size;
                   return (
                     <button

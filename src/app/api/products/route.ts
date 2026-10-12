@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { sanitizeString, sanitizeSlug, sanitizeNumber, isValidImageSource } from '@/lib/security';
-import { Product, ProductImage } from '@/lib/types';
+import { Product, ProductImage, sortSizes } from '@/lib/types';
 import { fetchProductsFromSupabase, createProductInSupabase, deleteProductFromSupabase } from '@/lib/supabase/db';
 
 export async function GET() {
@@ -78,9 +78,11 @@ export async function POST(request: Request) {
 
     // Sizes
     const allowedSizes = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL', '6XL'];
-    const cleanSizes = Array.isArray(sizes) && sizes.length > 0
-      ? sizes.filter((s: any) => allowedSizes.includes(s))
-      : ['S', 'M', 'L', 'XL'];
+    const cleanSizes = sortSizes(
+      Array.isArray(sizes) && sizes.length > 0
+        ? sizes.filter((s: any) => allowedSizes.includes(s))
+        : ['S', 'M', 'L', 'XL']
+    );
 
     // Generate variant matrix
     const variants = cleanColors.flatMap((c) =>

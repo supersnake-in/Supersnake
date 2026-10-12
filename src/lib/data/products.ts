@@ -92,7 +92,7 @@ export const PRODUCTS: Product[] = [
       { hex: '#5d0404', name: 'Imperial Oxblood' },
       { hex: '#ffffff', name: 'Royal Porcelain' },
     ],
-    sizes: ['S', 'M', 'L', 'XL', 'XS', 'XXL', '3XL', '4XL', '5XL'],
+    sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL'],
     variants: [],
     isSpotlight: false,
     isSignature: false,
