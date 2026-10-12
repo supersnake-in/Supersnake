@@ -56,6 +56,8 @@ export function ProductDetailClient({ initialProduct, slug }: ProductDetailClien
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [preBookingModalOpen, setPreBookingModalOpen] = useState(false);
   const mobileCarouselRef = useRef<HTMLDivElement>(null);
+  const desktopThumbnailsContainerRef = useRef<HTMLDivElement>(null);
+  const desktopThumbnailRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   // Deduplicate product images by URL to ensure no repeated shots are ever displayed
   const uniqueImages = useMemo(() => {
@@ -145,6 +147,17 @@ export function ProductDetailClient({ initialProduct, slug }: ProductDetailClien
     }
   }, [activeImageIndex]);
 
+  // Synchronize desktop vertical thumbnails when activeImageIndex changes
+  useEffect(() => {
+    const el = desktopThumbnailRefs.current[activeImageIndex];
+    if (el) {
+      el.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+      });
+    }
+  }, [activeImageIndex]);
+
   // Accordion open states
   const [openAccordions, setOpenAccordions] = useState<{ [key: string]: boolean }>({
     fabric: true,
@@ -200,10 +213,10 @@ export function ProductDetailClient({ initialProduct, slug }: ProductDetailClien
   const relatedProducts = products.filter((p) => p.id !== product.id).slice(0, 4);
 
   return (
-    <div className="bg-black text-white min-h-screen pt-28 pb-32 lg:pb-24 px-4 sm:px-6 md:px-12">
+    <div className="bg-black text-white min-h-screen pt-24 lg:pt-24 pb-32 lg:pb-24 px-4 sm:px-6 md:px-10 lg:px-8 xl:px-12">
       <div className="max-w-7xl mx-auto">
         {/* Breadcrumb Navigation - scroll-safe on mobile */}
-        <nav className="flex items-center gap-2 text-[10px] sm:text-[11px] font-mono tracking-wider text-neutral-500 mb-6 sm:mb-8 uppercase overflow-x-auto whitespace-nowrap pb-1">
+        <nav className="flex items-center gap-2 text-[10px] sm:text-[11px] font-mono tracking-wider text-neutral-500 mb-4 lg:mb-5 uppercase overflow-x-auto whitespace-nowrap pb-1">
           <Link href="/" className="hover:text-white transition-colors">HOME</Link>
           <span>/</span>
           {isPreLaunchMode ? (
@@ -312,17 +325,58 @@ export function ProductDetailClient({ initialProduct, slug }: ProductDetailClien
               </div>
             </div>
 
-            {/* DESKTOP GALLERY (LOCKED & UNTOUCHED FOR lg: AND ABOVE) */}
-            <div className="hidden lg:block space-y-4">
-              {/* Active Hero Image with Zoom trigger and 10s Auto-Slide Crossfade */}
-              <div className="relative aspect-[4/5] w-full rounded bg-[#0c0c0c] border border-white/10 overflow-hidden group">
+            {/* DESKTOP GALLERY: VERTICAL THUMBNAIL PREVIEWS ON LEFT + CONSTRAINED SCREEN-FIT HERO IMAGE */}
+            <div className="hidden lg:flex lg:flex-row gap-3.5 xl:gap-4 items-start justify-start w-full">
+              {/* Additional Image Previews: Left Vertical Strip (placed vertically one below the other) */}
+              {uniqueImages.length > 1 && (
+                <div
+                  ref={desktopThumbnailsContainerRef}
+                  className="flex flex-col gap-2.5 overflow-y-auto scrollbar-none flex-shrink-0 w-16 xl:w-20 pr-1 py-0.5 select-none"
+                  style={{ height: 'min(720px, max(460px, calc(100vh - 11rem)))' }}
+                >
+                  {uniqueImages.map((img, idx) => (
+                    <button
+                      key={idx}
+                      ref={(el) => {
+                        desktopThumbnailRefs.current[idx] = el;
+                      }}
+                      type="button"
+                      onClick={() => setActiveImageIndex(idx)}
+                      className={`relative aspect-[4/5] w-full rounded-md overflow-hidden bg-neutral-900 border transition-all flex-shrink-0 cursor-pointer ${
+                        activeImageIndex === idx
+                          ? 'border-snake-green ring-1 ring-snake-green shadow-[0_0_12px_rgba(0,255,102,0.3)] scale-[1.02]'
+                          : 'border-white/10 opacity-50 hover:opacity-100 hover:border-white/30'
+                      }`}
+                      aria-label={`View image ${idx + 1}`}
+                    >
+                      <Image
+                        src={img.url}
+                        alt={img.alt}
+                        fill
+                        sizes="90px"
+                        unoptimized={Boolean(img.url.startsWith('data:') || img.url.startsWith('blob:') || img.url.startsWith('/api/'))}
+                        className="object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Active Hero Image: sized to fit screen height exactly */}
+              <div
+                className="relative aspect-[4/5] rounded-xl bg-[#0c0c0c] border border-white/10 overflow-hidden group flex-shrink-0"
+                style={{
+                  height: 'min(720px, max(460px, calc(100vh - 11rem)))',
+                  maxWidth: uniqueImages.length > 1 ? 'calc(100% - 5rem)' : '100%',
+                }}
+              >
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={activeImageIndex}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                    transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                     className="absolute inset-0"
                   >
                     {activeImage?.url ? (
@@ -344,14 +398,14 @@ export function ProductDetailClient({ initialProduct, slug }: ProductDetailClien
                 </AnimatePresence>
 
                 {/* Tagline / Subtitle Badge on Hero Image */}
-                <div className="absolute top-4 left-4 z-10 px-2.5 py-1 bg-black/70 backdrop-blur-md border border-white/10 text-[10px] font-mono tracking-widest text-neutral-300 uppercase max-w-[80%] truncate">
+                <div className="absolute top-3.5 left-3.5 z-10 px-2.5 py-1 bg-black/70 backdrop-blur-md border border-white/10 text-[10px] font-mono tracking-widest text-neutral-300 uppercase max-w-[80%] truncate">
                   {product.tagline || (product.gsm && product.gsm > 0 ? `${product.gsm} GSM` : 'HEAVYWEIGHT')}
                 </div>
 
                 {/* Lightbox Expander */}
                 <button
                   onClick={() => setLightboxOpen(true)}
-                  className="absolute top-4 right-4 z-10 p-2 bg-black/60 backdrop-blur-md border border-white/10 rounded-full text-neutral-300 hover:text-white hover:border-snake-green transition-all"
+                  className="absolute top-3.5 right-3.5 z-10 p-2 bg-black/60 backdrop-blur-md border border-white/10 rounded-full text-neutral-300 hover:text-white hover:border-snake-green transition-all"
                   aria-label="View Fullscreen"
                 >
                   <Maximize2 size={16} />
@@ -381,30 +435,6 @@ export function ProductDetailClient({ initialProduct, slug }: ProductDetailClien
                     <ChevronRight size={22} className="stroke-[2.2] group-hover/btn:translate-x-0.5 transition-transform" />
                   </button>
                 )}
-              </div>
-
-              {/* Thumbnail Strip */}
-              <div className="grid grid-cols-4 gap-3">
-                {uniqueImages.map((img, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setActiveImageIndex(idx)}
-                    className={`relative aspect-square rounded overflow-hidden bg-neutral-900 border transition-all ${
-                      activeImageIndex === idx
-                        ? 'border-snake-green ring-1 ring-snake-green scale-[1.02]'
-                        : 'border-white/10 opacity-60 hover:opacity-100'
-                    }`}
-                  >
-                    <Image
-                      src={img.url}
-                      alt={img.alt}
-                      fill
-                      sizes="120px"
-                      unoptimized={Boolean(img.url.startsWith('data:') || img.url.startsWith('blob:') || img.url.startsWith('/api/'))}
-                      className="object-cover"
-                    />
-                  </button>
-                ))}
               </div>
             </div>
           </div>
