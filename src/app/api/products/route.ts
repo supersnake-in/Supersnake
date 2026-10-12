@@ -31,6 +31,9 @@ export async function POST(request: Request) {
       images,
       colors,
       sizes,
+      collectionId,
+      collectionSlug,
+      collectionName,
     } = body;
 
     // Strict Validations
@@ -127,6 +130,9 @@ export async function POST(request: Request) {
       colors: cleanColors,
       sizes: cleanSizes as any,
       variants,
+      collectionId: typeof collectionId === 'string' ? collectionId : undefined,
+      collectionSlug: typeof collectionSlug === 'string' ? collectionSlug : undefined,
+      collectionName: typeof collectionName === 'string' ? collectionName : undefined,
       isNew: true,
       rating: 5.0,
       reviewsCount: 0,

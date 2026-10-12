@@ -55,10 +55,20 @@ export default function DedicatedCollectionPage() {
 
     const allAvailable = Array.from(mergedMap.values());
 
-    return allAvailable.filter(
-      (p) =>
-        p.collectionSlug === collection.slug ||
-        p.collectionId === collection.id ||
+    return allAvailable.filter((p) => {
+      const pSlug = (p.collectionSlug || '').toLowerCase().trim();
+      const cSlug = (collection.slug || '').toLowerCase().trim();
+      const pName = (p.collectionName || '').toLowerCase().trim();
+      const cName = (collection.name || '').toLowerCase().trim();
+      const isDirectMatch =
+        (pSlug && pSlug === cSlug) ||
+        (pName && pName === cName) ||
+        (p.collectionId && (p.collectionId === collection.id || p.collectionId === collection.slug));
+
+      if (isDirectMatch) return true;
+
+      // Legacy / fallback hardcoded slug matches
+      return (
         (collection.slug === 'the-signature' &&
           (p.isSignature ||
             p.slug === 'the-signature-tee' ||
@@ -72,11 +82,12 @@ export default function DedicatedCollectionPage() {
         (collection.slug === 'the-aura' &&
           (p.slug === 'the-chalk-minimalist' || p.slug === 'the-kinetic-silk-cotton')) ||
         (collection.slug === 'the-royals' &&
-          (p.slug === 'the-meridian-cropped' || p.slug === 'the-royal-serpent-crest')) ||
+          (p.slug === 'the-meridian-cropped' || p.slug === 'the-royal-serpent-crest' || p.slug === 'the-royal-insignia')) ||
         (collection.slug === 'the-black-panther' &&
           (p.slug === 'the-panther-embossed-heavyweight' ||
             p.slug === 'the-panther-minimal-refined-tee'))
-    );
+      );
+    });
   }, [products, collection]);
 
   // Breakdown counts

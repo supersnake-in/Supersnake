@@ -23,9 +23,10 @@ const ALL_SIZES: Size[] = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL'
 
 export default function AdminNewProductPage() {
   const router = useRouter();
-  const { addProduct, setSignatureProduct } = useStore();
+  const { addProduct, setSignatureProduct, collections } = useStore();
 
   const [name, setName] = useState('');
+  const [selectedCollectionId, setSelectedCollectionId] = useState('');
   const [tagline, setTagline] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState<number>(1499);
@@ -165,10 +166,17 @@ export default function AdminNewProductPage() {
       });
     });
 
+    const matchedCollection = collections.find(
+      (c) => c.id === selectedCollectionId || c.slug === selectedCollectionId
+    );
+
     const newProduct: Product = {
       id: newId,
       name: cleanName,
       slug,
+      collectionId: matchedCollection?.id,
+      collectionSlug: matchedCollection?.slug,
+      collectionName: matchedCollection?.name,
       tagline: sanitizeString(tagline),
       description: sanitizeString(description),
       gender,
@@ -344,18 +352,46 @@ export default function AdminNewProductPage() {
             </div>
             <div>
               <label className="block text-[10px] font-mono uppercase text-neutral-400 mb-1">
-                Collection / Gender *
+                Gender Category *
               </label>
               <select
                 value={gender}
                 onChange={(e) => setGender(e.target.value as Gender)}
                 className="w-full bg-[#121212] border border-white/15 px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-snake-green cursor-pointer"
               >
-                <option value="unisex">Unisex Collection</option>
-                <option value="men">Men Collection</option>
-                <option value="women">Women Collection</option>
+                <option value="unisex">Unisex</option>
+                <option value="men">Men</option>
+                <option value="women">Women</option>
               </select>
             </div>
+          </div>
+
+          {/* Chapter / Collection Series Selector */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-[10px] font-mono uppercase text-neutral-400">
+                Chapter / Collection Series
+              </label>
+              <Link
+                href="/admin/collections"
+                target="_blank"
+                className="text-[10px] text-snake-green hover:underline uppercase font-mono font-bold"
+              >
+                + MANAGE / CREATE SERIES
+              </Link>
+            </div>
+            <select
+              value={selectedCollectionId}
+              onChange={(e) => setSelectedCollectionId(e.target.value)}
+              className="w-full bg-[#121212] border border-white/15 px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-snake-green cursor-pointer"
+            >
+              <option value="">No Series / Core Foundation Piece</option>
+              {collections.map((col) => (
+                <option key={col.id} value={col.id}>
+                  {col.name} {col.badge ? `// ${col.badge}` : ''}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
