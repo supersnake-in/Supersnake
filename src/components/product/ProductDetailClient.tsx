@@ -68,6 +68,34 @@ export function ProductDetailClient({ initialProduct, slug }: ProductDetailClien
     });
   }, [product?.images]);
 
+  const handlePrevImage = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (activeImageIndex > 0) {
+      const nextIdx = activeImageIndex - 1;
+      setActiveImageIndex(nextIdx);
+      if (mobileCarouselRef.current) {
+        mobileCarouselRef.current.scrollTo({
+          left: nextIdx * mobileCarouselRef.current.clientWidth,
+          behavior: 'smooth',
+        });
+      }
+    }
+  };
+
+  const handleNextImage = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (activeImageIndex < uniqueImages.length - 1) {
+      const nextIdx = activeImageIndex + 1;
+      setActiveImageIndex(nextIdx);
+      if (mobileCarouselRef.current) {
+        mobileCarouselRef.current.scrollTo({
+          left: nextIdx * mobileCarouselRef.current.clientWidth,
+          behavior: 'smooth',
+        });
+      }
+    }
+  };
+
   // Auto-slide images every 10 seconds if multiple images exist
   useEffect(() => {
     if (!uniqueImages || uniqueImages.length <= 1 || lightboxOpen) return;
@@ -237,6 +265,29 @@ export function ProductDetailClient({ initialProduct, slug }: ProductDetailClien
                 <span className="truncate">{product.tagline || (product.gsm && product.gsm > 0 ? `${product.gsm} GSM` : 'HEAVYWEIGHT')}</span>
               </div>
 
+              {/* Navigation Arrows for Mobile (appears only if direction is available) */}
+              {uniqueImages.length > 1 && activeImageIndex > 0 && (
+                <button
+                  type="button"
+                  onClick={handlePrevImage}
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 p-2 sm:p-2.5 rounded-full bg-black/65 hover:bg-black/90 active:scale-90 backdrop-blur-md border border-white/15 text-white hover:text-snake-green hover:border-snake-green transition-all shadow-lg focus:outline-none cursor-pointer"
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft size={18} className="stroke-[2.2]" />
+                </button>
+              )}
+
+              {uniqueImages.length > 1 && activeImageIndex < uniqueImages.length - 1 && (
+                <button
+                  type="button"
+                  onClick={handleNextImage}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 p-2 sm:p-2.5 rounded-full bg-black/65 hover:bg-black/90 active:scale-90 backdrop-blur-md border border-white/15 text-white hover:text-snake-green hover:border-snake-green transition-all shadow-lg focus:outline-none cursor-pointer"
+                  aria-label="Next image"
+                >
+                  <ChevronRight size={18} className="stroke-[2.2]" />
+                </button>
+              )}
+
               {/* Lightbox Trigger */}
               <button
                 onClick={() => setLightboxOpen(true)}
@@ -305,6 +356,31 @@ export function ProductDetailClient({ initialProduct, slug }: ProductDetailClien
                 >
                   <Maximize2 size={16} />
                 </button>
+
+                {/* Navigation Arrows for Desktop (appears only if direction is available) */}
+                {uniqueImages.length > 1 && activeImageIndex > 0 && (
+                  <button
+                    type="button"
+                    onClick={handlePrevImage}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 z-20 p-2.5 sm:p-3 rounded-full bg-black/65 hover:bg-black/90 active:scale-95 backdrop-blur-md border border-white/15 hover:border-snake-green text-white hover:text-snake-green transition-all shadow-[0_4px_25px_rgba(0,0,0,0.6)] focus:outline-none cursor-pointer group/btn"
+                    title="Previous image (Left)"
+                    aria-label="Previous image"
+                  >
+                    <ChevronLeft size={22} className="stroke-[2.2] group-hover/btn:-translate-x-0.5 transition-transform" />
+                  </button>
+                )}
+
+                {uniqueImages.length > 1 && activeImageIndex < uniqueImages.length - 1 && (
+                  <button
+                    type="button"
+                    onClick={handleNextImage}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 z-20 p-2.5 sm:p-3 rounded-full bg-black/65 hover:bg-black/90 active:scale-95 backdrop-blur-md border border-white/15 hover:border-snake-green text-white hover:text-snake-green transition-all shadow-[0_4px_25px_rgba(0,0,0,0.6)] focus:outline-none cursor-pointer group/btn"
+                    title="Next image (Right)"
+                    aria-label="Next image"
+                  >
+                    <ChevronRight size={22} className="stroke-[2.2] group-hover/btn:translate-x-0.5 transition-transform" />
+                  </button>
+                )}
               </div>
 
               {/* Thumbnail Strip */}
