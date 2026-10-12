@@ -234,7 +234,7 @@ export function ProductDetailClient({ initialProduct, slug }: ProductDetailClien
                   {String(activeImageIndex + 1).padStart(2, '0')} / {String(uniqueImages.length).padStart(2, '0')}
                 </span>
                 <span>•</span>
-                <span className="truncate">{product.tagline || `${product.gsm} GSM`}</span>
+                <span className="truncate">{product.tagline || (product.gsm && product.gsm > 0 ? `${product.gsm} GSM` : 'HEAVYWEIGHT')}</span>
               </div>
 
               {/* Lightbox Trigger */}
@@ -294,7 +294,7 @@ export function ProductDetailClient({ initialProduct, slug }: ProductDetailClien
 
                 {/* Tagline / Subtitle Badge on Hero Image */}
                 <div className="absolute top-4 left-4 z-10 px-2.5 py-1 bg-black/70 backdrop-blur-md border border-white/10 text-[10px] font-mono tracking-widest text-neutral-300 uppercase max-w-[80%] truncate">
-                  {product.tagline || `${product.gsm} GSM`}
+                  {product.tagline || (product.gsm && product.gsm > 0 ? `${product.gsm} GSM` : 'HEAVYWEIGHT')}
                 </div>
 
                 {/* Lightbox Expander */}
@@ -593,7 +593,7 @@ export function ProductDetailClient({ initialProduct, slug }: ProductDetailClien
                 {openAccordions.fabric && (
                   <div className="p-4 pt-0 space-y-2 text-neutral-400 border-t border-white/5">
                     {product.fabric && <p><span className="text-white">Fabric:</span> {product.fabric}</p>}
-                    {(product.weightText || product.gsm) && (
+                    {(product.weightText || (product.gsm && product.gsm > 0)) && (
                       <p><span className="text-white">Weight:</span> {product.weightText || `${product.gsm} GSM Heavyweight Jersey`}</p>
                     )}
                     {Array.isArray(product.features) && product.features.length > 0 && (

@@ -98,7 +98,7 @@ export default function AdminProductsPage() {
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState<number>(1499);
   const [mrp, setMrp] = useState<number>(2499);
-  const [gsm, setGsm] = useState<number>(280);
+  const [gsm, setGsm] = useState<number | string>('');
   const [fit, setFit] = useState<FitType>('Boxy');
   const [gender, setGender] = useState<Gender>('unisex');
   const [fabric, setFabric] = useState('100% Long-Staple Supima® Cotton (280 GSM Heavyweight)');
@@ -122,6 +122,7 @@ export default function AdminProductsPage() {
   ]);
   const [customColorName, setCustomColorName] = useState('');
   const [customColorHex, setCustomColorHex] = useState('#04fc21');
+  const [editingColorIndex, setEditingColorIndex] = useState<number | null>(null);
 
   // Image Upload State
   const [uploadedImages, setUploadedImages] = useState<
@@ -258,9 +259,9 @@ export default function AdminProductsPage() {
 
   const toggleColorPreset = (preset: { name: string; hex: string }) => {
     setSelectedColors((prev) => {
-      const exists = prev.some((c) => c.name === preset.name);
+      const exists = prev.some((c) => c.name.toLowerCase() === preset.name.toLowerCase());
       if (exists) {
-        return prev.length > 1 ? prev.filter((c) => c.name !== preset.name) : prev;
+        return prev.length > 1 ? prev.filter((c) => c.name.toLowerCase() !== preset.name.toLowerCase()) : prev;
       }
       return [...prev, preset];
     });
@@ -269,8 +270,64 @@ export default function AdminProductsPage() {
   const handleAddCustomColor = () => {
     if (!customColorName.trim()) return;
     const cleanName = sanitizeString(customColorName.trim());
-    setSelectedColors((prev) => [...prev, { name: cleanName, hex: customColorHex }]);
+    const cleanHex = customColorHex.startsWith('#') ? customColorHex : `#${customColorHex}`;
+    setSelectedColors((prev) => {
+      const existsIndex = prev.findIndex((c) => c.name.toLowerCase() === cleanName.toLowerCase());
+      if (existsIndex >= 0) {
+        const copy = [...prev];
+        copy[existsIndex] = { name: cleanName, hex: cleanHex };
+        return copy;
+      }
+      return [...prev, { name: cleanName, hex: cleanHex }];
+    });
     setCustomColorName('');
+    setCustomColorHex('#04fc21');
+  };
+
+  const handleStartEditColor = (index: number) => {
+    const target = selectedColors[index];
+    if (!target) return;
+    setEditingColorIndex(index);
+    setCustomColorName(target.name);
+    setCustomColorHex(target.hex);
+  };
+
+  const handleSaveEditedColor = () => {
+    if (editingColorIndex === null) return;
+    if (!customColorName.trim()) return;
+    const cleanName = sanitizeString(customColorName.trim());
+    const cleanHex = customColorHex.startsWith('#') ? customColorHex : `#${customColorHex}`;
+
+    setSelectedColors((prev) => {
+      const copy = [...prev];
+      if (editingColorIndex >= 0 && editingColorIndex < copy.length) {
+        copy[editingColorIndex] = { name: cleanName, hex: cleanHex };
+      }
+      return copy;
+    });
+
+    setEditingColorIndex(null);
+    setCustomColorName('');
+    setCustomColorHex('#04fc21');
+  };
+
+  const handleCancelEditColor = () => {
+    setEditingColorIndex(null);
+    setCustomColorName('');
+    setCustomColorHex('#04fc21');
+  };
+
+  const handleDeleteColor = (index: number) => {
+    setSelectedColors((prev) => {
+      if (prev.length <= 1) {
+        alert('Product must have at least one color configured.');
+        return prev;
+      }
+      return prev.filter((_, i) => i !== index);
+    });
+    if (editingColorIndex === index) {
+      handleCancelEditColor();
+    }
   };
 
   const handleOpenCreateModal = () => {
@@ -280,13 +337,13 @@ export default function AdminProductsPage() {
     setDescription('Constructed from premium heavyweight long-staple cotton with architectural drape.');
     setPrice(1499);
     setMrp(2499);
-    setGsm(280);
+    setGsm('');
     setFit('Boxy');
     setGender('unisex');
-    setFabric('100% Long-Staple Supima® Cotton (280 GSM Heavyweight)');
-    setWeightText('280 GSM Heavyweight Jersey');
+    setFabric('100% Long-Staple Supima® Cotton');
+    setWeightText('Luxury Cotton Jersey');
     setSpecificationsText(
-      '280 GSM Heavyweight structure\nZero-sag reinforced 1-inch collar\nPre-shrunk architectural geometry\nHigh-density luxury stitch finish'
+      'Zero-sag reinforced 1-inch collar\nPre-shrunk architectural geometry\nHigh-density luxury stitch finish'
     );
     setCareInstructionsText(
       'Machine wash cold, inside out with like colors\nDo not tumble dry\nLay flat to dry in shade\nCool iron on reverse; avoid contact with prints/embroidery'
@@ -303,6 +360,9 @@ export default function AdminProductsPage() {
     setSelectedSizes(['S', 'M', 'L', 'XL']);
     setSelectedColors([{ name: 'Obsidian Black', hex: '#0a0a0a' }]);
     setUploadedImages([]);
+    setEditingColorIndex(null);
+    setCustomColorName('');
+    setCustomColorHex('#04fc21');
     setIsModalOpen(true);
   };
 
@@ -314,11 +374,11 @@ export default function AdminProductsPage() {
     setDescription(prod.description || '');
     setPrice(prod.price);
     setMrp(prod.mrp);
-    setGsm(prod.gsm);
+    setGsm(prod.gsm && prod.gsm > 0 ? prod.gsm : '');
     setFit(prod.fit);
     setGender(prod.gender);
-    setFabric(prod.fabric || `${prod.gsm} GSM 100% Long-Staple Supima® Cotton`);
-    setWeightText(prod.weightText || `${prod.gsm} GSM Heavyweight Jersey`);
+    setFabric(prod.fabric || (prod.gsm && prod.gsm > 0 ? `${prod.gsm} GSM 100% Long-Staple Supima® Cotton` : '100% Long-Staple Supima® Cotton'));
+    setWeightText(prod.weightText || (prod.gsm && prod.gsm > 0 ? `${prod.gsm} GSM Heavyweight Jersey` : 'Luxury Cotton Jersey'));
     setSpecificationsText(Array.isArray(prod.features) ? prod.features.join('\n') : '');
     setCareInstructionsText(Array.isArray(prod.careInstructions) ? prod.careInstructions.join('\n') : '');
     setShippingPolicy(
@@ -339,6 +399,9 @@ export default function AdminProductsPage() {
         angle: img.angle || 'front',
       }))
     );
+    setEditingColorIndex(null);
+    setCustomColorName('');
+    setCustomColorHex('#04fc21');
     setIsModalOpen(true);
   };
 
@@ -366,7 +429,8 @@ export default function AdminProductsPage() {
     const cleanSlug = sanitizeSlug(cleanName);
     const cleanPrice = sanitizeNumber(price, 1499);
     const cleanMrp = sanitizeNumber(mrp, Math.max(cleanPrice, 2499));
-    const cleanGsm = sanitizeNumber(gsm, 280);
+    const numGsm = typeof gsm === 'number' ? gsm : Number(gsm);
+    const cleanGsm = !isNaN(numGsm) && numGsm > 0 ? numGsm : 0;
 
     const parsedFeatures = specificationsText
       .split('\n')
@@ -414,7 +478,7 @@ export default function AdminProductsPage() {
       collectionId: matchedCollection?.id,
       collectionSlug: matchedCollection?.slug,
       collectionName: matchedCollection?.name,
-      tagline: sanitizeString(tagline || `${cleanGsm} GSM Engineered luxury garment`),
+      tagline: sanitizeString(tagline || (cleanGsm > 0 ? `${cleanGsm} GSM Engineered luxury garment` : 'Engineered luxury garment')),
       description: sanitizeString(
         description || 'Constructed from premium heavyweight long-staple cotton with architectural drape.'
       ),
@@ -423,8 +487,8 @@ export default function AdminProductsPage() {
       price: cleanPrice,
       mrp: cleanMrp,
       gsm: cleanGsm,
-      fabric: sanitizeString(fabric || `${cleanGsm} GSM 100% Long-Staple Supima® Cotton`),
-      weightText: sanitizeString(weightText || `${cleanGsm} GSM Heavyweight Jersey`),
+      fabric: sanitizeString(fabric || (cleanGsm > 0 ? `${cleanGsm} GSM 100% Long-Staple Supima® Cotton` : '100% Long-Staple Supima® Cotton')),
+      weightText: sanitizeString(weightText || (cleanGsm > 0 ? `${cleanGsm} GSM Heavyweight Jersey` : 'Luxury Cotton Jersey')),
       careInstructions: parsedCare,
       features: parsedFeatures,
       shippingPolicy: sanitizeString(
@@ -726,7 +790,11 @@ export default function AdminProductsPage() {
                 </td>
 
                 <td className="py-3 px-4">
-                  <span className="text-snake-green font-bold block">{prod.gsm} GSM</span>
+                  {prod.gsm && Number(prod.gsm) > 0 ? (
+                    <span className="text-snake-green font-bold block">{prod.gsm} GSM</span>
+                  ) : (
+                    <span className="text-neutral-500 font-mono text-xs block">—</span>
+                  )}
                   <span className="text-[10px] text-neutral-400 block max-w-[160px] truncate">
                     {prod.fabric}
                   </span>
@@ -1140,23 +1208,23 @@ export default function AdminProductsPage() {
                 </div>
 
                 {/* SECTION 5: COLORS AVAILABLE */}
-                <div className="space-y-3 p-4 bg-neutral-950 border border-neutral-800 rounded-lg">
+                <div className="space-y-4 p-4 bg-neutral-950 border border-neutral-800 rounded-lg">
                   <div className="flex justify-between items-center">
                     <label className="text-white font-bold uppercase tracking-wider flex items-center gap-1.5 text-[11px]">
                       <Palette size={14} className="text-snake-green" />
                       COLORS AVAILABLE *
                     </label>
-                    <span className="text-[10px] text-neutral-500">
+                    <span className="text-[10px] text-neutral-400 font-mono">
                       {selectedColors.length} color(s) configured
                     </span>
                   </div>
 
                   {/* Preset Luxury Colors */}
                   <div className="space-y-1.5">
-                    <span className="text-[10px] text-neutral-400 uppercase">LUXURY PRESETS:</span>
+                    <span className="text-[10px] text-neutral-400 uppercase font-mono">LUXURY PRESETS:</span>
                     <div className="flex flex-wrap gap-2">
                       {LUXURY_COLOR_PRESETS.map((preset) => {
-                        const isSelected = selectedColors.some((c) => c.name === preset.name);
+                        const isSelected = selectedColors.some((c) => c.name.toLowerCase() === preset.name.toLowerCase());
                         return (
                           <button
                             key={preset.name}
@@ -1179,30 +1247,153 @@ export default function AdminProductsPage() {
                     </div>
                   </div>
 
-                  {/* Custom Color Creator */}
-                  <div className="pt-2 border-t border-neutral-800 flex flex-wrap items-center gap-2">
-                    <span className="text-[10px] text-neutral-400 uppercase">ADD BESPOKE SHADE:</span>
-                    <input
-                      type="text"
-                      value={customColorName}
-                      onChange={(e) => setCustomColorName(e.target.value)}
-                      placeholder="Color Name (e.g. Acid Lime)"
-                      className="bg-black border border-neutral-800 px-2.5 py-1 text-white rounded text-xs focus:border-snake-green"
-                    />
-                    <input
-                      type="color"
-                      value={customColorHex}
-                      onChange={(e) => setCustomColorHex(e.target.value)}
-                      className="w-8 h-8 rounded bg-transparent border border-neutral-800 cursor-pointer p-0.5"
-                      title="Choose Hex Color"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleAddCustomColor}
-                      className="px-3 py-1 bg-neutral-800 hover:bg-snake-green hover:text-black text-white font-bold uppercase rounded text-[10px] transition-colors"
-                    >
-                      + ADD SHADE
-                    </button>
+                  {/* Configured / Active Palette (Display, Edit & Delete) */}
+                  <div className="pt-3 border-t border-neutral-800/80 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] text-neutral-400 uppercase font-mono">
+                        CONFIGURED SHADES ({selectedColors.length}):
+                      </span>
+                      <span className="text-[9px] text-neutral-500 font-mono">
+                        Click edit or delete on any shade
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {selectedColors.map((color, idx) => {
+                        const isPreset = LUXURY_COLOR_PRESETS.some(
+                          (p) => p.name.toLowerCase() === color.name.toLowerCase()
+                        );
+                        const isBeingEdited = editingColorIndex === idx;
+
+                        return (
+                          <div
+                            key={`${color.name}-${idx}`}
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs transition-all ${
+                              isBeingEdited
+                                ? 'border-snake-green bg-snake-green/15 text-white ring-1 ring-snake-green'
+                                : 'border-neutral-800 bg-neutral-900/80 text-white hover:border-neutral-700'
+                            }`}
+                          >
+                            <span
+                              className="w-3.5 h-3.5 rounded-full border border-white/30 shrink-0 shadow-sm"
+                              style={{ backgroundColor: color.hex }}
+                            />
+                            <div className="flex flex-col">
+                              <span className="font-semibold text-[11px] leading-tight text-white">{color.name}</span>
+                              <span className="text-[9px] font-mono text-neutral-400 uppercase">{color.hex}</span>
+                            </div>
+                            {!isPreset && (
+                              <span className="text-[8px] font-mono uppercase bg-snake-green/20 text-snake-green px-1.5 py-0.5 rounded font-bold">
+                                BESPOKE
+                              </span>
+                            )}
+                            <div className="flex items-center gap-0.5 ml-1 pl-1.5 border-l border-neutral-800">
+                              <button
+                                type="button"
+                                onClick={() => handleStartEditColor(idx)}
+                                className="p-1 hover:bg-white/10 rounded text-neutral-400 hover:text-snake-green transition-colors"
+                                title="Edit shade name or hex color"
+                              >
+                                <Edit2 size={12} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteColor(idx)}
+                                className="p-1 hover:bg-rose-500/20 rounded text-neutral-400 hover:text-rose-400 transition-colors"
+                                title="Delete this shade"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Custom Color Creator / Editor Form */}
+                  <div className="pt-3 border-t border-neutral-800 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-neutral-400 uppercase font-mono flex items-center gap-1.5">
+                        {editingColorIndex !== null ? (
+                          <>
+                            <Sparkles size={12} className="text-snake-green" />
+                            <span className="text-snake-green font-bold">
+                              EDITING SHADE #{editingColorIndex + 1}:
+                            </span>
+                          </>
+                        ) : (
+                          <span>ADD BESPOKE SHADE:</span>
+                        )}
+                      </span>
+                      {editingColorIndex !== null && (
+                        <button
+                          type="button"
+                          onClick={handleCancelEditColor}
+                          className="text-[10px] font-mono text-neutral-400 hover:text-white underline"
+                        >
+                          Cancel Edit
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <input
+                        type="text"
+                        value={customColorName}
+                        onChange={(e) => setCustomColorName(e.target.value)}
+                        placeholder="Color Name (e.g. Acid Lime, Vintage Rose)"
+                        className="bg-black border border-neutral-800 px-2.5 py-1.5 text-white rounded text-xs focus:border-snake-green flex-1 min-w-[180px]"
+                      />
+                      <div className="flex items-center gap-1.5 bg-black border border-neutral-800 px-2 py-1 rounded">
+                        <input
+                          type="color"
+                          value={customColorHex}
+                          onChange={(e) => setCustomColorHex(e.target.value)}
+                          className="w-6 h-6 rounded bg-transparent border-0 cursor-pointer p-0"
+                          title="Choose Hex Color"
+                        />
+                        <input
+                          type="text"
+                          value={customColorHex.toUpperCase()}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val.startsWith('#') || val === '') setCustomColorHex(val);
+                            else setCustomColorHex('#' + val);
+                          }}
+                          placeholder="#000000"
+                          className="w-16 bg-transparent text-[11px] font-mono text-neutral-300 focus:outline-none"
+                        />
+                      </div>
+                      {editingColorIndex !== null ? (
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={handleSaveEditedColor}
+                            className="px-3 py-1.5 bg-snake-green text-black hover:bg-snake-green/90 font-bold uppercase rounded text-[10px] transition-colors flex items-center gap-1"
+                          >
+                            <Check size={12} />
+                            <span>UPDATE SHADE</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleCancelEditColor}
+                            className="px-2.5 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 uppercase rounded text-[10px] transition-colors"
+                          >
+                            CANCEL
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={handleAddCustomColor}
+                          className="px-3 py-1.5 bg-neutral-800 hover:bg-snake-green hover:text-black text-white font-bold uppercase rounded text-[10px] transition-colors flex items-center gap-1"
+                        >
+                          <Plus size={12} />
+                          <span>+ ADD SHADE</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -1311,26 +1502,30 @@ export default function AdminProductsPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                     <div className="space-y-1">
                       <div className="flex justify-between items-center">
-                        <label className="text-neutral-400 uppercase font-semibold text-[11px]">
-                          GSM DENSITY *
+                        <label className="text-neutral-400 uppercase font-semibold text-[11px] flex items-center gap-1.5">
+                          <span>GSM DENSITY</span>
+                          <span className="text-[9px] text-neutral-500 font-mono font-normal">(OPTIONAL)</span>
                         </label>
-                        <span className="text-[10px] text-snake-green font-bold">{gsm} GSM</span>
+                        <span className="text-[10px] text-snake-green font-bold">
+                          {gsm !== '' && Number(gsm) > 0 ? `${gsm} GSM` : 'Unspecified'}
+                        </span>
                       </div>
                       <input
                         type="number"
-                        required
                         value={gsm}
-                        onChange={(e) => setGsm(Number(e.target.value))}
-                        className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green"
+                        onChange={(e) => setGsm(e.target.value === '' ? '' : Number(e.target.value))}
+                        placeholder="Optional (e.g. 280)"
+                        className="w-full bg-black border border-neutral-800 px-3 py-2 text-white rounded focus:border-snake-green text-xs font-mono"
                       />
-                      <div className="flex flex-wrap gap-1 pt-1">
+                      <div className="flex flex-wrap items-center gap-1 pt-1">
+                        <span className="text-[9px] text-neutral-500 font-mono mr-1">PRESETS:</span>
                         {[220, 240, 260, 280, 300, 320, 400].map((weight) => (
                           <button
                             key={weight}
                             type="button"
                             onClick={() => setGsm(weight)}
                             className={`px-1.5 py-0.5 text-[9px] rounded border transition-colors ${
-                              gsm === weight
+                              Number(gsm) === weight
                                 ? 'bg-snake-green text-black border-snake-green font-bold'
                                 : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white'
                             }`}
@@ -1338,6 +1533,16 @@ export default function AdminProductsPage() {
                             {weight}
                           </button>
                         ))}
+                        {gsm !== '' && Number(gsm) > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setGsm('')}
+                            className="px-1.5 py-0.5 text-[9px] rounded border border-neutral-800 bg-neutral-900 text-neutral-400 hover:text-rose-400 transition-colors ml-auto font-mono"
+                            title="Clear GSM density"
+                          >
+                            Clear
+                          </button>
+                        )}
                       </div>
                     </div>
 

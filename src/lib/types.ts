@@ -61,7 +61,7 @@ export interface Product {
   fit: FitType;
   price: number;
   mrp: number;
-  gsm: number;
+  gsm?: number;
   fabric: string;
   weightText?: string;
   careInstructions: string[];

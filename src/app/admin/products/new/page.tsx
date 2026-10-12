@@ -30,10 +30,10 @@ export default function AdminNewProductPage() {
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState<number>(1499);
   const [mrp, setMrp] = useState<number>(2499);
-  const [gsm, setGsm] = useState<number>(280);
+  const [gsm, setGsm] = useState<number | string>('');
   const [fit, setFit] = useState<FitType>('Boxy');
   const [gender, setGender] = useState<Gender>('unisex');
-  const [fabric, setFabric] = useState('100% Long-Staple Supima® Cotton (280 GSM Heavyweight)');
+  const [fabric, setFabric] = useState('100% Long-Staple Supima® Cotton');
   const [isSignatureChoice, setIsSignatureChoice] = useState(false);
 
   const [selectedSizes, setSelectedSizes] = useState<Size[]>(['S', 'M', 'L', 'XL']);
@@ -175,7 +175,7 @@ export default function AdminNewProductPage() {
       fit,
       price,
       mrp,
-      gsm,
+      gsm: Number(gsm) > 0 ? Number(gsm) : 0,
       fabric: sanitizeString(fabric),
       careInstructions: [
         'Machine wash cold at 30°C',
@@ -184,7 +184,7 @@ export default function AdminNewProductPage() {
         'Iron on low heat; avoid print and collar',
       ],
       features: [
-        `${gsm} GSM French Terry heavyweight weave`,
+        Number(gsm) > 0 ? `${gsm} GSM French Terry heavyweight weave` : 'French Terry heavyweight weave',
         'Reinforced 1x1 ribbed zero-sag collar',
         'Twin-needle bound shoulder and hem construction',
         'Pre-shrunk organic long-staple cotton',
@@ -316,13 +316,13 @@ export default function AdminNewProductPage() {
             </div>
             <div>
               <label className="block text-[10px] font-mono uppercase text-neutral-400 mb-1">
-                GSM Density
+                GSM Density (Optional)
               </label>
               <input
                 type="number"
                 value={gsm}
-                onChange={(e) => setGsm(Number(e.target.value))}
-                required
+                onChange={(e) => setGsm(e.target.value === '' ? '' : Number(e.target.value))}
+                placeholder="Optional (e.g. 280)"
                 className="w-full bg-[#121212] border border-white/15 px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-snake-green"
               />
             </div>

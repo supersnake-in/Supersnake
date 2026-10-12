@@ -126,7 +126,7 @@ export function ProductCard({
           {activePreLaunch ? (
             <span className="text-snake-green font-bold">PRE-BOOK // FIRST DROP</span>
           ) : (
-            product.tagline || `${product.gsm} GSM`
+            product.tagline || (product.gsm && product.gsm > 0 ? `${product.gsm} GSM` : 'HEAVYWEIGHT')
           )}
         </div>
 

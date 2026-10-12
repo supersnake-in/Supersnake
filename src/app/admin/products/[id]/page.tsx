@@ -23,7 +23,7 @@ export default function AdminEditProductPage() {
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState<number>(1499);
   const [mrp, setMrp] = useState<number>(2499);
-  const [gsm, setGsm] = useState<number>(280);
+  const [gsm, setGsm] = useState<number | string>('');
   const [fit, setFit] = useState<FitType>('Boxy');
   const [gender, setGender] = useState<Gender>('unisex');
   const [fabric, setFabric] = useState('');
@@ -43,7 +43,7 @@ export default function AdminEditProductPage() {
       setDescription(product.description || '');
       setPrice(product.price);
       setMrp(product.mrp);
-      setGsm(product.gsm);
+      setGsm(product.gsm && product.gsm > 0 ? product.gsm : '');
       setFit(product.fit);
       setGender(product.gender);
       setFabric(product.fabric || '');
@@ -174,7 +174,7 @@ export default function AdminEditProductPage() {
       description: sanitizeString(description),
       price,
       mrp,
-      gsm,
+      gsm: Number(gsm) > 0 ? Number(gsm) : 0,
       fit,
       gender,
       fabric: sanitizeString(fabric),
@@ -316,13 +316,13 @@ export default function AdminEditProductPage() {
           </div>
           <div>
             <label className="block text-[10px] font-mono uppercase text-neutral-400 mb-1">
-              GSM Density
+              GSM Density (Optional)
             </label>
             <input
               type="number"
               value={gsm}
-              onChange={(e) => setGsm(Number(e.target.value))}
-              required
+              onChange={(e) => setGsm(e.target.value === '' ? '' : Number(e.target.value))}
+              placeholder="Optional (e.g. 280)"
               className="w-full bg-[#121212] border border-white/15 px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-snake-green"
             />
           </div>
