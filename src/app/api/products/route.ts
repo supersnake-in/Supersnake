@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { sanitizeString, sanitizeSlug, sanitizeNumber, isValidImageSource } from '@/lib/security';
 import { Product, ProductImage } from '@/lib/types';
-import { fetchProductsFromSupabase, createProductInSupabase } from '@/lib/supabase/db';
+import { fetchProductsFromSupabase, createProductInSupabase, deleteProductFromSupabase } from '@/lib/supabase/db';
 
 export async function GET() {
   const products = await fetchProductsFromSupabase();
@@ -154,6 +154,32 @@ export async function POST(request: Request) {
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || 'Failed to process product' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    let id = searchParams.get('id');
+    let slug = searchParams.get('slug');
+
+    if (!id && !slug) {
+      const body = await request.json().catch(() => ({}));
+      id = body?.id;
+      slug = body?.slug;
+    }
+
+    if (!id && !slug) {
+      return NextResponse.json({ error: 'Product ID or slug is required' }, { status: 400 });
+    }
+
+    const success = await deleteProductFromSupabase(id || slug || '', slug || undefined);
+    return NextResponse.json({ success, message: 'Product deleted successfully' });
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error.message || 'Failed to delete product' },
       { status: 500 }
     );
   }

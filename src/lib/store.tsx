@@ -328,7 +328,7 @@ interface StoreContextType {
   products: Product[];
   addProduct: (product: Product) => void;
   updateProduct: (product: Product) => void;
-  deleteProduct: (productId: string) => void;
+  deleteProduct: (productId: string, slug?: string) => Promise<void> | void;
   setSignatureProduct: (productId: string) => Promise<{ success: boolean; error?: string }>;
   getProductBySlug: (slug: string) => Product | undefined;
 
@@ -440,13 +440,22 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try {
       // Purge any legacy mock products from browser storage & deduplicate images
+      let deletedSlugs = new Set<string>();
+      try {
+        const stored = localStorage.getItem('supersnake_deleted_products');
+        if (stored) {
+          const arr = JSON.parse(stored);
+          if (Array.isArray(arr)) deletedSlugs = new Set(arr);
+        }
+      } catch (e) {}
+
       const savedProducts = localStorage.getItem('supersnake_products');
       if (savedProducts) {
         try {
           const parsed = JSON.parse(savedProducts);
           if (Array.isArray(parsed)) {
             const realProducts = parsed
-              .filter((p) => !p.id?.startsWith('prod-0'))
+              .filter((p) => !p.id?.startsWith('prod-0') && !deletedSlugs.has(p.slug) && !deletedSlugs.has(p.id))
               .map((p) => {
                 const seen = new Set<string>();
                 return {
@@ -470,6 +479,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             saveProductsToLocalStorage(normalized);
           }
         } catch (e) {}
+      } else if (deletedSlugs.size > 0) {
+        const filtered = PRODUCTS.filter((p) => !deletedSlugs.has(p.slug) && !deletedSlugs.has(p.id));
+        setProducts(filtered);
       }
 
       const syncCart = loadCartFromStorageSync();
@@ -721,9 +733,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           });
           const normalized = normalizeSignatureProduct(deduplicated);
           // Merge with master catalog to guarantee complete chapter assignments
+          let deletedSlugs = new Set<string>();
+          try {
+            const stored = localStorage.getItem('supersnake_deleted_products');
+            if (stored) {
+              const arr = JSON.parse(stored);
+              if (Array.isArray(arr)) deletedSlugs = new Set(arr);
+            }
+          } catch (e) {}
+
           const mergedMap = new Map<string, Product>();
-          for (const p of PRODUCTS) mergedMap.set(p.slug, p);
+          for (const p of PRODUCTS) {
+            if (!deletedSlugs.has(p.slug) && !deletedSlugs.has(p.id)) {
+              mergedMap.set(p.slug, p);
+            }
+          }
           for (const p of normalized) {
+            if (deletedSlugs.has(p.slug) || deletedSlugs.has(p.id)) continue;
             const def = mergedMap.get(p.slug);
             mergedMap.set(p.slug, {
               ...def,
@@ -1541,19 +1567,54 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const deleteProduct = (productId: string) => {
-    const target = products.find((p) => p.id === productId || p.slug === productId);
+  const deleteProduct = async (productId: string, slug?: string) => {
+    const target = products.find((p) => p.id === productId || p.slug === productId || (slug && p.slug === slug));
     if (target?.isSignature) {
       throw new Error('This product is currently the Signature Product. Please select another Signature Product before deleting or archiving it.');
     }
+
+    const targetSlug = slug || target?.slug;
+    const targetId = target?.id || productId;
+
+    // Record tombstone in localStorage so it never resurrects
+    try {
+      const existing = localStorage.getItem('supersnake_deleted_products');
+      const arr: string[] = existing ? JSON.parse(existing) : [];
+      const toAdd = [productId, slug, targetId, targetSlug].filter(Boolean) as string[];
+      for (const item of toAdd) {
+        if (!arr.includes(item)) arr.push(item);
+      }
+      localStorage.setItem('supersnake_deleted_products', JSON.stringify(arr));
+    } catch (e) {}
+
+    // Remove from local store and storage immediately
     setProducts((prev) => {
-      const next = prev.filter((p) => p.id !== productId && p.slug !== productId);
+      const next = prev.filter(
+        (p) =>
+          p.id !== productId &&
+          p.slug !== productId &&
+          p.id !== targetId &&
+          (!targetSlug || p.slug !== targetSlug)
+      );
       saveProductsToLocalStorage(next);
       return next;
     });
-    deleteProductFromSupabase(productId).catch((err) => {
-      console.warn('Could not delete product from Supabase:', err);
-    });
+
+    // Delete in Supabase
+    try {
+      await deleteProductFromSupabase(targetId, targetSlug);
+    } catch (err) {
+      console.warn('Could not delete product from Supabase directly:', err);
+    }
+
+    // Call DELETE API route as well for server-side sync
+    try {
+      await fetch(`/api/products?id=${encodeURIComponent(targetId)}&slug=${encodeURIComponent(targetSlug || '')}`, {
+        method: 'DELETE',
+      });
+    } catch (apiErr) {
+      console.warn('Could not delete product via API route:', apiErr);
+    }
   };
 
   const getProductBySlug = (slug: string) => {

@@ -237,9 +237,21 @@ export async function fetchProductsFromSupabase(forceRefresh: boolean = false): 
     // Map Supabase rows to Product TypeScript interface and merge with master catalog
     const mapped = productsData.map(mapProductRowToProduct);
     const existingSlugs = new Set(mapped.map((p) => p.slug));
-    const merged = [...mapped];
+
+    let deletedSlugs = new Set<string>();
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('supersnake_deleted_products');
+        if (stored) {
+          const arr = JSON.parse(stored);
+          if (Array.isArray(arr)) deletedSlugs = new Set(arr);
+        }
+      } catch (e) {}
+    }
+
+    const merged = mapped.filter((p) => !deletedSlugs.has(p.slug) && !deletedSlugs.has(p.id));
     for (const p of PRODUCTS) {
-      if (!existingSlugs.has(p.slug)) {
+      if (!existingSlugs.has(p.slug) && !deletedSlugs.has(p.slug) && !deletedSlugs.has(p.id)) {
         merged.push(p);
       }
     }
@@ -377,13 +389,52 @@ export async function createProductInSupabase(product: Product): Promise<boolean
 /**
  * DELETE PRODUCT FROM SUPABASE
  */
-export async function deleteProductFromSupabase(productId: string): Promise<boolean> {
+export async function deleteProductFromSupabase(productId: string, productSlug?: string): Promise<boolean> {
   try {
+    cachedProducts = null;
+    productsCacheTime = 0;
+
+    let targetId = productId;
+    let targetSlug = productSlug;
+
+    // 1. If productId is not UUID and we have productSlug, look up UUID from Supabase
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(productId);
-    const query = supabase.from('products').delete();
-    const { error } = isUuid ? await query.eq('id', productId) : await query.eq('slug', productId);
-    return !error;
+    if (!isUuid) {
+      const searchVal = targetSlug || productId;
+      const { data: row } = await supabase
+        .from('products')
+        .select('id, slug')
+        .or(`slug.eq.${searchVal},id.eq.${productId}`)
+        .maybeSingle();
+      if (row?.id) {
+        targetId = row.id;
+        targetSlug = row.slug || targetSlug;
+      }
+    }
+
+    // 2. Clean up child records (images and variants) to ensure foreign keys don't block deletion
+    if (targetId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId)) {
+      await supabase.from('product_images').delete().eq('product_id', targetId);
+      await supabase.from('product_variants').delete().eq('product_id', targetId);
+    }
+
+    // 3. Delete the product row
+    if (targetId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId)) {
+      const { error } = await supabase.from('products').delete().eq('id', targetId);
+      if (error && targetSlug) {
+        await supabase.from('products').delete().eq('slug', targetSlug);
+      }
+    } else if (targetSlug) {
+      await supabase.from('products').delete().eq('slug', targetSlug);
+    } else {
+      await supabase.from('products').delete().eq('id', productId);
+    }
+
+    cachedProducts = null;
+    productsCacheTime = 0;
+    return true;
   } catch (err) {
+    console.warn('Error deleting product from Supabase:', err);
     return false;
   }
 }

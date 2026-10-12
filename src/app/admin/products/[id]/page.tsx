@@ -197,7 +197,7 @@ export default function AdminEditProductPage() {
     }, 1200);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (product.isSignature) {
       alert(
         `CANNOT DELETE SIGNATURE PRODUCT\n\n"${product.name}" is currently designated as the active Signature Product (Homepage Spotlight). Exactly one signature product must always remain active.\n\nPlease designate another product as the Signature Product before deleting this one.`
@@ -206,7 +206,7 @@ export default function AdminEditProductPage() {
     }
     if (confirm(`Are you sure you want to delete ${product.name}?`)) {
       try {
-        deleteProduct(product.id);
+        await deleteProduct(product.id, product.slug);
         router.push('/admin/products');
       } catch (err: any) {
         alert(err?.message || 'Failed to delete product.');

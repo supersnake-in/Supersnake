@@ -531,8 +531,8 @@ export default function AdminProductsPage() {
     setTimeout(() => setNotification(null), 5000);
   };
 
-  const handleDeleteProduct = (id: string, prodName: string) => {
-    const prod = products.find((p) => p.id === id);
+  const handleDeleteProduct = async (id: string, prodName: string, slug?: string) => {
+    const prod = products.find((p) => p.id === id || p.slug === id || (slug && p.slug === slug));
     if (prod?.isSignature) {
       alert(
         `CANNOT DELETE SIGNATURE PRODUCT\n\n"${prodName}" is currently designated as the active Signature Product (Homepage Spotlight). Exactly one signature product must always remain active.\n\nPlease designate another product as the Signature Product before deleting this one.`
@@ -541,7 +541,7 @@ export default function AdminProductsPage() {
     }
     if (confirm(`Remove "${prodName}" from customer-facing storefront?`)) {
       try {
-        deleteProduct(id);
+        await deleteProduct(id, slug || prod?.slug);
         setNotification(`REMOVED: "${prodName}" from storefront`);
         setTimeout(() => setNotification(null), 4000);
       } catch (err: any) {
@@ -857,7 +857,7 @@ export default function AdminProductsPage() {
                       <Edit2 size={14} />
                     </button>
                     <button
-                      onClick={() => handleDeleteProduct(prod.id, prod.name)}
+                      onClick={() => handleDeleteProduct(prod.id, prod.name, prod.slug)}
                       className="p-1 hover:text-red-400"
                       title="Delete from storefront"
                     >
