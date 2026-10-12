@@ -15,6 +15,7 @@ import {
   Package,
   Layers,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useStore } from '@/lib/store';
 import { ProductCard } from '@/components/product/ProductCard';
 import { PreBookingModal } from '@/components/pre-booking/PreBookingModal';
@@ -22,7 +23,15 @@ import { Product } from '@/lib/types';
 import { SuperSnakeLogo } from '@/components/brand/SuperSnakeLogo';
 
 export default function PreLaunchPage() {
+  const router = useRouter();
   const { products, collections, storefrontConfig } = useStore();
+
+  // If storefront mode is LIVE (or not PRE_LAUNCH), redirect immediately to homepage
+  useEffect(() => {
+    if (storefrontConfig?.storefrontMode && storefrontConfig.storefrontMode !== 'PRE_LAUNCH') {
+      router.replace('/');
+    }
+  }, [storefrontConfig?.storefrontMode, router]);
 
   const [selectedProductForPreBooking, setSelectedProductForPreBooking] = useState<Product | null>(null);
   const [isPreBookingModalOpen, setIsPreBookingModalOpen] = useState(false);
@@ -102,6 +111,10 @@ export default function PreLaunchPage() {
     setSelectedProductForPreBooking(product);
     setIsPreBookingModalOpen(true);
   };
+
+  if (storefrontConfig?.storefrontMode && storefrontConfig.storefrontMode !== 'PRE_LAUNCH') {
+    return null;
+  }
 
   return (
     <div className="bg-black text-white selection:bg-snake-green selection:text-black min-h-screen">

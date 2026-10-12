@@ -7,7 +7,7 @@ export const revalidate = 0;
 
 const DEFAULT_CONFIG: StorefrontConfig = {
   id: 'default',
-  storefrontMode: 'PRE_LAUNCH',
+  storefrontMode: 'LIVE',
   launchDate: '2026-10-14',
   launchTime: '10:00',
   launchTimezone: 'IST',

@@ -4,7 +4,7 @@ export type StorefrontMode = 'PRE_LAUNCH' | 'LIVE' | 'MAINTENANCE';
 
 // In-memory Edge cache for sub-millisecond middleware execution
 let edgeStorefrontState = {
-  mode: 'PRE_LAUNCH' as StorefrontMode,
+  mode: 'LIVE' as StorefrontMode,
   launchDate: '2026-10-14',
   launchTime: '10:00',
   launchTimezone: 'IST',
@@ -32,17 +32,17 @@ function isPastLaunch(launchDate: string, launchTime: string): boolean {
 }
 
 /**
- * Fetch storefront mode from Supabase with 30-second in-memory Edge caching
+ * Fetch storefront mode from Supabase with 5-second in-memory Edge caching
  */
 async function getStorefrontStatus(): Promise<typeof edgeStorefrontState> {
   const now = Date.now();
-  if (now - lastFetchTime < 30000 && lastFetchTime > 0) {
+  if (now - lastFetchTime < 5000 && lastFetchTime > 0) {
     return edgeStorefrontState;
   }
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 1200);
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
 
     // 1. Try fetching from storefront_config
     const res = await fetch(
@@ -63,7 +63,7 @@ async function getStorefrontStatus(): Promise<typeof edgeStorefrontState> {
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0) {
         edgeStorefrontState = {
-          mode: (data[0].storefront_mode as StorefrontMode) || 'PRE_LAUNCH',
+          mode: (data[0].storefront_mode as StorefrontMode) || 'LIVE',
           launchDate: data[0].launch_date || '2026-10-14',
           launchTime: data[0].launch_time || '10:00',
           launchTimezone: data[0].launch_timezone || 'IST',
@@ -80,7 +80,7 @@ async function getStorefrontStatus(): Promise<typeof edgeStorefrontState> {
   // 2. Fallback to maintenance_config if storefront_config table is not yet migrated
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 1000);
+    const timeoutId = setTimeout(() => controller.abort(), 2000);
 
     const res = await fetch(
       `${SUPABASE_URL}/rest/v1/maintenance_config?id=eq.default&select=maintenance_mode,maintenance_message,estimated_restore_time`,
@@ -101,7 +101,7 @@ async function getStorefrontStatus(): Promise<typeof edgeStorefrontState> {
       if (Array.isArray(data) && data.length > 0) {
         const isMaint = Boolean(data[0].maintenance_mode);
         edgeStorefrontState = {
-          mode: isMaint ? 'MAINTENANCE' : 'PRE_LAUNCH',
+          mode: isMaint ? 'MAINTENANCE' : 'LIVE',
           launchDate: '2026-10-14',
           launchTime: '10:00',
           launchTimezone: 'IST',
@@ -112,9 +112,7 @@ async function getStorefrontStatus(): Promise<typeof edgeStorefrontState> {
         lastFetchTime = now;
       }
     }
-  } catch (err) {
-    lastFetchTime = now;
-  }
+  } catch (err) {}
 
   return edgeStorefrontState;
 }
@@ -229,6 +227,8 @@ export async function middleware(request: NextRequest) {
       preLaunchUrl.pathname = '/pre-launch';
       const response = NextResponse.rewrite(preLaunchUrl);
       response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+      response.headers.set('CDN-Cache-Control', 'no-store');
+      response.headers.set('Vercel-CDN-Cache-Control', 'no-store');
       return response;
     }
 
@@ -295,15 +295,32 @@ export async function middleware(request: NextRequest) {
   // =========================================================================
   // CASE 3: LIVE MODE (Full Storefront Operational)
   // =========================================================================
-  // If a visitor accesses /maintenance or /pre-launch when LIVE, redirect them to home
-  if (pathname === '/maintenance' || pathname === '/pre-launch') {
+  // If a visitor accesses /maintenance or /pre-launch when LIVE, redirect them to home immediately
+  if (
+    pathname === '/maintenance' ||
+    pathname.startsWith('/maintenance/') ||
+    pathname === '/pre-launch' ||
+    pathname.startsWith('/pre-launch/')
+  ) {
     const homeUrl = request.nextUrl.clone();
     homeUrl.pathname = '/';
-    return NextResponse.redirect(homeUrl, { status: 307 });
+    homeUrl.search = '';
+    const response = NextResponse.redirect(homeUrl, { status: 307 });
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('CDN-Cache-Control', 'no-store');
+    response.headers.set('Vercel-CDN-Cache-Control', 'no-store');
+    return response;
   }
 
-  // Allow normal storefront request
-  return NextResponse.next();
+  // Allow normal storefront request with fresh cache controls
+  const response = NextResponse.next();
+  if (pathname === '/') {
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    response.headers.set('CDN-Cache-Control', 'no-store');
+    response.headers.set('Vercel-CDN-Cache-Control', 'no-store');
+  }
+  return response;
 }
 
 export const config = {

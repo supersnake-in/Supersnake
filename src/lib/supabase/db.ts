@@ -1589,7 +1589,7 @@ export async function fetchStorefrontConfigFromSupabase(forceRefresh: boolean = 
     if (!error && data) {
       cachedStorefrontConfig = {
         id: data.id || 'default',
-        storefrontMode: (data.storefront_mode as any) || 'PRE_LAUNCH',
+        storefrontMode: (data.storefront_mode as any) || 'LIVE',
         launchDate: data.launch_date || '2026-10-14',
         launchTime: data.launch_time || '10:00',
         launchTimezone: data.launch_timezone || 'IST',
@@ -1623,7 +1623,7 @@ export async function fetchStorefrontConfigFromSupabase(forceRefresh: boolean = 
       const isMaint = Boolean(mData.maintenance_mode);
       cachedStorefrontConfig = {
         id: 'default',
-        storefrontMode: isMaint ? 'MAINTENANCE' : (((mData as any).storefront_mode as any) || 'PRE_LAUNCH'),
+        storefrontMode: isMaint ? 'MAINTENANCE' : (((mData as any).storefront_mode as any) || 'LIVE'),
         launchDate: (mData as any).launch_date || '2026-10-14',
         launchTime: (mData as any).launch_time || '10:00',
         launchTimezone: (mData as any).launch_timezone || 'IST',

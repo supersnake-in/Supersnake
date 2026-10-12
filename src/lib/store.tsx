@@ -209,7 +209,7 @@ export const DEFAULT_MAINTENANCE_CONFIG: MaintenanceConfig = {
 
 export const DEFAULT_STOREFRONT_CONFIG: StorefrontConfig = {
   id: 'default',
-  storefrontMode: 'PRE_LAUNCH',
+  storefrontMode: 'LIVE',
   launchDate: '2026-10-14',
   launchTime: '10:00',
   launchTimezone: 'IST',
@@ -837,8 +837,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       })
       .catch(() => {});
 
-    // Fetch consolidated storefront and maintenance configuration (30s edge cached)
-    fetch('/api/storefront-mode')
+    // Fetch consolidated storefront and maintenance configuration (guaranteed fresh)
+    fetch('/api/storefront-mode', { cache: 'no-store' })
       .then(async (res) => {
         if (res.ok) {
           const cfg = await res.json();
