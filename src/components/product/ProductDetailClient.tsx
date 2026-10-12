@@ -221,7 +221,7 @@ export function ProductDetailClient({ initialProduct, slug }: ProductDetailClien
                       fill
                       priority={idx === 0}
                       sizes="(max-width: 1024px) 100vw, 60vw"
-                      unoptimized={Boolean(img.url.startsWith('data:') || img.url.startsWith('blob:'))}
+                      unoptimized={Boolean(img.url.startsWith('data:') || img.url.startsWith('blob:') || img.url.startsWith('/api/'))}
                       className="object-cover"
                     />
                   </div>
@@ -281,7 +281,7 @@ export function ProductDetailClient({ initialProduct, slug }: ProductDetailClien
                         fill
                         priority
                         sizes="(max-width: 1024px) 100vw, 60vw"
-                        unoptimized={Boolean(activeImage.url.startsWith('data:') || activeImage.url.startsWith('blob:'))}
+                        unoptimized={Boolean(activeImage.url.startsWith('data:') || activeImage.url.startsWith('blob:') || activeImage.url.startsWith('/api/'))}
                         className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                       />
                     ) : (
@@ -324,7 +324,7 @@ export function ProductDetailClient({ initialProduct, slug }: ProductDetailClien
                       alt={img.alt}
                       fill
                       sizes="120px"
-                      unoptimized={Boolean(img.url.startsWith('data:') || img.url.startsWith('blob:'))}
+                      unoptimized={Boolean(img.url.startsWith('data:') || img.url.startsWith('blob:') || img.url.startsWith('/api/'))}
                       className="object-cover"
                     />
                   </button>
@@ -800,7 +800,7 @@ export function ProductDetailClient({ initialProduct, slug }: ProductDetailClien
                   alt={activeImage.alt}
                   fill
                   priority
-                  unoptimized={Boolean(activeImage.url.startsWith('data:') || activeImage.url.startsWith('blob:'))}
+                  unoptimized={Boolean(activeImage.url.startsWith('data:') || activeImage.url.startsWith('blob:') || activeImage.url.startsWith('/api/'))}
                   className="object-contain"
                 />
               </motion.div>

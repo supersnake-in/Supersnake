@@ -40,12 +40,18 @@ export function mapProductRowToProduct(row: any): Product {
     return true;
   });
 
-  const images: ProductImage[] = deduplicatedImages.map((img: any, idx: number) => ({
-    url: img.url,
-    alt: img.alt || `${row.name} view ${idx + 1}`,
-    angle: img.angle || (idx === 0 ? 'front' : idx === 1 ? 'model' : 'fabric'),
-    isPrimary: idx === 0,
-  }));
+  const images: ProductImage[] = deduplicatedImages.map((img: any, idx: number) => {
+    let imageUrl = img.url;
+    if (typeof imageUrl === 'string' && imageUrl.startsWith('data:') && img.id) {
+      imageUrl = `/api/images/${img.id}`;
+    }
+    return {
+      url: imageUrl,
+      alt: img.alt || `${row.name} view ${idx + 1}`,
+      angle: img.angle || (idx === 0 ? 'front' : idx === 1 ? 'model' : 'fabric'),
+      isPrimary: idx === 0,
+    };
+  });
 
   const variants: ProductVariant[] = (row.variants || []).map((v: any) => ({
     id: v.id,

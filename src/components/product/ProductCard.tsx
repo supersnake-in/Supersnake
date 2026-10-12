@@ -95,7 +95,7 @@ export function ProductCard({
               fill
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               priority={priority}
-              unoptimized={Boolean(primarySrc.startsWith('data:') || primarySrc.startsWith('blob:'))}
+              unoptimized={Boolean(primarySrc.startsWith('data:') || primarySrc.startsWith('blob:') || primarySrc.startsWith('/api/'))}
               className={`object-cover transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                 isHovered && altSrc !== primarySrc ? 'opacity-0 scale-105' : 'scale-100 opacity-100'
               }`}
@@ -113,7 +113,7 @@ export function ProductCard({
               alt={`${product.name} — Alternate View Luxury Heavyweight T-Shirt`}
               fill
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              unoptimized={Boolean(altSrc.startsWith('data:') || altSrc.startsWith('blob:'))}
+              unoptimized={Boolean(altSrc.startsWith('data:') || altSrc.startsWith('blob:') || altSrc.startsWith('/api/'))}
               className={`object-cover transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                 isHovered ? 'opacity-100 scale-105' : 'opacity-0 scale-100'
               }`}

@@ -21,6 +21,9 @@ const getProductBySlug = cache(async (slug: string): Promise<Product | null> => 
   return PRODUCTS.find((p) => p.slug === slug) || null;
 });
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function generateStaticParams() {
   return PRODUCTS.map((product) => ({
     slug: product.slug,
@@ -39,7 +42,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const title = `${product.name} — ${product.tagline || `${product.gsm} GSM Luxury Heavyweight Tee`}`;
   const description = `${product.description} Cut from ${product.fabric || `${product.gsm} GSM heavyweight cotton`}. Available in ${product.colors.map((c) => c.name).join(', ')}.`;
-  const primaryImage = product.images?.[0]?.url || 'https://supersnake.in/logo.png';
+  const rawPrimary = product.images?.[0]?.url;
+  const primaryImage = rawPrimary && !rawPrimary.startsWith('data:')
+    ? (rawPrimary.startsWith('http') ? rawPrimary : `https://supersnake.in${rawPrimary}`)
+    : 'https://supersnake.in/logo.png';
   const canonicalUrl = `https://supersnake.in/product/${product.slug}`;
 
   return {
@@ -79,14 +85,17 @@ export default async function ProductDetailPage({ params }: Props) {
     notFound();
   }
 
-  const primaryImage = product.images?.[0]?.url || 'https://supersnake.in/logo.png';
-  const allImages = product.images?.map((img) => img.url).filter(Boolean) || [primaryImage];
+  const schemaImages = product.images
+    ?.map((img) => img.url)
+    .filter((url) => Boolean(url && !url.startsWith('data:')))
+    .map((url) => (url.startsWith('http') ? url : `https://supersnake.in${url}`))
+    .slice(0, 5) || ['https://supersnake.in/logo.png'];
 
   const productSchema = {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: product.name,
-    image: allImages,
+    image: schemaImages.length > 0 ? schemaImages : ['https://supersnake.in/logo.png'],
     description: product.description,
     sku: product.variants?.[0]?.sku || product.id,
     mpn: product.id,
