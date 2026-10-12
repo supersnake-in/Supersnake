@@ -11,7 +11,6 @@ import { PreBookingModal } from '@/components/pre-booking/PreBookingModal';
 import { Product, Collection } from '@/lib/types';
 import { SuperSnakeLogo } from '@/components/brand/SuperSnakeLogo';
 import { COLLECTIONS_DATA } from '@/lib/data/collections';
-import { PRODUCTS } from '@/lib/data/products';
 
 export default function DedicatedCollectionPage() {
   const params = useParams();
@@ -37,25 +36,7 @@ export default function DedicatedCollectionPage() {
   const seriesProducts = useMemo(() => {
     if (!collection) return [];
 
-    // Merge store products with master PRODUCTS catalog to ensure full product roster
-    const mergedMap = new Map<string, Product>();
-    for (const p of PRODUCTS) {
-      mergedMap.set(p.slug, p);
-    }
-    for (const p of products) {
-      const def = mergedMap.get(p.slug);
-      mergedMap.set(p.slug, {
-        ...def,
-        ...p,
-        collectionSlug: p.collectionSlug || def?.collectionSlug,
-        collectionId: p.collectionId || def?.collectionId,
-        collectionName: p.collectionName || def?.collectionName,
-      });
-    }
-
-    const allAvailable = Array.from(mergedMap.values());
-
-    return allAvailable.filter((p) => {
+    return products.filter((p) => {
       const pSlug = (p.collectionSlug || '').toLowerCase().trim();
       const cSlug = (collection.slug || '').toLowerCase().trim();
       const pName = (p.collectionName || '').toLowerCase().trim();

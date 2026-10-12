@@ -24,6 +24,7 @@ import {
 } from './types';
 import {
   fetchProductsFromSupabase,
+  LEGACY_MOCK_SLUGS,
   createProductInSupabase,
   updateProductInSupabase,
   deleteProductFromSupabase,
@@ -455,7 +456,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           const parsed = JSON.parse(savedProducts);
           if (Array.isArray(parsed)) {
             const realProducts = parsed
-              .filter((p) => !p.id?.startsWith('prod-0') && !deletedSlugs.has(p.slug) && !deletedSlugs.has(p.id))
+              .filter((p) => !p.id?.startsWith('prod-0') && !LEGACY_MOCK_SLUGS.has(p.slug) && !deletedSlugs.has(p.slug) && !deletedSlugs.has(p.id))
               .map((p) => {
                 const seen = new Set<string>();
                 return {
@@ -732,7 +733,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             };
           });
           const normalized = normalizeSignatureProduct(deduplicated);
-          // Merge with master catalog to guarantee complete chapter assignments
+
           let deletedSlugs = new Set<string>();
           try {
             const stored = localStorage.getItem('supersnake_deleted_products');
@@ -742,24 +743,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             }
           } catch (e) {}
 
-          const mergedMap = new Map<string, Product>();
-          for (const p of PRODUCTS) {
-            if (!deletedSlugs.has(p.slug) && !deletedSlugs.has(p.id)) {
-              mergedMap.set(p.slug, p);
-            }
-          }
-          for (const p of normalized) {
-            if (deletedSlugs.has(p.slug) || deletedSlugs.has(p.id)) continue;
-            const def = mergedMap.get(p.slug);
-            mergedMap.set(p.slug, {
-              ...def,
-              ...p,
-              collectionSlug: p.collectionSlug || def?.collectionSlug,
-              collectionId: p.collectionId || def?.collectionId,
-              collectionName: p.collectionName || def?.collectionName,
-            });
-          }
-          const finalProducts = Array.from(mergedMap.values());
+          const activeProducts = normalized.filter((p) => !LEGACY_MOCK_SLUGS.has(p.slug) && !deletedSlugs.has(p.slug) && !deletedSlugs.has(p.id));
+          const finalProducts = activeProducts.length > 0
+            ? activeProducts
+            : PRODUCTS.filter((p) => !LEGACY_MOCK_SLUGS.has(p.slug) && !deletedSlugs.has(p.slug) && !deletedSlugs.has(p.id));
+
           setProducts(finalProducts);
           saveProductsToLocalStorage(finalProducts);
         }

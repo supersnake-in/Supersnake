@@ -704,7 +704,10 @@ export default function HomePage() {
           {products.length > 0 && (
             <div className="relative w-full overflow-hidden py-4 -mx-4 sm:-mx-6 md:-mx-12 px-4 sm:px-6 md:px-12">
               <div className="flex gap-4 sm:gap-6 w-max animate-marquee hover:[animation-play-state:paused]">
-                {[...products, ...products].map((product, idx) => (
+                {(products.length < 5
+                  ? [...products, ...products, ...products, ...products]
+                  : [...products, ...products]
+                ).map((product, idx) => (
                   <div key={`marquee-${product.id}-${idx}`} className="w-[220px] sm:w-[280px] shrink-0">
                     <ProductCard product={product} />
                   </div>

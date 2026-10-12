@@ -176,6 +176,21 @@ export async function fetchProductBySlugFromSupabase(slug: string): Promise<Prod
   }
 }
 
+export const LEGACY_MOCK_SLUGS = new Set([
+  'the-serpent-tee',
+  'the-monolith-oversized',
+  'the-venom-edition',
+  'the-chalk-minimalist',
+  'the-meridian-cropped',
+  'the-shadow-raw-hem',
+  'the-kinetic-silk-cotton',
+  'the-panther-gt-hypercar-tee',
+  'the-royal-serpent-crest',
+  'the-panther-circuit-racing-tee',
+  'the-serpent-silk-cotton-crop',
+  'the-signature-womens-architectural-tee',
+]);
+
 /**
  * FETCH PRODUCTS DYNAMICALLY FROM SUPABASE FOR LISTINGS
  * Selects only explicit required fields, caches in memory for 60s,
@@ -230,13 +245,12 @@ export async function fetchProductsFromSupabase(forceRefresh: boolean = false): 
       return null;
     }
 
-    if (!productsData || productsData.length === 0) {
+    if (!productsData) {
       return null;
     }
 
-    // Map Supabase rows to Product TypeScript interface and merge with master catalog
+    // Map Supabase rows to Product TypeScript interface
     const mapped = productsData.map(mapProductRowToProduct);
-    const existingSlugs = new Set(mapped.map((p) => p.slug));
 
     let deletedSlugs = new Set<string>();
     if (typeof window !== 'undefined') {
@@ -249,13 +263,13 @@ export async function fetchProductsFromSupabase(forceRefresh: boolean = false): 
       } catch (e) {}
     }
 
-    const merged = mapped.filter((p) => !deletedSlugs.has(p.slug) && !deletedSlugs.has(p.id));
-    for (const p of PRODUCTS) {
-      if (!existingSlugs.has(p.slug) && !deletedSlugs.has(p.slug) && !deletedSlugs.has(p.id)) {
-        merged.push(p);
-      }
-    }
-    cachedProducts = merged;
+
+    const filtered = mapped.filter((p) => !LEGACY_MOCK_SLUGS.has(p.slug) && !deletedSlugs.has(p.slug) && !deletedSlugs.has(p.id));
+    const finalProducts = filtered.length > 0
+      ? filtered
+      : PRODUCTS.filter((p) => !LEGACY_MOCK_SLUGS.has(p.slug) && !deletedSlugs.has(p.slug) && !deletedSlugs.has(p.id));
+
+    cachedProducts = finalProducts;
     productsCacheTime = now;
     return cachedProducts;
   } catch (err) {
