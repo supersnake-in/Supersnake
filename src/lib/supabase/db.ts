@@ -85,6 +85,14 @@ export function mapProductRowToProduct(row: any): Product {
       : ['S', 'M', 'L', 'XL'];
   const sizes = sortSizes(rawSizes) as Size[];
 
+  const rawFeatures: string[] = Array.isArray(row.features) ? row.features : [];
+  const orderTag = rawFeatures.find((f: any) => typeof f === 'string' && f.startsWith('__order:'));
+  const parsedDisplayOrder = orderTag ? parseInt(orderTag.replace('__order:', ''), 10) : undefined;
+  const cleanFeatures = rawFeatures.filter((f: any) => typeof f === 'string' && !f.startsWith('__order:'));
+  const displayOrder = row.display_order !== undefined && row.display_order !== null
+    ? Number(row.display_order)
+    : (parsedDisplayOrder && !isNaN(parsedDisplayOrder) && parsedDisplayOrder > 0 ? parsedDisplayOrder : undefined);
+
   return {
     id: row.id,
     name: row.name,
@@ -99,7 +107,7 @@ export function mapProductRowToProduct(row: any): Product {
     fabric: row.fabric,
     weightText: row.weight_text || undefined,
     careInstructions: row.care_instructions || [],
-    features: row.features || [],
+    features: cleanFeatures,
     shippingPolicy: row.shipping_policy || undefined,
     images: images.length > 0 ? images : [],
     colors,
@@ -116,6 +124,7 @@ export function mapProductRowToProduct(row: any): Product {
     collectionName: row.collection_name || PRODUCTS.find((p) => p.slug === row.slug || p.id === row.id)?.collectionName || undefined,
     rating: Number(row.rating || 5.0),
     reviewsCount: Number(row.reviews_count || 0),
+    displayOrder,
     createdAt: row.created_at || new Date().toISOString(),
   };
 }
@@ -319,7 +328,13 @@ export async function createProductInSupabase(product: Product): Promise<boolean
       fabric: product.fabric,
       weight_text: product.weightText,
       care_instructions: product.careInstructions,
-      features: product.features,
+      features: (() => {
+        const feats = (product.features || []).filter((f) => typeof f === 'string' && !f.startsWith('__order:'));
+        if (product.displayOrder !== undefined && product.displayOrder > 0) {
+          feats.push(`__order:${product.displayOrder}`);
+        }
+        return feats;
+      })(),
       shipping_policy: product.shippingPolicy,
       is_spotlight: Boolean(product.isSpotlight),
       is_bestseller: Boolean(product.isBestseller),
@@ -514,7 +529,13 @@ export async function updateProductInSupabase(product: Product): Promise<boolean
       fabric: product.fabric,
       weight_text: product.weightText,
       care_instructions: product.careInstructions,
-      features: product.features,
+      features: (() => {
+        const feats = (product.features || []).filter((f) => typeof f === 'string' && !f.startsWith('__order:'));
+        if (product.displayOrder !== undefined && product.displayOrder > 0) {
+          feats.push(`__order:${product.displayOrder}`);
+        }
+        return feats;
+      })(),
       shipping_policy: product.shippingPolicy,
       is_spotlight: Boolean(product.isSpotlight),
       is_bestseller: Boolean(product.isBestseller),

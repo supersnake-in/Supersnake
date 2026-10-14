@@ -97,7 +97,26 @@ function ShopCatalogContent({
         if (sortBy === 'price-asc') return a.price - b.price;
         if (sortBy === 'price-desc') return b.price - a.price;
         if (sortBy === 'rating') return b.rating - a.rating;
-        return 0; // featured default
+
+        // FEATURED (default):
+        // 1. Products with custom admin displayOrder (1, 2, ... 12+) appear first, ordered ascending.
+        // 2. Remaining products (or without displayOrder) follow, ordered by created_at descending (newest first).
+        const orderA = a.displayOrder && a.displayOrder > 0 ? a.displayOrder : Infinity;
+        const orderB = b.displayOrder && b.displayOrder > 0 ? b.displayOrder : Infinity;
+
+        if (orderA !== Infinity && orderB !== Infinity) {
+          if (orderA !== orderB) return orderA - orderB;
+          const dateA = new Date(a.createdAt || 0).getTime();
+          const dateB = new Date(b.createdAt || 0).getTime();
+          return dateB - dateA;
+        }
+
+        if (orderA !== Infinity) return -1;
+        if (orderB !== Infinity) return 1;
+
+        const dateA = new Date(a.createdAt || 0).getTime();
+        const dateB = new Date(b.createdAt || 0).getTime();
+        return dateB - dateA;
       });
   }, [products, selectedGender, selectedSeries, selectedFit, selectedSize, selectedColor, onlyNew, onlyBestsellers, sortBy]);
 

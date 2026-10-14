@@ -114,6 +114,7 @@ export default function AdminProductsPage() {
   );
   const [isNewProduct, setIsNewProduct] = useState(true);
   const [isBestsellerProduct, setIsBestsellerProduct] = useState(false);
+  const [displayOrder, setDisplayOrder] = useState<number | string>('');
 
   // Selected Sizes & Colors
   const [selectedSizes, setSelectedSizes] = useState<Size[]>(['S', 'M', 'L', 'XL']);
@@ -353,6 +354,7 @@ export default function AdminProductsPage() {
     );
     setIsNewProduct(true);
     setIsBestsellerProduct(false);
+    setDisplayOrder('');
     setIsSignatureChoice(false);
     setIsPreLaunchEnabled(false);
     setMaxPreBookings(undefined);
@@ -387,6 +389,7 @@ export default function AdminProductsPage() {
     );
     setIsNewProduct(prod.isNew ?? true);
     setIsBestsellerProduct(Boolean(prod.isBestseller));
+    setDisplayOrder(prod.displayOrder ?? '');
     setIsSignatureChoice(Boolean(prod.isSignature));
     setIsPreLaunchEnabled(Boolean(prod.preLaunchEnabled));
     setMaxPreBookings(prod.maxPreBookings);
@@ -506,6 +509,10 @@ export default function AdminProductsPage() {
       variants,
       isNew: isNewProduct,
       isBestseller: isBestsellerProduct,
+      displayOrder: (() => {
+        const parsed = typeof displayOrder === 'number' ? displayOrder : parseInt(String(displayOrder).trim(), 10);
+        return !isNaN(parsed) && parsed > 0 ? parsed : undefined;
+      })(),
       preLaunchEnabled: isPreLaunchEnabled,
       maxPreBookings: maxPreBookings,
       rating: existingProd?.rating ?? 5.0,
@@ -669,6 +676,10 @@ export default function AdminProductsPage() {
               <th className="py-3 px-3 w-28 text-center" title="Active Homepage Spotlight Garment">
                 <span className="text-[9px] font-bold text-amber-400 block">SIGNATURE</span>
               </th>
+              <th className="py-3 px-3 w-20 text-center" title="Featured Display Order in /shop (1, 2, ... 12). Leave blank for default newest-first.">
+                <span className="text-[9px] font-bold text-snake-green block">SHOP ORDER</span>
+                <span className="text-[8px] text-neutral-500 font-mono">1–12+</span>
+              </th>
               <th className="py-3 px-4">GARMENT</th>
               <th className="py-3 px-4">GSM & FABRIC</th>
               <th className="py-3 px-4">COLORS</th>
@@ -759,6 +770,32 @@ export default function AdminProductsPage() {
                       MAKE SIGNATURE
                     </button>
                   )}
+                </td>
+                <td className="py-3 px-3 text-center">
+                  <input
+                    type="number"
+                    min="1"
+                    max="99"
+                    placeholder="—"
+                    value={prod.displayOrder ?? ''}
+                    onChange={(e) => {
+                      const val = e.target.value.trim();
+                      const newOrder = val === '' ? undefined : parseInt(val, 10);
+                      const updated = {
+                        ...prod,
+                        displayOrder: newOrder !== undefined && !isNaN(newOrder) && newOrder > 0 ? newOrder : undefined,
+                      };
+                      updateProduct(updated);
+                      setNotification(
+                        newOrder !== undefined && !isNaN(newOrder) && newOrder > 0
+                          ? `SET SHOP ORDER #${newOrder}: "${prod.name}"`
+                          : `CLEARED SHOP ORDER: "${prod.name}" (defaults to created date)`
+                      );
+                      setTimeout(() => setNotification(null), 3000);
+                    }}
+                    className="w-12 px-1.5 py-1 text-center font-mono text-xs font-bold bg-neutral-900 border border-neutral-700 hover:border-neutral-500 rounded text-snake-green focus:border-snake-green focus:ring-1 focus:ring-snake-green focus:outline-none placeholder:text-neutral-600 transition-colors"
+                    title="Featured rank in /shop (e.g. 1, 2, ... 12). Leave blank for created_at order."
+                  />
                 </td>
                 <td className="py-3 px-4">
                   <div className="flex items-center gap-3">
@@ -1752,6 +1789,31 @@ export default function AdminProductsPage() {
                     />
                   </div>
                 )}
+
+                {/* SECTION 11B: SHOP CATALOG DISPLAY POSITION (1–12+) */}
+                <div className="p-4 bg-neutral-950 border border-neutral-800 rounded-lg flex items-center justify-between gap-4">
+                  <div>
+                    <label htmlFor="displayOrderInput" className="text-white font-bold uppercase text-[11px] block cursor-pointer">
+                      SHOP DISPLAY POSITION (FEATURED RANK)
+                    </label>
+                    <span className="text-[10px] text-neutral-400 mt-0.5 block">
+                      Enter a position number (e.g. 1 to 12) to place this product at that exact position at the top of the <span className="text-snake-green font-mono">/shop</span> page. Products without a number follow after, sorted by newest added first. Leave empty for default newest-first.
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] font-mono text-neutral-500 uppercase">RANK:</span>
+                    <input
+                      id="displayOrderInput"
+                      type="number"
+                      min="1"
+                      max="99"
+                      placeholder="—"
+                      value={displayOrder}
+                      onChange={(e) => setDisplayOrder(e.target.value)}
+                      className="w-16 px-2.5 py-1.5 text-center font-mono text-sm font-bold bg-neutral-900 border border-neutral-700 rounded text-snake-green focus:border-snake-green focus:ring-1 focus:ring-snake-green focus:outline-none placeholder:text-neutral-600"
+                    />
+                  </div>
+                </div>
 
                 {/* SECTION 12: PRE-LAUNCH DROP & PRE-BOOKING TOGGLE */}
                 <div className="p-4 bg-neutral-950 border border-neutral-800 rounded-lg flex items-center justify-between">

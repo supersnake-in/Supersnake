@@ -736,7 +736,21 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                 }),
             };
           });
-          const normalized = normalizeSignatureProduct(deduplicated);
+          let storedOrders: Record<string, number> = {};
+          try {
+            const rawStoredOrders = localStorage.getItem('supersnake_product_display_orders');
+            if (rawStoredOrders) storedOrders = JSON.parse(rawStoredOrders);
+          } catch (e) {}
+
+          const withOrders = deduplicated.map((p) => {
+            const localOrder = storedOrders[p.id] || storedOrders[p.slug];
+            return {
+              ...p,
+              displayOrder: p.displayOrder !== undefined ? p.displayOrder : localOrder,
+            };
+          });
+
+          const normalized = normalizeSignatureProduct(withOrders);
 
           let deletedSlugs = new Set<string>();
           try {
@@ -1531,6 +1545,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       saveProductsToLocalStorage(next);
       return next;
     });
+
+    if (cleanProduct.displayOrder !== undefined && cleanProduct.displayOrder > 0) {
+      try {
+        const raw = localStorage.getItem('supersnake_product_display_orders');
+        const map = raw ? JSON.parse(raw) : {};
+        map[cleanProduct.id] = cleanProduct.displayOrder;
+        map[cleanProduct.slug] = cleanProduct.displayOrder;
+        localStorage.setItem('supersnake_product_display_orders', JSON.stringify(map));
+      } catch (e) {}
+    }
+
     createProductInSupabase(cleanProduct).catch((err) => {
       console.warn('Could not sync product to Supabase:', err);
     });
@@ -1557,6 +1582,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       saveProductsToLocalStorage(next);
       return next;
     });
+
+    try {
+      const raw = localStorage.getItem('supersnake_product_display_orders');
+      const map = raw ? JSON.parse(raw) : {};
+      if (cleanProduct.displayOrder !== undefined && cleanProduct.displayOrder > 0) {
+        map[cleanProduct.id] = cleanProduct.displayOrder;
+        map[cleanProduct.slug] = cleanProduct.displayOrder;
+      } else {
+        delete map[cleanProduct.id];
+        delete map[cleanProduct.slug];
+      }
+      localStorage.setItem('supersnake_product_display_orders', JSON.stringify(map));
+    } catch (e) {}
+
     updateProductInSupabase(cleanProduct).catch((err) => {
       console.warn('Could not sync product update to Supabase:', err);
     });

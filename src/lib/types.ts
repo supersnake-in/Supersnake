@@ -114,7 +114,40 @@ export interface Product {
   collectionName?: string;
   rating: number;
   reviewsCount: number;
+  displayOrder?: number;
   createdAt: string;
+}
+
+/**
+ * Sorts products for the Shop Catalog:
+ * 1. Products with displayOrder (1, 2, ... 12+) appear first, ordered ascending by displayOrder.
+ * 2. Remaining products (without displayOrder) follow, ordered by created_at descending (newest first).
+ */
+export function sortProductsForShop(products: Product[]): Product[] {
+  if (!Array.isArray(products)) return [];
+  return [...products].sort((a, b) => {
+    const orderA = a.displayOrder && a.displayOrder > 0 ? a.displayOrder : Infinity;
+    const orderB = b.displayOrder && b.displayOrder > 0 ? b.displayOrder : Infinity;
+
+    // Both have an explicit shop display order
+    if (orderA !== Infinity && orderB !== Infinity) {
+      if (orderA !== orderB) return orderA - orderB;
+      const dateA = new Date(a.createdAt || 0).getTime();
+      const dateB = new Date(b.createdAt || 0).getTime();
+      return dateB - dateA;
+    }
+
+    // Only 'a' has a display order -> 'a' comes first
+    if (orderA !== Infinity) return -1;
+
+    // Only 'b' has a display order -> 'b' comes first
+    if (orderB !== Infinity) return 1;
+
+    // Neither has a display order -> sort by created_at descending (newest first)
+    const dateA = new Date(a.createdAt || 0).getTime();
+    const dateB = new Date(b.createdAt || 0).getTime();
+    return dateB - dateA;
+  });
 }
 
 export interface CartItem {

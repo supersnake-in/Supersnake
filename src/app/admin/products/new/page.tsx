@@ -35,6 +35,7 @@ export default function AdminNewProductPage() {
   const [fit, setFit] = useState<FitType>('Boxy');
   const [gender, setGender] = useState<Gender>('unisex');
   const [fabric, setFabric] = useState('100% Long-Staple Supima® Cotton');
+  const [displayOrder, setDisplayOrder] = useState<number | string>('');
   const [isSignatureChoice, setIsSignatureChoice] = useState(false);
 
   const [selectedSizes, setSelectedSizes] = useState<Size[]>(['S', 'M', 'L', 'XL']);
@@ -205,6 +206,10 @@ export default function AdminNewProductPage() {
       sizes: selectedSizes,
       variants,
       isNew: true,
+      displayOrder: (() => {
+        const parsed = typeof displayOrder === 'number' ? displayOrder : parseInt(String(displayOrder).trim(), 10);
+        return !isNaN(parsed) && parsed > 0 ? parsed : undefined;
+      })(),
       rating: 5.0,
       reviewsCount: 1,
       createdAt: new Date().toISOString(),
@@ -568,6 +573,33 @@ export default function AdminNewProductPage() {
               onChange={(e) => setIsSignatureChoice(e.target.checked)}
               className="w-5 h-5 rounded border-neutral-700 bg-neutral-900 text-amber-400 focus:ring-amber-400 focus:ring-offset-0 accent-amber-400 cursor-pointer"
             />
+          </div>
+        </div>
+
+        {/* Shop Display Position (1–12+) */}
+        <div className="pt-4 border-t border-white/10">
+          <div className="p-4 bg-[#121212] border border-white/10 rounded-sm flex items-center justify-between gap-4">
+            <div>
+              <label htmlFor="displayOrderInput" className="text-white font-bold uppercase text-[11px] block cursor-pointer font-mono">
+                SHOP DISPLAY POSITION (FEATURED RANK)
+              </label>
+              <span className="text-[10px] text-neutral-400 font-mono block mt-0.5">
+                Enter a position number (e.g. 1 to 12) to place this product at that exact position at the top of the <span className="text-snake-green">/shop</span> page. Products without a rank follow after, sorted by newest created first. Leave empty for default newest-first.
+              </span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-[10px] font-mono text-neutral-500 uppercase">RANK:</span>
+              <input
+                id="displayOrderInput"
+                type="number"
+                min="1"
+                max="99"
+                placeholder="—"
+                value={displayOrder}
+                onChange={(e) => setDisplayOrder(e.target.value)}
+                className="w-16 px-2.5 py-1.5 text-center font-mono text-sm font-bold bg-neutral-900 border border-neutral-700 rounded text-snake-green focus:border-snake-green focus:ring-1 focus:ring-snake-green focus:outline-none placeholder:text-neutral-600"
+              />
+            </div>
           </div>
         </div>
 
