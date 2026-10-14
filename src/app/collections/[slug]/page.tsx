@@ -50,18 +50,10 @@ export default function DedicatedCollectionPage() {
 
       // Legacy / fallback hardcoded slug matches
       return (
-        (collection.slug === 'the-signature' &&
-          (p.isSignature ||
-            p.slug === 'the-signature-tee' ||
-            p.slug === 'the-signature-womens-architectural-tee' ||
-            p.slug === 'the-monolith-oversized' ||
-            p.slug === 'the-shadow-raw-hem')) ||
         (collection.slug === 'the-serpent' &&
           (p.slug === 'the-serpent-tee' ||
             p.slug === 'the-venom-edition' ||
             p.slug === 'the-serpent-silk-cotton-crop')) ||
-        (collection.slug === 'the-aura' &&
-          (p.slug === 'the-chalk-minimalist' || p.slug === 'the-kinetic-silk-cotton')) ||
         (collection.slug === 'the-royals' &&
           (p.slug === 'the-meridian-cropped' || p.slug === 'the-royal-serpent-crest' || p.slug === 'the-royal-insignia')) ||
         (collection.slug === 'the-black-panther' &&

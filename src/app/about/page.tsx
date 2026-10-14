@@ -53,22 +53,6 @@ const CHAPTERS = [
     image: '/collection-the-serpent-card.jpg',
     href: '/collections/the-serpent',
   },
-  {
-    name: 'THE AURA',
-    badge: 'CHAPTER 04',
-    tagline: 'Minimalism with meaning.',
-    description: 'Radical simplicity, organic earth tones, and clean silhouettes designed to be felt before they are seen.',
-    image: '/collection-the-aura-card.jpg',
-    href: '/collections/the-aura',
-  },
-  {
-    name: 'THE SIGNATURE',
-    badge: 'CHAPTER 05',
-    tagline: 'The unmistakable SuperSnake identity.',
-    description: 'The permanent cornerstone featuring the master brand symbol, engineered for presence in everyday wear.',
-    image: '/hero-object-supersnake-tee.png',
-    href: '/collections/the-signature',
-  },
 ];
 
 export default function AboutPage() {

@@ -496,7 +496,6 @@ export default function AdminCollectionsPage() {
                     (p) =>
                       p.collectionSlug === col.slug ||
                       p.collectionId === col.id ||
-                      (col.slug === 'the-signature' && p.isSignature) ||
                       (col.slug === 'the-serpent' && (p.slug === 'the-serpent-tee' || p.slug === 'the-venom-edition'))
                   ).length;
 

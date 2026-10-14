@@ -194,6 +194,13 @@ export const LEGACY_MOCK_SLUGS = new Set([
   'the-signature-womens-architectural-tee',
 ]);
 
+export const REMOVED_COLLECTION_SLUGS = new Set([
+  'the-aura',
+  'the-signature',
+  'col-the-aura',
+  'col-the-signature',
+]);
+
 /**
  * FETCH PRODUCTS DYNAMICALLY FROM SUPABASE FOR LISTINGS
  * Selects only explicit required fields, caches in memory for 60s,
@@ -2084,7 +2091,9 @@ export async function fetchCollectionsFromSupabase(forceRefresh: boolean = false
       return null;
     }
 
-    cachedCollections = data.map((row: any) => ({
+    const validRows = data.filter((row: any) => !REMOVED_COLLECTION_SLUGS.has(row.slug) && !REMOVED_COLLECTION_SLUGS.has(row.id));
+
+    cachedCollections = validRows.map((row: any) => ({
       id: row.id,
       name: row.name,
       slug: row.slug,

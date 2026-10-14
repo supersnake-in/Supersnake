@@ -61,6 +61,7 @@ import {
   DEFAULT_ANNOUNCEMENT_CONFIG,
   fetchAnnouncementConfigFromSupabase,
   updateAnnouncementConfigInSupabase,
+  REMOVED_COLLECTION_SLUGS,
 } from './supabase/db';
 import { COLLECTIONS_DATA } from './data/collections';
 import { PRODUCTS } from './data/products';
@@ -651,8 +652,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         try {
           const parsedCols = JSON.parse(savedCollections);
           if (Array.isArray(parsedCols) && parsedCols.length > 0) {
+            const sanitizedCols = parsedCols.filter(
+              (c: any) => !REMOVED_COLLECTION_SLUGS.has(c.slug) && !REMOVED_COLLECTION_SLUGS.has(c.id)
+            );
             const mergedCols = COLLECTIONS_DATA.map((defaultCol) => {
-              const saved = parsedCols.find((c: any) => c.slug === defaultCol.slug || c.id === defaultCol.id);
+              const saved = sanitizedCols.find((c: any) => c.slug === defaultCol.slug || c.id === defaultCol.id);
               if (!saved) return defaultCol;
 
               const isStaleCard =
@@ -688,7 +692,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                 heroImage: isStaleHero ? defaultCol.heroImage : saved.heroImage,
               };
             });
-            const customCols = parsedCols.filter((c: any) => !COLLECTIONS_DATA.some((d) => d.id === c.id || d.slug === c.slug));
+            const customCols = sanitizedCols.filter((c: any) => !COLLECTIONS_DATA.some((d) => d.id === c.id || d.slug === c.slug));
             const finalCols = [...mergedCols, ...customCols];
             setCollections(finalCols);
             try {
@@ -760,7 +764,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     fetchCollectionsFromSupabase()
       .then((supabaseCols) => {
         if (supabaseCols && supabaseCols.length > 0) {
-          const merged = supabaseCols.map((col) => {
+          const validSupabaseCols = supabaseCols.filter(
+            (c) => !REMOVED_COLLECTION_SLUGS.has(c.slug) && !REMOVED_COLLECTION_SLUGS.has(c.id)
+          );
+          const merged = validSupabaseCols.map((col) => {
             const defaultCol = COLLECTIONS_DATA.find((c) => c.slug === col.slug || c.id === col.id);
             if (!defaultCol) return col;
 
@@ -2488,7 +2495,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     try {
       const supaCols = await fetchCollectionsFromSupabase(forceRefresh);
       if (supaCols && supaCols.length > 0) {
-        const merged = supaCols.map((col) => {
+        const validSupaCols = supaCols.filter(
+          (c) => !REMOVED_COLLECTION_SLUGS.has(c.slug) && !REMOVED_COLLECTION_SLUGS.has(c.id)
+        );
+        const merged = validSupaCols.map((col) => {
           const defaultCol = COLLECTIONS_DATA.find((c) => c.slug === col.slug || c.id === col.id);
           if (!defaultCol) return col;
 

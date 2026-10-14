@@ -22,7 +22,7 @@ export default function CollectionsOverviewPage() {
     if (activeFilter === 'FEATURED') {
       list = list.filter((c) => c.isFeatured);
     } else if (activeFilter === 'CORE') {
-      list = list.filter((c) => c.slug === 'the-signature' || c.slug === 'the-serpent');
+      list = list.filter((c) => c.slug === 'the-serpent' || c.slug === 'the-royals');
     }
 
     return list.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
