@@ -335,34 +335,49 @@ export function ProductDetailClient({ initialProduct, slug }: ProductDetailClien
               {uniqueImages.length > 1 && (
                 <div
                   ref={desktopThumbnailsContainerRef}
-                  className="flex flex-col gap-2.5 overflow-y-auto scrollbar-none flex-shrink-0 w-16 xl:w-20 pr-1 py-0.5 select-none"
-                  style={{ height: 'min(720px, max(460px, calc(100vh - 11rem)))' }}
+                  className="flex flex-col gap-2.5 overflow-y-auto no-scrollbar scrollbar-none flex-shrink-0 w-20 xl:w-24 p-1.5 select-none"
+                  style={{
+                    height: 'min(720px, max(460px, calc(100vh - 11rem)))',
+                    scrollbarWidth: 'none',
+                    msOverflowStyle: 'none',
+                  }}
                 >
-                  {uniqueImages.map((img, idx) => (
-                    <button
-                      key={idx}
-                      ref={(el) => {
-                        desktopThumbnailRefs.current[idx] = el;
-                      }}
-                      type="button"
-                      onClick={() => setActiveImageIndex(idx)}
-                      className={`relative aspect-[4/5] w-full rounded-md overflow-hidden bg-neutral-900 border transition-all flex-shrink-0 cursor-pointer ${
-                        activeImageIndex === idx
-                          ? 'border-snake-green ring-1 ring-snake-green shadow-[0_0_12px_rgba(0,255,102,0.3)] scale-[1.02]'
-                          : 'border-white/10 opacity-50 hover:opacity-100 hover:border-white/30'
-                      }`}
-                      aria-label={`View image ${idx + 1}`}
-                    >
-                      <Image
-                        src={img.url}
-                        alt={img.alt}
-                        fill
-                        sizes="90px"
-                        unoptimized={Boolean(img.url.startsWith('data:') || img.url.startsWith('blob:') || img.url.startsWith('/api/'))}
-                        className="object-cover"
-                      />
-                    </button>
-                  ))}
+                  {uniqueImages.map((img, idx) => {
+                    const isActive = activeImageIndex === idx;
+                    return (
+                      <button
+                        key={idx}
+                        ref={(el) => {
+                          desktopThumbnailRefs.current[idx] = el;
+                        }}
+                        type="button"
+                        onClick={() => setActiveImageIndex(idx)}
+                        className={`relative aspect-[4/5] w-full rounded-lg overflow-hidden bg-neutral-900 transition-all flex-shrink-0 cursor-pointer ${
+                          isActive
+                            ? 'shadow-[0_0_12px_rgba(4,252,33,0.35)] opacity-100'
+                            : 'opacity-50 hover:opacity-100'
+                        }`}
+                        aria-label={`View image ${idx + 1}`}
+                      >
+                        <Image
+                          src={img.url}
+                          alt={img.alt}
+                          fill
+                          sizes="96px"
+                          unoptimized={Boolean(img.url.startsWith('data:') || img.url.startsWith('blob:') || img.url.startsWith('/api/'))}
+                          className="object-cover"
+                        />
+                        {/* High-visibility complete border overlay: guarantees 100% 4-sided border visibility */}
+                        <div
+                          className={`absolute inset-0 rounded-lg pointer-events-none transition-all ${
+                            isActive
+                              ? 'border-2 border-snake-green ring-1 ring-inset ring-snake-green/50'
+                              : 'border border-white/15 hover:border-white/40'
+                          }`}
+                        />
+                      </button>
+                    );
+                  })}
                 </div>
               )}
 
@@ -371,7 +386,7 @@ export function ProductDetailClient({ initialProduct, slug }: ProductDetailClien
                 className="relative aspect-[4/5] rounded-xl bg-[#0c0c0c] border border-white/10 overflow-hidden group flex-shrink-0"
                 style={{
                   height: 'min(720px, max(460px, calc(100vh - 11rem)))',
-                  maxWidth: uniqueImages.length > 1 ? 'calc(100% - 5rem)' : '100%',
+                  maxWidth: uniqueImages.length > 1 ? 'calc(100% - 6.5rem)' : '100%',
                 }}
               >
                 <AnimatePresence mode="wait">

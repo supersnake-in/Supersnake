@@ -75,13 +75,17 @@ body {
   }
 }
 
-/* Hide scrollbar for clean touch horizontal carousels */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
+/* Hide scrollbar for clean carousels and vertical thumbnail strips */
+.no-scrollbar::-webkit-scrollbar,
+.scrollbar-none::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+.no-scrollbar,
+.scrollbar-none {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
 }
 
 /* Dedicated Modal Scroller with High-Visibility Thumb */
