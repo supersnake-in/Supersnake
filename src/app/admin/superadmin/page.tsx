@@ -49,6 +49,7 @@ import {
 } from '@/lib/types';
 import {
   getAdminUsers,
+  fetchAdminUsers,
   saveAdminUsers,
   getAdminActivityLogs,
   recordAdminActivity,
@@ -114,6 +115,9 @@ export default function SuperadminPage() {
   useEffect(() => {
     loadLogs();
     setAdmins(getAdminUsers());
+    fetchAdminUsers().then((res) => {
+      if (res && res.length > 0) setAdmins(res);
+    });
     setEmergencyControls(getEmergencyControls());
 
     // Listen for custom broadcast events

@@ -107,7 +107,7 @@ export const DEFAULT_EMERGENCY_STATE: EmergencyControlState = {
 };
 
 /**
- * Fetch all admin users
+ * Fetch all admin users synchronously from cache
  */
 export function getAdminUsers(): AdminUser[] {
   if (typeof window === 'undefined') return DEFAULT_ADMIN_USERS;
@@ -125,15 +125,54 @@ export function getAdminUsers(): AdminUser[] {
 }
 
 /**
- * Save updated admin user roster
+ * Fetch all admin users asynchronously from Supabase with cache fallback
+ */
+export async function fetchAdminUsers(): Promise<AdminUser[]> {
+  try {
+    const { data, error } = await supabase.from('admin_users').select('*').order('added_at', { ascending: true });
+    if (!error && Array.isArray(data) && data.length > 0) {
+      const mapped: AdminUser[] = data.map((r: any) => ({
+        id: r.id,
+        email: r.email,
+        name: r.name,
+        role: r.role,
+        status: r.status,
+        lastActiveAt: r.last_active_at,
+        addedAt: r.added_at,
+      }));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(ADMIN_USERS_STORAGE_KEY, JSON.stringify(mapped));
+      }
+      return mapped;
+    }
+  } catch (err) {
+    // Fall back to local cache
+  }
+  return getAdminUsers();
+}
+
+/**
+ * Save updated admin user roster (syncs to localStorage and Supabase)
  */
 export function saveAdminUsers(users: AdminUser[]): void {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(ADMIN_USERS_STORAGE_KEY, JSON.stringify(users));
     window.dispatchEvent(new CustomEvent('supersnake_admin_users_updated', { detail: users }));
+
+    // Non-blocking sync to Supabase
+    const rows = users.map((u) => ({
+      id: u.id,
+      email: u.email,
+      name: u.name,
+      role: u.role,
+      status: u.status,
+      last_active_at: u.lastActiveAt || new Date().toISOString(),
+      added_at: u.addedAt || new Date().toISOString(),
+    }));
+    supabase.from('admin_users').upsert(rows).then(() => {});
   } catch (e) {
-    console.warn('Failed to save admin users to localStorage:', e);
+    console.warn('Failed to save admin users:', e);
   }
 }
 
@@ -290,6 +329,22 @@ export function saveEmergencyControls(
     try {
       localStorage.setItem(EMERGENCY_STORAGE_KEY, JSON.stringify(next));
       window.dispatchEvent(new CustomEvent('supersnake_emergency_controls_updated', { detail: next }));
+
+      // Non-blocking sync to Supabase emergency_controls table
+      supabase
+        .from('emergency_controls')
+        .upsert([
+          {
+            id: 'current',
+            storefront_frozen: next.storefrontFrozen,
+            checkout_paused: next.checkoutPaused,
+            discounts_disabled: next.discountsDisabled,
+            emergency_notice: next.emergencyNotice || '',
+            last_toggled_by: adminEmail,
+            last_toggled_at: next.lastToggledAt,
+          },
+        ])
+        .then(() => {});
     } catch (e) {
       console.warn('Failed to save emergency controls:', e);
     }
