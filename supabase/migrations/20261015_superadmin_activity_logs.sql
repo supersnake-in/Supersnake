@@ -56,6 +56,12 @@ CREATE TABLE IF NOT EXISTS public.admin_users (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Ensure check constraint supports CO_ADMIN even if table already existed
+ALTER TABLE public.admin_users DROP CONSTRAINT IF EXISTS admin_users_role_check;
+ALTER TABLE public.admin_users 
+  ADD CONSTRAINT admin_users_role_check 
+  CHECK (role IN ('SUPERADMIN', 'ADMIN', 'CO_ADMIN', 'STORE_MANAGER', 'SUPPORT_LEAD'));
+
 -- Seed Initial Administrators (jdhanush213@gmail.com as sole Superadmin, supersnake.in@gmail.com as Admin)
 INSERT INTO public.admin_users (id, email, name, role, status)
 VALUES 
