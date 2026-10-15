@@ -47,10 +47,9 @@ export const AUTHORIZED_ADMIN_EMAILS = [
   'supersnake.in@gmail.com',
 ] as const;
 
-// Executive Superadmin Email Whitelist
+// Executive Superadmin Email Whitelist (Exclusive to Lead Superadmin)
 export const SUPERADMIN_EMAILS = [
   'jdhanush213@gmail.com',
-  'supersnake.in@gmail.com',
 ] as const;
 
 // Verify if an email is an authorized atelier administrator

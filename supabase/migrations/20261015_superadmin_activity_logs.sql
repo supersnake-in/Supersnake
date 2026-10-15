@@ -56,12 +56,14 @@ CREATE TABLE IF NOT EXISTS public.admin_users (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Seed Initial Executive Administrators
+-- Seed Initial Administrators (jdhanush213@gmail.com as sole Superadmin, supersnake.in@gmail.com as Admin)
 INSERT INTO public.admin_users (id, email, name, role, status)
 VALUES 
-  ('admin-1', 'supersnake.in@gmail.com', 'SuperSnake Atelier (Executive)', 'SUPERADMIN', 'ACTIVE'),
-  ('admin-2', 'jdhanush213@gmail.com', 'Dhanush J (Founder & Lead)', 'SUPERADMIN', 'ACTIVE')
-ON CONFLICT (email) DO NOTHING;
+  ('admin-1', 'supersnake.in@gmail.com', 'SuperSnake Atelier (Admin)', 'STORE_MANAGER', 'ACTIVE'),
+  ('admin-2', 'jdhanush213@gmail.com', 'Dhanush J (Founder & Superadmin)', 'SUPERADMIN', 'ACTIVE')
+ON CONFLICT (email) DO UPDATE SET 
+  role = EXCLUDED.role,
+  name = EXCLUDED.name;
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE public.admin_activity_logs ENABLE ROW LEVEL SECURITY;

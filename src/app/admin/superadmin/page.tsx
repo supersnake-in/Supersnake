@@ -567,7 +567,9 @@ export default function SuperadminPage() {
         <div className="bg-[#0d0d0d] border border-neutral-800 p-4 rounded-lg space-y-1">
           <span className="text-[10px] text-neutral-500 uppercase tracking-wider block">ACTIVE PERSONNEL</span>
           <span className="text-xl md:text-2xl font-bold text-white block">{admins.length} Admins</span>
-          <span className="text-[10px] text-neutral-400">2 Executive Superadmins</span>
+          <span className="text-[10px] text-neutral-400">
+            {admins.filter((a) => a.role === 'SUPERADMIN').length} Executive Superadmin
+          </span>
         </div>
 
         <div className="bg-[#0d0d0d] border border-neutral-800 p-4 rounded-lg space-y-1">

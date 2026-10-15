@@ -7,6 +7,7 @@ import { supabase } from './supabase/client';
 import {
   AdminActivityLog,
   AdminUser,
+  AdminRole,
   AdminActionCategory,
   EmergencyControlState,
   CustomerIntelligence,
@@ -21,8 +22,8 @@ export const DEFAULT_ADMIN_USERS: AdminUser[] = [
   {
     id: 'admin-1',
     email: 'supersnake.in@gmail.com',
-    name: 'SuperSnake Atelier (Executive)',
-    role: 'SUPERADMIN',
+    name: 'SuperSnake Atelier (Admin)',
+    role: 'STORE_MANAGER',
     status: 'ACTIVE',
     lastActiveAt: new Date().toISOString(),
     addedAt: '2026-09-01T00:00:00.000Z',
@@ -30,7 +31,7 @@ export const DEFAULT_ADMIN_USERS: AdminUser[] = [
   {
     id: 'admin-2',
     email: 'jdhanush213@gmail.com',
-    name: 'Dhanush J (Founder & Lead)',
+    name: 'Dhanush J (Founder & Superadmin)',
     role: 'SUPERADMIN',
     status: 'ACTIVE',
     lastActiveAt: new Date().toISOString(),
@@ -118,7 +119,17 @@ export function getAdminUsers(): AdminUser[] {
       return DEFAULT_ADMIN_USERS;
     }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_ADMIN_USERS;
+    const users: AdminUser[] = Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_ADMIN_USERS;
+    const normalized = users.map((u) => {
+      if (u.email.toLowerCase() === 'supersnake.in@gmail.com') {
+        return { ...u, role: 'STORE_MANAGER' as AdminRole, name: 'SuperSnake Atelier (Admin)' };
+      }
+      if (u.email.toLowerCase() === 'jdhanush213@gmail.com') {
+        return { ...u, role: 'SUPERADMIN' as AdminRole };
+      }
+      return u;
+    });
+    return normalized;
   } catch {
     return DEFAULT_ADMIN_USERS;
   }
