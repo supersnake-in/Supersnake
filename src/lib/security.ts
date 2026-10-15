@@ -54,6 +54,11 @@ export const SUPERADMIN_EMAILS = [
   'jdhanush213@gmail.com',
 ] as const;
 
+// Permanent Co-Admin Whitelist (Scoped to Products, Collections, Inventory, Orders)
+export const AUTHORIZED_CO_ADMIN_EMAILS = [
+  'jdhanush2103@gmail.com',
+] as const;
+
 // Verify if an email is an authorized atelier administrator (including dynamic co-admins)
 export function isAuthorizedAdmin(email?: string | null): boolean {
   if (!email) return false;
@@ -64,6 +69,9 @@ export function isAuthorizedAdmin(email?: string | null): boolean {
     return true;
   }
   if (SUPERADMIN_EMAILS.some((adminEmail) => adminEmail.toLowerCase() === normalized)) {
+    return true;
+  }
+  if (AUTHORIZED_CO_ADMIN_EMAILS.some((coAdminEmail) => coAdminEmail.toLowerCase() === normalized)) {
     return true;
   }
 
@@ -101,6 +109,11 @@ export function getAdminRole(email?: string | null): AdminRole | null {
   // Primary Superadmin
   if (isSuperAdmin(normalized)) {
     return 'SUPERADMIN';
+  }
+
+  // Check permanent co-admin list
+  if (AUTHORIZED_CO_ADMIN_EMAILS.some((coAdminEmail) => coAdminEmail.toLowerCase() === normalized)) {
+    return 'CO_ADMIN';
   }
 
   // Check dynamically registered personnel

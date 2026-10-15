@@ -12,6 +12,9 @@ import {
   CheckCircle2,
   Clock,
   Sparkles,
+  Shield,
+  ShoppingBag,
+  Crown,
 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useAuth } from '@/lib/auth-context';
@@ -19,7 +22,7 @@ import { formatPrice } from '@/lib/design-tokens';
 
 export default function AccountOverviewPage() {
   const { orders, wishlist } = useStore();
-  const { profile, user } = useAuth();
+  const { profile, user, isAdmin, isSuperAdmin, isCoAdmin } = useAuth();
 
   const recentOrder = orders[0];
   const activeOrders = orders.filter(
@@ -30,6 +33,80 @@ export default function AccountOverviewPage() {
 
   return (
     <div className="space-y-8">
+      {/* Co-Admin Clearance Banner */}
+      {isCoAdmin && (
+        <div className="bg-gradient-to-r from-amber-500/15 via-[#0d0d0d] to-[#0a0a0a] border-2 border-amber-500/40 p-6 md:p-8 rounded-sm relative overflow-hidden shadow-[0_0_30px_rgba(245,158,11,0.15)]">
+          <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/10 blur-3xl rounded-full pointer-events-none" />
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-amber-500/20 border border-amber-500/40 text-[10px] font-mono text-amber-300 font-bold rounded uppercase tracking-wider">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                <span>CO-ADMIN ATELIER ACCESS GRANTED</span>
+              </div>
+              <h3 className="text-xl md:text-2xl font-display font-medium text-white tracking-tight">
+                CATALOG & ORDERS MANAGEMENT CLEARANCE
+              </h3>
+              <p className="text-xs font-mono text-neutral-300 max-w-xl leading-relaxed">
+                You have active Co-Admin privileges. You can create & edit products, manage inventory stock levels, curate collections, and fulfill customer orders.
+              </p>
+              <div className="flex flex-wrap items-center gap-2 pt-2">
+                <span className="text-[10px] font-mono px-2 py-0.5 bg-white/10 text-neutral-300 rounded border border-white/10">
+                  ✓ Products
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 bg-white/10 text-neutral-300 rounded border border-white/10">
+                  ✓ Collections
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 bg-white/10 text-neutral-300 rounded border border-white/10">
+                  ✓ Inventory
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 bg-white/10 text-neutral-300 rounded border border-white/10">
+                  ✓ Orders
+                </span>
+              </div>
+            </div>
+
+            <div className="shrink-0 flex flex-col sm:flex-row md:flex-col gap-3">
+              <Link
+                href="/admin/products"
+                className="px-6 py-3.5 bg-amber-400 hover:bg-white text-black font-mono text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(245,158,11,0.3)]"
+              >
+                <span>OPEN CO-ADMIN ATELIER</span>
+                <ArrowRight size={14} />
+              </Link>
+              <Link
+                href="/admin/orders"
+                className="px-6 py-2.5 bg-white/5 hover:bg-white/10 border border-white/20 text-white font-mono text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-2 text-center"
+              >
+                <ShoppingBag size={13} />
+                <span>VIEW ATELIER ORDERS</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Superadmin / Executive Admin Access Banner */}
+      {isAdmin && !isCoAdmin && (
+        <div className="bg-gradient-to-r from-snake-green/15 via-[#0d0d0d] to-[#0a0a0a] border border-snake-green/40 p-5 rounded-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-[0_0_20px_rgba(4,252,33,0.1)]">
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-2 text-[10px] font-mono font-bold text-snake-green tracking-widest uppercase">
+              <Crown size={13} />
+              <span>{isSuperAdmin ? 'SUPERADMIN EXECUTIVE CLEARANCE' : 'ADMIN ATELIER CLEARANCE'}</span>
+            </div>
+            <h3 className="text-base font-display font-medium text-white">
+              MASTER ATELIER ADMINISTRATION SYSTEM
+            </h3>
+          </div>
+          <Link
+            href={isSuperAdmin ? '/admin/superadmin' : '/admin'}
+            className="px-5 py-2.5 bg-snake-green hover:bg-white text-black font-mono text-xs font-bold uppercase tracking-wider transition-colors shrink-0 flex items-center gap-2"
+          >
+            <span>ENTER ATELIER ADMIN</span>
+            <ArrowRight size={14} />
+          </Link>
+        </div>
+      )}
+
       {/* Welcome Banner */}
       <div className="bg-[#0a0a0a] border border-white/10 p-6 md:p-8 rounded-sm relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-snake-green/5 blur-3xl rounded-full pointer-events-none" />

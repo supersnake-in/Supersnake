@@ -3,8 +3,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from './supabase/client';
 import { User, Session } from '@supabase/supabase-js';
-import { isAuthorizedAdmin, isSuperAdmin } from './security';
-import { FitType } from './types';
+import { isAuthorizedAdmin, isSuperAdmin, getAdminRole } from './security';
+import { FitType, AdminRole } from './types';
+import { fetchAdminUsers } from './activity-logger';
 import {
   isPasskeySupported,
   signInWithPasskey as doPasskeySignIn,
@@ -35,6 +36,8 @@ interface AuthContextType {
   isLoading: boolean;
   isAdmin: boolean;
   isSuperAdmin: boolean;
+  isCoAdmin: boolean;
+  role: AdminRole | null;
   isPasskeyAvailable: boolean;
   signIn: (email: string, password?: string) => Promise<{ error?: string }>;
   signUp: (email: string, password?: string, fullName?: string, phone?: string) => Promise<{ error?: string; requireVerification?: boolean }>;
@@ -64,6 +67,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPasskeyAvailable, setIsPasskeyAvailable] = useState(false);
+  const [, setPersonnelVersion] = useState(0);
+
+  // Sync admin personnel directory universally across all devices
+  useEffect(() => {
+    fetchAdminUsers().catch(() => {});
+
+    const handleAdminsUpdated = () => {
+      setPersonnelVersion((v) => v + 1);
+    };
+
+    window.addEventListener('supersnake_admin_users_updated', handleAdminsUpdated);
+    return () => {
+      window.removeEventListener('supersnake_admin_users_updated', handleAdminsUpdated);
+    };
+  }, []);
 
   // Check hardware/browser WebAuthn support on mount
   useEffect(() => {
@@ -726,8 +744,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return {};
   };
 
-  const isAdmin = isAuthorizedAdmin(user?.email || profile?.email);
-  const isSuperAdminUser = isSuperAdmin(user?.email || profile?.email);
+  const effectiveEmail = user?.email || profile?.email;
+  const role = getAdminRole(effectiveEmail);
+  const isAdmin = isAuthorizedAdmin(effectiveEmail);
+  const isSuperAdminUser = isSuperAdmin(effectiveEmail) || role === 'SUPERADMIN';
+  const isCoAdmin = role === 'CO_ADMIN' || role === 'STORE_MANAGER';
 
   return (
     <AuthContext.Provider
@@ -738,6 +759,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         isAdmin,
         isSuperAdmin: isSuperAdminUser,
+        isCoAdmin,
+        role,
         isPasskeyAvailable,
         signIn,
         signUp,

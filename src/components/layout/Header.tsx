@@ -21,7 +21,7 @@ export function Header() {
   const glassLayerRef = useRef<HTMLDivElement>(null);
   const accountMenuRef = useRef<HTMLDivElement>(null);
   const { cartCount, wishlist, openCart, openSearch, storefrontConfig, announcementConfig } = useStore();
-  const { user, profile, signOut, isAdmin } = useAuth();
+  const { user, profile, signOut, isAdmin, isCoAdmin, isSuperAdmin } = useAuth();
 
   const isStorefront = !pathname.startsWith('/admin') && !pathname.startsWith('/maintenance');
   const isPreLaunch = storefrontConfig?.storefrontMode === 'PRE_LAUNCH';
@@ -289,10 +289,24 @@ export function Header() {
                         </Link>
                       </div>
 
-                      {isAdmin && (
+                      {isCoAdmin ? (
                         <div className="pt-2 border-t border-white/10">
                           <Link
-                            href="/admin"
+                            href="/admin/products"
+                            onClick={() => setAccountMenuOpen(false)}
+                            className="flex items-center justify-between p-2 rounded bg-amber-500/15 border border-amber-500/40 text-amber-300 text-xs font-mono font-bold hover:bg-amber-400 hover:text-black transition-colors shadow-[0_0_12px_rgba(245,158,11,0.2)]"
+                          >
+                            <div className="flex items-center gap-1.5">
+                              <Shield size={12} className="text-amber-400" />
+                              <span>CO-ADMIN PORTAL</span>
+                            </div>
+                            <ArrowRight size={12} />
+                          </Link>
+                        </div>
+                      ) : isAdmin ? (
+                        <div className="pt-2 border-t border-white/10">
+                          <Link
+                            href={isSuperAdmin ? '/admin/superadmin' : '/admin'}
                             onClick={() => setAccountMenuOpen(false)}
                             className="flex items-center justify-between p-2 rounded bg-snake-green/10 border border-snake-green/30 text-snake-green text-xs font-mono font-semibold hover:bg-snake-green hover:text-black transition-colors"
                           >
@@ -303,7 +317,7 @@ export function Header() {
                             <ArrowRight size={12} />
                           </Link>
                         </div>
-                      )}
+                      ) : null}
 
                       <div className="pt-2 border-t border-white/10">
                         <button
@@ -582,9 +596,21 @@ export function Header() {
                   </button>
                 )}
 
-                {isAdmin && (
+                {isCoAdmin ? (
                   <Link
-                    href="/admin"
+                    href="/admin/products"
+                    className="col-span-2 p-3 bg-amber-500/15 border border-amber-500/40 rounded text-amber-300 hover:bg-amber-400 hover:text-black font-bold flex items-center justify-between transition-all shadow-[0_0_12px_rgba(245,158,11,0.2)]"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Shield size={16} className="text-amber-400" />
+                      <span>CO-ADMIN PORTAL (PRODUCTS & ORDERS)</span>
+                    </div>
+                    <span>→</span>
+                  </Link>
+                ) : isAdmin ? (
+                  <Link
+                    href={isSuperAdmin ? '/admin/superadmin' : '/admin'}
                     className="col-span-2 p-3 bg-snake-green/10 border border-snake-green/30 rounded text-snake-green hover:bg-snake-green hover:text-black font-semibold flex items-center justify-between transition-all"
                     onClick={() => setMobileMenuOpen(false)}
                   >
@@ -594,7 +620,7 @@ export function Header() {
                     </div>
                     <span>→</span>
                   </Link>
-                )}
+                ) : null}
 
                 {user && (
                   <button

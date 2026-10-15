@@ -35,7 +35,7 @@ const ACCOUNT_NAV = [
 export default function AccountLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, profile, signOut, isAdmin } = useAuth();
+  const { user, profile, signOut, isAdmin, isCoAdmin, isSuperAdmin } = useAuth();
   const { orders, wishlist } = useStore();
 
   const handleSignOut = async () => {
@@ -167,15 +167,23 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
               );
             })}
 
-            {isAdmin && (
+            {isCoAdmin ? (
               <Link
-                href="/admin"
+                href="/admin/products"
+                className="flex items-center gap-2 px-3.5 py-2.5 rounded-sm text-xs font-mono tracking-wider whitespace-nowrap min-h-[44px] text-amber-300 bg-amber-500/15 border border-amber-500/40 shrink-0 font-bold shadow-[0_0_12px_rgba(245,158,11,0.2)]"
+              >
+                <Shield size={14} className="text-amber-400" />
+                <span>CO-ADMIN</span>
+              </Link>
+            ) : isAdmin ? (
+              <Link
+                href={isSuperAdmin ? '/admin/superadmin' : '/admin'}
                 className="flex items-center gap-2 px-3.5 py-2.5 rounded-sm text-xs font-mono tracking-wider whitespace-nowrap min-h-[44px] text-snake-green bg-snake-green/10 border border-snake-green/30 shrink-0 font-semibold"
               >
                 <Shield size={14} />
                 <span>ADMIN</span>
               </Link>
-            )}
+            ) : null}
 
             {user ? (
               <button
@@ -253,10 +261,23 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
               );
             })}
 
-            {isAdmin && (
+            {isCoAdmin ? (
               <div className="pt-2 mt-2 border-t border-white/10">
                 <Link
-                  href="/admin"
+                  href="/admin/products"
+                  className="flex items-center justify-between px-3 py-2.5 rounded text-xs font-mono tracking-wider text-amber-300 bg-amber-500/15 border border-amber-500/40 hover:bg-amber-400 hover:text-black transition-all font-bold shadow-[0_0_12px_rgba(245,158,11,0.2)]"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Shield size={15} className="text-amber-400" />
+                    <span>CO-ADMIN ATELIER</span>
+                  </div>
+                  <ArrowRight size={13} />
+                </Link>
+              </div>
+            ) : isAdmin ? (
+              <div className="pt-2 mt-2 border-t border-white/10">
+                <Link
+                  href={isSuperAdmin ? '/admin/superadmin' : '/admin'}
                   className="flex items-center justify-between px-3 py-2.5 rounded text-xs font-mono tracking-wider text-snake-green bg-snake-green/10 border border-snake-green/30 hover:bg-snake-green hover:text-black transition-all font-semibold"
                 >
                   <div className="flex items-center gap-2.5">
@@ -266,7 +287,7 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
                   <ArrowRight size={13} />
                 </Link>
               </div>
-            )}
+            ) : null}
 
             <div className="pt-2 mt-2 border-t border-white/5">
               {user ? (

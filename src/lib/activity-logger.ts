@@ -37,6 +37,15 @@ export const DEFAULT_ADMIN_USERS: AdminUser[] = [
     lastActiveAt: new Date().toISOString(),
     addedAt: '2026-09-01T00:00:00.000Z',
   },
+  {
+    id: 'admin-3',
+    email: 'jdhanush2103@gmail.com',
+    name: 'DhanushJ2103 (Co-Admin)',
+    role: 'CO_ADMIN',
+    status: 'ACTIVE',
+    lastActiveAt: new Date().toISOString(),
+    addedAt: '2026-10-15T00:00:00.000Z',
+  },
 ];
 
 // Seeded historical audit trail so the dashboard is operational from day one
@@ -136,9 +145,27 @@ export function getAdminUsers(): AdminUser[] {
 }
 
 /**
- * Fetch all admin users asynchronously from Supabase with cache fallback
+ * Fetch all admin users asynchronously from Supabase / API with cache fallback
  */
 export async function fetchAdminUsers(): Promise<AdminUser[]> {
+  // 1. Try server-side personnel API endpoint first
+  try {
+    const res = await fetch('/api/admin/personnel', { cache: 'no-store' });
+    if (res.ok) {
+      const json = await res.json();
+      if (json && Array.isArray(json.admins) && json.admins.length > 0) {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(ADMIN_USERS_STORAGE_KEY, JSON.stringify(json.admins));
+          window.dispatchEvent(new CustomEvent('supersnake_admin_users_updated', { detail: json.admins }));
+        }
+        return json.admins;
+      }
+    }
+  } catch (apiErr) {
+    // Non-blocking fallback to Supabase
+  }
+
+  // 2. Try Supabase direct query
   try {
     const { data, error } = await supabase.from('admin_users').select('*').order('added_at', { ascending: true });
     if (!error && Array.isArray(data) && data.length > 0) {
@@ -153,6 +180,7 @@ export async function fetchAdminUsers(): Promise<AdminUser[]> {
       }));
       if (typeof window !== 'undefined') {
         localStorage.setItem(ADMIN_USERS_STORAGE_KEY, JSON.stringify(mapped));
+        window.dispatchEvent(new CustomEvent('supersnake_admin_users_updated', { detail: mapped }));
       }
       return mapped;
     }
@@ -163,7 +191,7 @@ export async function fetchAdminUsers(): Promise<AdminUser[]> {
 }
 
 /**
- * Save updated admin user roster (syncs to localStorage and Supabase)
+ * Save updated admin user roster (syncs to localStorage, Server API, and Supabase)
  */
 export function saveAdminUsers(users: AdminUser[]): void {
   if (typeof window === 'undefined') return;
@@ -171,7 +199,14 @@ export function saveAdminUsers(users: AdminUser[]): void {
     localStorage.setItem(ADMIN_USERS_STORAGE_KEY, JSON.stringify(users));
     window.dispatchEvent(new CustomEvent('supersnake_admin_users_updated', { detail: users }));
 
-    // Non-blocking sync to Supabase
+    // Sync to universal server personnel endpoint
+    fetch('/api/admin/personnel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ users }),
+    }).catch(() => {});
+
+    // Non-blocking sync to Supabase table
     const rows = users.map((u) => ({
       id: u.id,
       email: u.email,
