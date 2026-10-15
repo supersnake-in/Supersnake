@@ -23,7 +23,7 @@ export const DEFAULT_ADMIN_USERS: AdminUser[] = [
     id: 'admin-1',
     email: 'supersnake.in@gmail.com',
     name: 'SuperSnake Atelier (Admin)',
-    role: 'STORE_MANAGER',
+    role: 'ADMIN',
     status: 'ACTIVE',
     lastActiveAt: new Date().toISOString(),
     addedAt: '2026-09-01T00:00:00.000Z',
@@ -122,7 +122,7 @@ export function getAdminUsers(): AdminUser[] {
     const users: AdminUser[] = Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_ADMIN_USERS;
     const normalized = users.map((u) => {
       if (u.email.toLowerCase() === 'supersnake.in@gmail.com') {
-        return { ...u, role: 'STORE_MANAGER' as AdminRole, name: 'SuperSnake Atelier (Admin)' };
+        return { ...u, role: 'ADMIN' as AdminRole, name: 'SuperSnake Atelier (Admin)' };
       }
       if (u.email.toLowerCase() === 'jdhanush213@gmail.com') {
         return { ...u, role: 'SUPERADMIN' as AdminRole };

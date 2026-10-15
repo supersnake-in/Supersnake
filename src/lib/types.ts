@@ -592,7 +592,14 @@ export function sanitizeAnnouncementMessage(msg: string): string {
 // SUPERADMIN, AUDIT LOGGING & CUSTOMER INTELLIGENCE TYPES
 // ============================================================
 
-export type AdminRole = 'SUPERADMIN' | 'STORE_MANAGER' | 'SUPPORT_LEAD';
+export type AdminRole = 'SUPERADMIN' | 'ADMIN' | 'CO_ADMIN' | 'STORE_MANAGER' | 'SUPPORT_LEAD';
+
+export const CO_ADMIN_PERMITTED_ROUTES = [
+  '/admin/products',
+  '/admin/inventory',
+  '/admin/collections',
+  '/admin/orders',
+] as const;
 
 export interface AdminUser {
   id: string;

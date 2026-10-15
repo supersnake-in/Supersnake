@@ -30,18 +30,28 @@ import { SuperSnakeLogo } from '@/components/brand/SuperSnakeLogo';
 import { useAuth } from '@/lib/auth-context';
 import { useStore } from '@/lib/store';
 import { supabase } from '@/lib/supabase/client';
-import { isSuperAdmin } from '@/lib/security';
+import { isSuperAdmin, getAdminRole, isRoutePermittedForRole } from '@/lib/security';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, profile, isLoading, isAdmin } = useAuth();
-  const isSuperAdminUser = isSuperAdmin(user?.email || profile?.email);
+  const currentEmail = user?.email || profile?.email;
+  const adminRole = getAdminRole(currentEmail);
+  const isCoAdmin = adminRole === 'CO_ADMIN' || adminRole === 'STORE_MANAGER';
+  const isSuperAdminUser = adminRole === 'SUPERADMIN' || isSuperAdmin(currentEmail);
   const { defectReports, abandonedCarts, maintenanceConfig, preBookings } = useStore();
   const [badgeCounts, setBadgeCounts] = React.useState({
     pendingDefects: 0,
     openCarts: 0,
     activePreBookings: 0,
   });
+
+  // Automatically redirect Co-Admins landing on /admin to /admin/products
+  React.useEffect(() => {
+    if (isCoAdmin && pathname === '/admin') {
+      window.location.replace('/admin/products');
+    }
+  }, [isCoAdmin, pathname]);
 
   React.useEffect(() => {
     if (!isAdmin) return;
@@ -85,50 +95,58 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     badgeCounts.activePreBookings ||
     preBookings.filter((b) => b.status === 'CONFIRMED' || b.status === 'CONTACTED').length;
 
-  const navItems = [
-    ...(isSuperAdminUser
-      ? [
-          {
-            label: 'Superadmin Command',
-            href: '/admin/superadmin',
-            icon: Crown,
-            badgeText: 'LEVEL 0',
-            highlight: true,
-          },
-        ]
-      : []),
-    { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-    { label: 'Products', href: '/admin/products', icon: Shirt },
-    { label: 'Collections', href: '/admin/collections', icon: Layers },
-    {
-      label: 'Pre-Bookings',
-      href: '/admin/pre-bookings',
-      icon: Calendar,
-      badge: activePreBookingsCount,
-    },
-    { label: 'Inventory', href: '/admin/inventory', icon: Boxes },
-    { label: 'Orders', href: '/admin/orders', icon: ShoppingBag },
-    {
-      label: 'Defects Reported',
-      href: '/admin/defects',
-      icon: ShieldAlert,
-      badge: pendingDefectsCount,
-    },
-    {
-      label: 'Abandoned Carts',
-      href: '/admin/carts',
-      icon: ShoppingCart,
-      badge: openCartsCount,
-    },
-    { label: 'Customers', href: '/admin/customers', icon: Users },
-    { label: 'Coupons', href: '/admin/coupons', icon: Tag },
-    { label: 'Reviews', href: '/admin/reviews', icon: Star },
-    { label: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
-    { label: 'Homepage', href: '/admin/homepage', icon: Home },
-    { label: 'Social Media', href: '/admin/social', icon: Share2 },
-    { label: 'Membership', href: '/admin/membership', icon: Mail },
-    { label: 'Settings', href: '/admin/settings', icon: Settings },
-  ];
+  // Filter navigation items based on role: Co-Admins only see Products, Collections, Inventory, Orders
+  const navItems = isCoAdmin
+    ? [
+        { label: 'Products', href: '/admin/products', icon: Shirt },
+        { label: 'Collections', href: '/admin/collections', icon: Layers },
+        { label: 'Inventory', href: '/admin/inventory', icon: Boxes },
+        { label: 'Orders', href: '/admin/orders', icon: ShoppingBag },
+      ]
+    : [
+        ...(isSuperAdminUser
+          ? [
+              {
+                label: 'Superadmin Command',
+                href: '/admin/superadmin',
+                icon: Crown,
+                badgeText: 'LEVEL 0',
+                highlight: true,
+              },
+            ]
+          : []),
+        { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+        { label: 'Products', href: '/admin/products', icon: Shirt },
+        { label: 'Collections', href: '/admin/collections', icon: Layers },
+        {
+          label: 'Pre-Bookings',
+          href: '/admin/pre-bookings',
+          icon: Calendar,
+          badge: activePreBookingsCount,
+        },
+        { label: 'Inventory', href: '/admin/inventory', icon: Boxes },
+        { label: 'Orders', href: '/admin/orders', icon: ShoppingBag },
+        {
+          label: 'Defects Reported',
+          href: '/admin/defects',
+          icon: ShieldAlert,
+          badge: pendingDefectsCount,
+        },
+        {
+          label: 'Abandoned Carts',
+          href: '/admin/carts',
+          icon: ShoppingCart,
+          badge: openCartsCount,
+        },
+        { label: 'Customers', href: '/admin/customers', icon: Users },
+        { label: 'Coupons', href: '/admin/coupons', icon: Tag },
+        { label: 'Reviews', href: '/admin/reviews', icon: Star },
+        { label: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
+        { label: 'Homepage', href: '/admin/homepage', icon: Home },
+        { label: 'Social Media', href: '/admin/social', icon: Share2 },
+        { label: 'Membership', href: '/admin/membership', icon: Mail },
+        { label: 'Settings', href: '/admin/settings', icon: Settings },
+      ];
 
   // While checking auth status
   if (isLoading) {
@@ -188,6 +206,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <SuperSnakeLogo size="sm" showText={true} withLink={false} />
           </div>
 
+          {/* Co-Admin Clearance Tag */}
+          {isCoAdmin && (
+            <div className="px-2 -mt-2">
+              <span className="px-2.5 py-1 rounded bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[10px] font-bold tracking-wider uppercase flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                CO-ADMIN CLEARANCE
+              </span>
+            </div>
+          )}
+
           {/* Navigation Links */}
           <nav className="space-y-1 text-xs font-mono">
             {navItems.map((item) => {
@@ -245,7 +273,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </Link>
 
           <div className="px-3 py-2 text-[11px] text-neutral-500 truncate">
-            Logged in as <strong className="text-snake-green">{user?.email || profile?.email || 'admin'}</strong>
+            {isCoAdmin ? (
+              <span>
+                Role: <strong className="text-amber-400 font-bold">Co-Admin</strong> ({user?.email || profile?.email})
+              </span>
+            ) : (
+              <span>
+                Logged in as <strong className="text-snake-green">{user?.email || profile?.email || 'admin'}</strong>
+              </span>
+            )}
           </div>
         </div>
       </aside>
@@ -299,8 +335,34 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </header>
 
-        {/* Page Content */}
-        <main className="flex-1 p-6 md:p-8 overflow-y-auto">{children}</main>
+        {/* Page Content with Co-Admin Permission Enforcement */}
+        {!isRoutePermittedForRole(pathname, adminRole || (isAdmin ? 'ADMIN' : null)) ? (
+          <main className="flex-1 p-6 md:p-8 overflow-y-auto flex items-center justify-center font-mono">
+            <div className="max-w-md w-full bg-[#0d0d0d] border border-amber-500/30 p-8 rounded-lg text-center space-y-4">
+              <ShieldAlert size={44} className="mx-auto text-amber-400 animate-pulse" />
+              <span className="text-[10px] font-bold tracking-widest text-amber-400 uppercase block">
+                ROLE: {adminRole || 'CO_ADMIN'} // CLEARANCE LIMITED
+              </span>
+              <h2 className="text-xl font-bold uppercase text-white tracking-tight">
+                ACCESS RESTRICTED
+              </h2>
+              <p className="text-xs text-neutral-400 leading-relaxed font-sans">
+                Your atelier staff account is authorized strictly for <strong>Products</strong>, <strong>Collections</strong>, <strong>Inventory</strong>, and <strong>Orders</strong>. Storewide settings, customer directories, and financial metrics require Superadmin authorization.
+              </p>
+              <div className="pt-2">
+                <Link
+                  href="/admin/products"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-snake-green text-black font-bold uppercase text-xs rounded hover:bg-white transition-colors"
+                >
+                  <Shirt size={14} />
+                  <span>GO TO PRODUCTS CATALOG</span>
+                </Link>
+              </div>
+            </div>
+          </main>
+        ) : (
+          <main className="flex-1 p-6 md:p-8 overflow-y-auto">{children}</main>
+        )}
       </div>
     </div>
   );

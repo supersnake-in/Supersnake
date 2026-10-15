@@ -85,7 +85,7 @@ export default function SuperadminPage() {
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [newAdminEmail, setNewAdminEmail] = useState('');
   const [newAdminName, setNewAdminName] = useState('');
-  const [newAdminRole, setNewAdminRole] = useState<AdminRole>('STORE_MANAGER');
+  const [newAdminRole, setNewAdminRole] = useState<AdminRole>('CO_ADMIN');
   const [showAddAdminModal, setShowAddAdminModal] = useState(false);
   const [adminActionFeedback, setAdminActionFeedback] = useState<string | null>(null);
 
@@ -805,9 +805,10 @@ export default function SuperadminPage() {
                       onChange={(e) => setNewAdminRole(e.target.value as AdminRole)}
                       className="w-full bg-neutral-900 border border-neutral-800 rounded p-2.5 text-white focus:outline-none focus:border-snake-green"
                     >
-                      <option value="STORE_MANAGER">STORE MANAGER (Catalog, Inventory, Pricing, Marketing)</option>
-                      <option value="SUPPORT_LEAD">SUPPORT & LOGISTICS (Orders, Defect Resolution, Shipping)</option>
-                      <option value="SUPERADMIN">SUPERADMIN (Full Executive Control, Kill-Switches, Logs)</option>
+                      <option value="CO_ADMIN">CO-ADMIN (Restricted: Products, Collections, Inventory & Orders only)</option>
+                      <option value="ADMIN">ATELIER ADMIN (Standard: All admin tools except Superadmin)</option>
+                      <option value="SUPPORT_LEAD">SUPPORT & LOGISTICS (Orders & Shipping only)</option>
+                      <option value="SUPERADMIN">SUPERADMIN (Executive Control, Kill-Switches, Full Clearance)</option>
                     </select>
                   </div>
 
@@ -849,6 +850,7 @@ export default function SuperadminPage() {
                   const isPrimarySuper = SUPERADMIN_EMAILS.some(
                     (se) => se.toLowerCase() === adm.email.toLowerCase()
                   );
+                  const isCoAdminRole = adm.role === 'CO_ADMIN' || adm.role === 'STORE_MANAGER';
                   return (
                     <tr key={adm.id} className="hover:bg-white/[0.02] transition-colors">
                       <td className="py-3.5 px-4">
@@ -868,12 +870,14 @@ export default function SuperadminPage() {
                           className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
                             adm.role === 'SUPERADMIN'
                               ? 'bg-snake-green/15 text-snake-green border border-snake-green/30'
-                              : adm.role === 'STORE_MANAGER'
+                              : isCoAdminRole
+                              ? 'bg-amber-950/40 text-amber-300 border border-amber-500/40'
+                              : adm.role === 'ADMIN'
                               ? 'bg-blue-950/40 text-blue-400 border border-blue-500/30'
                               : 'bg-purple-950/40 text-purple-400 border border-purple-500/30'
                           }`}
                         >
-                          {adm.role}
+                          {isCoAdminRole ? 'CO-ADMIN' : adm.role}
                         </span>
                       </td>
 
@@ -892,6 +896,10 @@ export default function SuperadminPage() {
                         {isPrimarySuper ? (
                           <span className="text-amber-400 font-bold flex items-center gap-1">
                             <Crown size={12} /> LEVEL 0 OWNER
+                          </span>
+                        ) : isCoAdminRole ? (
+                          <span className="text-amber-300 font-mono text-[10px] font-bold">
+                            PRODUCTS & ORDERS
                           </span>
                         ) : (
                           <span>OPERATIONAL</span>

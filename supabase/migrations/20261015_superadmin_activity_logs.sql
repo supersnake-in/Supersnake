@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS public.admin_users (
   id TEXT PRIMARY KEY,
   email TEXT UNIQUE NOT NULL,
   name TEXT NOT NULL,
-  role TEXT NOT NULL CHECK (role IN ('SUPERADMIN', 'STORE_MANAGER', 'SUPPORT_LEAD')),
+  role TEXT NOT NULL CHECK (role IN ('SUPERADMIN', 'ADMIN', 'CO_ADMIN', 'STORE_MANAGER', 'SUPPORT_LEAD')),
   status TEXT DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'INVITED', 'SUSPENDED')),
   avatar_url TEXT,
   last_active_at TIMESTAMPTZ DEFAULT NOW(),
@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS public.admin_users (
 -- Seed Initial Administrators (jdhanush213@gmail.com as sole Superadmin, supersnake.in@gmail.com as Admin)
 INSERT INTO public.admin_users (id, email, name, role, status)
 VALUES 
-  ('admin-1', 'supersnake.in@gmail.com', 'SuperSnake Atelier (Admin)', 'STORE_MANAGER', 'ACTIVE'),
+  ('admin-1', 'supersnake.in@gmail.com', 'SuperSnake Atelier (Admin)', 'ADMIN', 'ACTIVE'),
   ('admin-2', 'jdhanush213@gmail.com', 'Dhanush J (Founder & Superadmin)', 'SUPERADMIN', 'ACTIVE')
 ON CONFLICT (email) DO UPDATE SET 
   role = EXCLUDED.role,
