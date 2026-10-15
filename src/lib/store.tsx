@@ -72,6 +72,7 @@ import {
   sanitizeCartItem,
 } from './storage-helper';
 import { BRAND } from './design-tokens';
+import { recordAdminActivity } from './activity-logger';
 export interface HomepageConfig {
   heroImages: string[];
   heroIntervalSeconds: number;
@@ -1528,6 +1529,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return { success: true };
   };
 
+  const getSessionAdminEmail = (): string => {
+    if (typeof window === 'undefined') return 'supersnake.in@gmail.com';
+    try {
+      const raw = localStorage.getItem('supersnake_user_profile');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.email) return parsed.email;
+      }
+    } catch {}
+    return 'supersnake.in@gmail.com';
+  };
+
   const addProduct = async (newProduct: Product) => {
     const isSignatureRequested = Boolean(newProduct.isSignature);
     const seen = new Set<string>();
@@ -1558,6 +1571,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     createProductInSupabase(cleanProduct).catch((err) => {
       console.warn('Could not sync product to Supabase:', err);
+    });
+
+    // Record administrative activity audit log
+    recordAdminActivity({
+      adminEmail: getSessionAdminEmail(),
+      category: 'CATALOG',
+      action: 'PRODUCT_CREATE',
+      targetTitle: cleanProduct.name,
+      details: `Created new product '${cleanProduct.name}' (Price: ₹${cleanProduct.price.toLocaleString('en-IN')}, MRP: ₹${cleanProduct.mrp.toLocaleString('en-IN')}, Fabric: ${cleanProduct.fabric || 'Heavyweight'}, Display Rank: #${cleanProduct.displayOrder || 'Auto'}).`,
+      metadata: { productId: cleanProduct.id, slug: cleanProduct.slug, price: cleanProduct.price },
     });
 
     if (isSignatureRequested) {
@@ -1599,6 +1622,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     updateProductInSupabase(cleanProduct).catch((err) => {
       console.warn('Could not sync product update to Supabase:', err);
     });
+
+    // Record administrative activity audit log
+    recordAdminActivity({
+      adminEmail: getSessionAdminEmail(),
+      category: 'CATALOG',
+      action: 'PRODUCT_UPDATE',
+      targetTitle: cleanProduct.name,
+      details: `Updated product '${cleanProduct.name}' (Price: ₹${cleanProduct.price.toLocaleString('en-IN')}, Sizes: ${cleanProduct.sizes.join(', ')}, Rank: #${cleanProduct.displayOrder || 'Auto'}).`,
+      metadata: { productId: cleanProduct.id, slug: cleanProduct.slug, price: cleanProduct.price },
+    });
   };
 
   const deleteProduct = async (productId: string, slug?: string) => {
@@ -1632,6 +1665,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       );
       saveProductsToLocalStorage(next);
       return next;
+    });
+
+    // Record administrative activity audit log
+    recordAdminActivity({
+      adminEmail: getSessionAdminEmail(),
+      category: 'CATALOG',
+      action: 'PRODUCT_DELETE',
+      targetTitle: target?.name || productId,
+      details: `Archived/deleted product '${target?.name || productId}' (slug: ${targetSlug || 'N/A'}) from atelier inventory.`,
+      metadata: { productId: targetId, slug: targetSlug },
+      severity: 'WARNING',
     });
 
     // Delete in Supabase
@@ -2097,6 +2141,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       window.dispatchEvent(new Event('supersnake_maintenance_change'));
     } catch (e) {}
 
+    // Record administrative activity audit log
+    recordAdminActivity({
+      adminEmail: userEmail,
+      category: 'SETTINGS',
+      action: 'MAINTENANCE_TOGGLE',
+      targetTitle: 'Storefront Maintenance Mode',
+      details: `Maintenance mode ${updated.maintenanceMode ? 'ENABLED (Storefront locked to public visitors)' : 'DISABLED (Storefront live to public visitors)'}. Notice: "${updated.maintenanceMessage || 'Standard Atelier Enhancements'}".`,
+      metadata: updated,
+      severity: updated.maintenanceMode ? 'CRITICAL' : 'INFO',
+    });
+
     try {
       const res = await fetch('/api/admin/maintenance', {
         method: 'POST',
@@ -2188,6 +2243,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('supersnake_storefront_config', JSON.stringify(updated));
       window.dispatchEvent(new Event('supersnake_storefront_change'));
     } catch (e) {}
+
+    // Record administrative activity audit log
+    recordAdminActivity({
+      adminEmail: userEmail,
+      category: 'SETTINGS',
+      action: 'STOREFRONT_MODE_CHANGE',
+      targetTitle: 'Storefront Mode',
+      details: `Storefront operating mode changed to '${updated.storefrontMode}'. Automatic drop launch: ${updated.automaticLaunch ? 'YES' : 'NO'}. Scheduled launch: ${updated.launchDate || 'N/A'}.`,
+      metadata: updated,
+      severity: updated.storefrontMode === 'MAINTENANCE' ? 'WARNING' : 'INFO',
+    });
 
     try {
       const res = await fetch('/api/admin/storefront-mode', {

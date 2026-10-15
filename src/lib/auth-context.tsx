@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from './supabase/client';
 import { User, Session } from '@supabase/supabase-js';
-import { isAuthorizedAdmin } from './security';
+import { isAuthorizedAdmin, isSuperAdmin } from './security';
 import { FitType } from './types';
 import {
   isPasskeySupported,
@@ -34,6 +34,7 @@ interface AuthContextType {
   session: Session | null;
   isLoading: boolean;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
   isPasskeyAvailable: boolean;
   signIn: (email: string, password?: string) => Promise<{ error?: string }>;
   signUp: (email: string, password?: string, fullName?: string, phone?: string) => Promise<{ error?: string; requireVerification?: boolean }>;
@@ -726,6 +727,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const isAdmin = isAuthorizedAdmin(user?.email || profile?.email);
+  const isSuperAdminUser = isSuperAdmin(user?.email || profile?.email);
 
   return (
     <AuthContext.Provider
@@ -735,6 +737,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         session,
         isLoading,
         isAdmin,
+        isSuperAdmin: isSuperAdminUser,
         isPasskeyAvailable,
         signIn,
         signUp,

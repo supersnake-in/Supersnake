@@ -47,9 +47,22 @@ export const AUTHORIZED_ADMIN_EMAILS = [
   'supersnake.in@gmail.com',
 ] as const;
 
+// Executive Superadmin Email Whitelist
+export const SUPERADMIN_EMAILS = [
+  'jdhanush213@gmail.com',
+  'supersnake.in@gmail.com',
+] as const;
+
 // Verify if an email is an authorized atelier administrator
 export function isAuthorizedAdmin(email?: string | null): boolean {
   if (!email) return false;
   const normalized = email.trim().toLowerCase();
   return AUTHORIZED_ADMIN_EMAILS.some((adminEmail) => adminEmail.toLowerCase() === normalized);
+}
+
+// Verify if an email is an executive Superadmin
+export function isSuperAdmin(email?: string | null): boolean {
+  if (!email) return false;
+  const normalized = email.trim().toLowerCase();
+  return SUPERADMIN_EMAILS.some((adminEmail) => adminEmail.toLowerCase() === normalized);
 }

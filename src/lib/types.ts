@@ -587,3 +587,67 @@ export function sanitizeAnnouncementMessage(msg: string): string {
     .trim()
     .slice(0, 160);
 }
+
+// ============================================================
+// SUPERADMIN, AUDIT LOGGING & CUSTOMER INTELLIGENCE TYPES
+// ============================================================
+
+export type AdminRole = 'SUPERADMIN' | 'STORE_MANAGER' | 'SUPPORT_LEAD';
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  name: string;
+  role: AdminRole;
+  avatarUrl?: string;
+  status: 'ACTIVE' | 'INVITED' | 'SUSPENDED';
+  lastActiveAt?: string;
+  addedAt: string;
+}
+
+export type AdminActionCategory =
+  | 'CATALOG'
+  | 'SETTINGS'
+  | 'ORDERS'
+  | 'DISCOUNTS'
+  | 'EMERGENCY'
+  | 'COLLECTIONS'
+  | 'SYSTEM';
+
+export interface AdminActivityLog {
+  id: string;
+  adminEmail: string;
+  adminName?: string;
+  category: AdminActionCategory;
+  action: string;
+  targetTitle: string;
+  details: string;
+  metadata?: Record<string, any>;
+  timestamp: string;
+  severity?: 'INFO' | 'WARNING' | 'CRITICAL';
+}
+
+export interface CustomerIntelligence {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  location: string;
+  ordersCount: number;
+  totalSpent: number;
+  averageOrderValue: number;
+  tier: 'VIP INSTINCT' | 'ELITE' | 'MEMBER';
+  firstOrderDate: string;
+  lastOrderDate: string;
+  registeredAccount?: boolean;
+  phoneVerified?: boolean;
+}
+
+export interface EmergencyControlState {
+  storefrontFrozen: boolean;
+  checkoutPaused: boolean;
+  discountsDisabled: boolean;
+  emergencyNotice?: string;
+  lastToggledBy?: string;
+  lastToggledAt?: string;
+}

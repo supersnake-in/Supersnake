@@ -24,15 +24,18 @@ import {
   AlertTriangle,
   Calendar,
   Layers,
+  Crown,
 } from 'lucide-react';
 import { SuperSnakeLogo } from '@/components/brand/SuperSnakeLogo';
 import { useAuth } from '@/lib/auth-context';
 import { useStore } from '@/lib/store';
 import { supabase } from '@/lib/supabase/client';
+import { isSuperAdmin } from '@/lib/security';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, profile, isLoading, isAdmin } = useAuth();
+  const isSuperAdminUser = isSuperAdmin(user?.email || profile?.email);
   const { defectReports, abandonedCarts, maintenanceConfig, preBookings } = useStore();
   const [badgeCounts, setBadgeCounts] = React.useState({
     pendingDefects: 0,
@@ -83,6 +86,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     preBookings.filter((b) => b.status === 'CONFIRMED' || b.status === 'CONTACTED').length;
 
   const navItems = [
+    ...(isSuperAdminUser
+      ? [
+          {
+            label: 'Superadmin Command',
+            href: '/admin/superadmin',
+            icon: Crown,
+            badgeText: 'LEVEL 0',
+            highlight: true,
+          },
+        ]
+      : []),
     { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
     { label: 'Products', href: '/admin/products', icon: Shirt },
     { label: 'Collections', href: '/admin/collections', icon: Layers },
@@ -179,6 +193,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
+              const isHighlight = (item as any).highlight;
+              const badgeText = (item as any).badgeText;
               return (
                 <Link
                   key={item.href}
@@ -186,16 +202,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   className={`flex items-center gap-3 px-3 py-2.5 rounded transition-colors ${
                     isActive
                       ? 'bg-neutral-800/80 text-white font-semibold border-l-2 border-snake-green'
+                      : isHighlight
+                      ? 'text-snake-green hover:text-white hover:bg-neutral-900 border border-snake-green/30 bg-snake-green/5'
                       : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
                   }`}
                 >
-                  <Icon size={16} className={isActive ? 'text-snake-green' : 'text-neutral-500'} />
-                  <span>{item.label}</span>
-                  {Boolean(item.badge && item.badge > 0) && (
+                  <Icon size={16} className={isActive ? 'text-snake-green' : isHighlight ? 'text-snake-green' : 'text-neutral-500'} />
+                  <span className="truncate">{item.label}</span>
+                  {badgeText ? (
+                    <span className="ml-auto px-1.5 py-0.5 text-[8px] font-mono font-bold bg-snake-green text-black rounded leading-none whitespace-nowrap">
+                      {badgeText}
+                    </span>
+                  ) : Boolean(item.badge && item.badge > 0) ? (
                     <span className="ml-auto px-1.5 py-0.5 text-[9px] font-mono font-bold bg-snake-green text-black rounded-full leading-none">
                       {item.badge}
                     </span>
-                  )}
+                  ) : null}
                 </Link>
               );
             })}
