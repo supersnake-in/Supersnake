@@ -154,11 +154,24 @@ export async function fetchAdminUsers(): Promise<AdminUser[]> {
     if (res.ok) {
       const json = await res.json();
       if (json && Array.isArray(json.admins) && json.admins.length > 0) {
+        const normalizedList: AdminUser[] = json.admins.map((u: any) => {
+          const cleanEmail = (u.email || '').toLowerCase().trim();
+          if (cleanEmail === 'supersnake.in@gmail.com') {
+            return { ...u, role: 'ADMIN' as AdminRole, name: 'SuperSnake Atelier (Admin)' };
+          }
+          if (cleanEmail === 'jdhanush213@gmail.com') {
+            return { ...u, role: 'SUPERADMIN' as AdminRole };
+          }
+          if (u.role === 'STORE_MANAGER') {
+            return { ...u, role: 'ADMIN' as AdminRole };
+          }
+          return u;
+        });
         if (typeof window !== 'undefined') {
-          localStorage.setItem(ADMIN_USERS_STORAGE_KEY, JSON.stringify(json.admins));
-          window.dispatchEvent(new CustomEvent('supersnake_admin_users_updated', { detail: json.admins }));
+          localStorage.setItem(ADMIN_USERS_STORAGE_KEY, JSON.stringify(normalizedList));
+          window.dispatchEvent(new CustomEvent('supersnake_admin_users_updated', { detail: normalizedList }));
         }
-        return json.admins;
+        return normalizedList;
       }
     }
   } catch (apiErr) {
@@ -169,15 +182,26 @@ export async function fetchAdminUsers(): Promise<AdminUser[]> {
   try {
     const { data, error } = await supabase.from('admin_users').select('*').order('added_at', { ascending: true });
     if (!error && Array.isArray(data) && data.length > 0) {
-      const mapped: AdminUser[] = data.map((r: any) => ({
-        id: r.id,
-        email: r.email,
-        name: r.name,
-        role: r.role,
-        status: r.status,
-        lastActiveAt: r.last_active_at,
-        addedAt: r.added_at,
-      }));
+      const mapped: AdminUser[] = data.map((r: any) => {
+        const cleanEmail = (r.email || '').toLowerCase().trim();
+        let role = r.role;
+        if (cleanEmail === 'supersnake.in@gmail.com') {
+          role = 'ADMIN';
+        } else if (cleanEmail === 'jdhanush213@gmail.com') {
+          role = 'SUPERADMIN';
+        } else if (role === 'STORE_MANAGER') {
+          role = 'ADMIN';
+        }
+        return {
+          id: r.id,
+          email: r.email,
+          name: r.name,
+          role,
+          status: r.status,
+          lastActiveAt: r.last_active_at,
+          addedAt: r.added_at,
+        };
+      });
       if (typeof window !== 'undefined') {
         localStorage.setItem(ADMIN_USERS_STORAGE_KEY, JSON.stringify(mapped));
         window.dispatchEvent(new CustomEvent('supersnake_admin_users_updated', { detail: mapped }));

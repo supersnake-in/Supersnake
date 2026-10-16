@@ -87,23 +87,42 @@ export default function AccountOverviewPage() {
 
       {/* Superadmin / Executive Admin Access Banner */}
       {isAdmin && !isCoAdmin && (
-        <div className="bg-gradient-to-r from-snake-green/15 via-[#0d0d0d] to-[#0a0a0a] border border-snake-green/40 p-5 rounded-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-[0_0_20px_rgba(4,252,33,0.1)]">
-          <div className="space-y-1">
-            <div className="inline-flex items-center gap-2 text-[10px] font-mono font-bold text-snake-green tracking-widest uppercase">
-              <Crown size={13} />
-              <span>{isSuperAdmin ? 'SUPERADMIN EXECUTIVE CLEARANCE' : 'ADMIN ATELIER CLEARANCE'}</span>
+        <div className="bg-gradient-to-r from-snake-green/15 via-[#0d0d0d] to-[#0a0a0a] border-2 border-snake-green/40 p-6 md:p-8 rounded-sm relative overflow-hidden shadow-[0_0_30px_rgba(4,252,33,0.15)]">
+          <div className="absolute top-0 right-0 w-80 h-80 bg-snake-green/10 blur-3xl rounded-full pointer-events-none" />
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-snake-green/20 border border-snake-green/40 text-[10px] font-mono text-snake-green font-bold rounded uppercase tracking-wider">
+                <span className="w-2 h-2 rounded-full bg-snake-green animate-pulse" />
+                <span>{isSuperAdmin ? 'SUPERADMIN EXECUTIVE CLEARANCE' : 'ATELIER ADMIN CLEARANCE: FULL ACCESS'}</span>
+              </div>
+              <h3 className="text-xl md:text-2xl font-display font-medium text-white tracking-tight">
+                {isSuperAdmin ? 'MASTER ATELIER ADMINISTRATION SYSTEM' : 'FULL ATELIER MANAGEMENT & OPERATIONS'}
+              </h3>
+              <p className="text-xs font-mono text-neutral-300 max-w-xl leading-relaxed">
+                {isSuperAdmin
+                  ? 'Level 0 Owner access with universal executive authority, personnel management, audit logs, and brand kill-switches.'
+                  : 'Authorized clearance across the complete atelier suite: Products, Inventory, Customer Orders, Discounts, Reviews, Analytics, and Store Settings.'}
+              </p>
+              <div className="flex flex-wrap items-center gap-2 pt-1 text-[10px] font-mono text-neutral-300">
+                <span className="px-2 py-0.5 bg-white/10 rounded border border-white/10">✓ Dashboard</span>
+                <span className="px-2 py-0.5 bg-white/10 rounded border border-white/10">✓ Products</span>
+                <span className="px-2 py-0.5 bg-white/10 rounded border border-white/10">✓ Orders & Pre-Bookings</span>
+                <span className="px-2 py-0.5 bg-white/10 rounded border border-white/10">✓ Customers</span>
+                <span className="px-2 py-0.5 bg-white/10 rounded border border-white/10">✓ Analytics</span>
+                <span className="px-2 py-0.5 bg-white/10 rounded border border-white/10">✓ Settings</span>
+              </div>
             </div>
-            <h3 className="text-base font-display font-medium text-white">
-              MASTER ATELIER ADMINISTRATION SYSTEM
-            </h3>
+
+            <div className="shrink-0 flex flex-col sm:flex-row md:flex-col gap-3">
+              <Link
+                href={isSuperAdmin ? '/admin/superadmin' : '/admin'}
+                className="px-6 py-3.5 bg-snake-green hover:bg-white text-black font-mono text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(4,252,33,0.3)]"
+              >
+                <span>{isSuperAdmin ? 'OPEN SUPERADMIN COMMAND' : 'ENTER ATELIER ADMIN'}</span>
+                <ArrowRight size={14} />
+              </Link>
+            </div>
           </div>
-          <Link
-            href={isSuperAdmin ? '/admin/superadmin' : '/admin'}
-            className="px-5 py-2.5 bg-snake-green hover:bg-white text-black font-mono text-xs font-bold uppercase tracking-wider transition-colors shrink-0 flex items-center gap-2"
-          >
-            <span>ENTER ATELIER ADMIN</span>
-            <ArrowRight size={14} />
-          </Link>
         </div>
       )}
 

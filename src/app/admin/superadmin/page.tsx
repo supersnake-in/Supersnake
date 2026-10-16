@@ -850,7 +850,7 @@ export default function SuperadminPage() {
                   const isPrimarySuper = SUPERADMIN_EMAILS.some(
                     (se) => se.toLowerCase() === adm.email.toLowerCase()
                   );
-                  const isCoAdminRole = adm.role === 'CO_ADMIN' || adm.role === 'STORE_MANAGER';
+                  const isCoAdminRole = adm.role === 'CO_ADMIN';
                   return (
                     <tr key={adm.id} className="hover:bg-white/[0.02] transition-colors">
                       <td className="py-3.5 px-4">

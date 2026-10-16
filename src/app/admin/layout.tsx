@@ -37,7 +37,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { user, profile, isLoading, isAdmin } = useAuth();
   const currentEmail = user?.email || profile?.email;
   const adminRole = getAdminRole(currentEmail);
-  const isCoAdmin = adminRole === 'CO_ADMIN' || adminRole === 'STORE_MANAGER';
+  const isCoAdmin = adminRole === 'CO_ADMIN';
   const isSuperAdminUser = adminRole === 'SUPERADMIN' || isSuperAdmin(currentEmail);
   const { defectReports, abandonedCarts, maintenanceConfig, preBookings } = useStore();
   const [badgeCounts, setBadgeCounts] = React.useState({

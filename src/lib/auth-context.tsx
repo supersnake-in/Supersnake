@@ -748,7 +748,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const role = getAdminRole(effectiveEmail);
   const isAdmin = isAuthorizedAdmin(effectiveEmail);
   const isSuperAdminUser = isSuperAdmin(effectiveEmail) || role === 'SUPERADMIN';
-  const isCoAdmin = role === 'CO_ADMIN' || role === 'STORE_MANAGER';
+  const isCoAdmin = role === 'CO_ADMIN';
 
   return (
     <AuthContext.Provider

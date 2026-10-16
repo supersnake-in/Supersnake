@@ -50,15 +50,26 @@ export async function GET() {
       .order('added_at', { ascending: true });
 
     if (!error && Array.isArray(data) && data.length > 0) {
-      serverAdminsCache = data.map((r: any) => ({
-        id: r.id,
-        email: r.email,
-        name: r.name,
-        role: r.role as AdminRole,
-        status: r.status,
-        lastActiveAt: r.last_active_at,
-        addedAt: r.added_at,
-      }));
+      serverAdminsCache = data.map((r: any) => {
+        const cleanEmail = (r.email || '').toLowerCase().trim();
+        let role = r.role as AdminRole;
+        if (cleanEmail === 'supersnake.in@gmail.com') {
+          role = 'ADMIN';
+        } else if (cleanEmail === 'jdhanush213@gmail.com') {
+          role = 'SUPERADMIN';
+        } else if (role === 'STORE_MANAGER') {
+          role = 'ADMIN';
+        }
+        return {
+          id: r.id,
+          email: r.email,
+          name: r.name,
+          role,
+          status: r.status,
+          lastActiveAt: r.last_active_at,
+          addedAt: r.added_at,
+        };
+      });
     }
   } catch (err) {
     // Graceful fallback to server in-memory cache

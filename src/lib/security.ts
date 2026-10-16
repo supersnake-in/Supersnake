@@ -106,9 +106,14 @@ export function getAdminRole(email?: string | null): AdminRole | null {
   if (!email) return null;
   const normalized = email.trim().toLowerCase();
 
-  // Primary Superadmin
+  // Primary Superadmin (Sole executive owner: strictly jdhanush213@gmail.com)
   if (isSuperAdmin(normalized)) {
     return 'SUPERADMIN';
+  }
+
+  // Primary Atelier Administrator (Always full ADMIN)
+  if (normalized === 'supersnake.in@gmail.com') {
+    return 'ADMIN';
   }
 
   // Check permanent co-admin list
@@ -127,16 +132,13 @@ export function getAdminRole(email?: string | null): AdminRole | null {
             (u: any) => u.email?.toLowerCase() === normalized && u.status === 'ACTIVE'
           );
           if (match && match.role) {
+            // Guard against legacy demotions
+            if (match.role === 'STORE_MANAGER') return 'ADMIN';
             return match.role as AdminRole;
           }
         }
       }
     } catch {}
-  }
-
-  // Fallback for permanent atelier administration
-  if (normalized === 'supersnake.in@gmail.com') {
-    return 'ADMIN';
   }
 
   return null;
@@ -149,13 +151,13 @@ export function isRoutePermittedForRole(pathname: string, role?: AdminRole | nul
   // Superadmin has universal clearance
   if (role === 'SUPERADMIN') return true;
 
-  // Standard Admin has access to all admin routes except Superadmin Command
-  if (role === 'ADMIN') {
+  // Standard Admin & Store Manager have access to all admin routes except Superadmin Command
+  if (role === 'ADMIN' || role === 'STORE_MANAGER') {
     return pathname !== '/admin/superadmin' && !pathname.startsWith('/admin/superadmin/');
   }
 
   // Co-Admin has strictly scoped clearance: Products, Collections, Inventory, Orders
-  if (role === 'CO_ADMIN' || role === 'STORE_MANAGER') {
+  if (role === 'CO_ADMIN') {
     return CO_ADMIN_PERMITTED_ROUTES.some(
       (permittedRoute) => pathname === permittedRoute || pathname.startsWith(`${permittedRoute}/`)
     );
