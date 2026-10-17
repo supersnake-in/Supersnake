@@ -1495,9 +1495,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       console.warn('LocalStorage quota exceeded, storing lightweight offline cache:', err);
       try {
+        // Strip heavy base64 strings (>5KB) so the entire product list always fits within the 5MB browser quota
         const lightList = productList.map((p) => ({
           ...p,
-          images: p.images.slice(0, 2),
+          images: (p.images || []).map((img) => ({
+            ...img,
+            url: img.url && img.url.length > 5000 ? '' : img.url,
+          })),
         }));
         localStorage.setItem('supersnake_products', JSON.stringify(lightList));
       } catch (inner) {
