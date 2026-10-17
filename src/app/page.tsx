@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { ArrowRight, ArrowDown, Sparkles, Instagram, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ProductCard } from '@/components/product/ProductCard';
+import { SuperSnakeLogo } from '@/components/brand/SuperSnakeLogo';
 import { formatPrice } from '@/lib/design-tokens';
 import { useStore, DEFAULT_HOMEPAGE_CONFIG, cleanHeroImages, cleanCollectionImage, cleanCommunityImages } from '@/lib/store';
 
@@ -768,6 +769,10 @@ export default function HomePage() {
             <br />
             TO BLEND IN.
           </h2>
+
+          <div className="pt-2 sm:pt-4 flex justify-center">
+            <SuperSnakeLogo size="md" showText={false} withGlow={true} />
+          </div>
         </div>
       </section>
 
