@@ -273,13 +273,11 @@ export function ProductDetailClient({ initialProduct, slug }: ProductDetailClien
                 ))}
               </div>
 
-              {/* Floating Counter & Tagline badge */}
-              <div className="absolute top-3 left-3 px-2.5 py-1 bg-black/75 backdrop-blur-md border border-white/10 text-[9px] font-mono tracking-widest text-neutral-200 uppercase flex items-center gap-2 max-w-[85%]">
-                <span className="text-snake-green font-bold flex-shrink-0">
+              {/* Floating Counter badge */}
+              <div className="absolute top-3 left-3 px-2.5 py-1 bg-black/75 backdrop-blur-md border border-white/10 text-[9px] font-mono tracking-widest text-neutral-200 uppercase flex items-center gap-1.5">
+                <span className="text-snake-green font-bold">
                   {String(activeImageIndex + 1).padStart(2, '0')} / {String(uniqueImages.length).padStart(2, '0')}
                 </span>
-                <span>•</span>
-                <span className="truncate">{product.tagline || (product.gsm && product.gsm > 0 ? `${product.gsm} GSM` : 'HEAVYWEIGHT')}</span>
               </div>
 
               {/* Navigation Arrows for Mobile (appears only if direction is available) */}
@@ -415,11 +413,6 @@ export function ProductDetailClient({ initialProduct, slug }: ProductDetailClien
                     )}
                   </motion.div>
                 </AnimatePresence>
-
-                {/* Tagline / Subtitle Badge on Hero Image */}
-                <div className="absolute top-3.5 left-3.5 z-10 px-2.5 py-1 bg-black/70 backdrop-blur-md border border-white/10 text-[10px] font-mono tracking-widest text-neutral-300 uppercase max-w-[80%] truncate">
-                  {product.tagline || (product.gsm && product.gsm > 0 ? `${product.gsm} GSM` : 'HEAVYWEIGHT')}
-                </div>
 
                 {/* Lightbox Expander */}
                 <button

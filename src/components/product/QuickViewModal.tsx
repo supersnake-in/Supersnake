@@ -78,9 +78,6 @@ export function QuickViewModal() {
                 NO IMAGE
               </div>
             )}
-            <div className="absolute bottom-3 left-3 px-2 py-0.5 bg-black/80 backdrop-blur-sm text-[9px] font-mono tracking-widest text-neutral-300 border border-white/10 uppercase max-w-[85%] truncate">
-              {quickViewProduct.tagline || `${quickViewProduct.gsm} GSM • ${quickViewProduct.fit.toUpperCase()}`}
-            </div>
           </div>
 
           {/* Right: Rapid Purchase Form */}

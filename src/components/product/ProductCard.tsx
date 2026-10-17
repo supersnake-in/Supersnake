@@ -121,14 +121,12 @@ export function ProductCard({
           )}
         </Link>
 
-        {/* Tagline / Subtitle badge */}
-        <div className="absolute top-3 left-3 z-10 px-2 py-0.5 bg-black/60 backdrop-blur-md text-[9px] font-mono tracking-widest text-neutral-300 border border-white/10 uppercase max-w-[75%] truncate pointer-events-none">
-          {activePreLaunch ? (
-            <span className="text-snake-green font-bold">PRE-BOOK // FIRST DROP</span>
-          ) : (
-            product.tagline || (product.gsm && product.gsm > 0 ? `${product.gsm} GSM` : 'HEAVYWEIGHT')
-          )}
-        </div>
+        {/* Pre-launch drop badge only (no tagline over image) */}
+        {activePreLaunch && (
+          <div className="absolute top-3 left-3 z-10 px-2 py-0.5 bg-black/60 backdrop-blur-md text-[9px] font-mono tracking-widest text-snake-green font-bold border border-snake-green/30 uppercase max-w-[75%] truncate pointer-events-none">
+            PRE-BOOK // FIRST DROP
+          </div>
+        )}
 
         {/* Wishlist Button - 44px min tap target */}
         <button
