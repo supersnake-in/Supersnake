@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { ArrowRight, ArrowDown, Sparkles, Instagram, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ProductCard } from '@/components/product/ProductCard';
-import { SuperSnakeLogo } from '@/components/brand/SuperSnakeLogo';
 import { formatPrice } from '@/lib/design-tokens';
 import { useStore, DEFAULT_HOMEPAGE_CONFIG, cleanHeroImages, cleanCollectionImage, cleanCommunityImages } from '@/lib/store';
 
@@ -759,11 +758,6 @@ export default function HomePage() {
           08 — BRAND STATEMENT (BLACK SCREEN, MONUMENTAL STATEMENT)
           ============================================================ */}
       <section className="py-24 sm:py-36 md:py-52 px-4 sm:px-6 md:px-12 border-t border-white/[0.06] bg-black flex flex-col items-center justify-center text-center relative overflow-hidden">
-        {/* Subtle Watermark Logo */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
-          <SuperSnakeLogo size="hero" showText={false} withLink={false} />
-        </div>
-
         <div className="relative z-10 max-w-4xl space-y-6 sm:space-y-8">
           <span className="text-[10px] font-mono tracking-mega text-snake-green uppercase">
             SUPERSNAKE MANIFESTO
@@ -774,10 +768,6 @@ export default function HomePage() {
             <br />
             TO BLEND IN.
           </h2>
-
-          <div className="pt-2 sm:pt-4 flex justify-center">
-            <SuperSnakeLogo size="md" showText={false} withGlow={true} />
-          </div>
         </div>
       </section>
 
