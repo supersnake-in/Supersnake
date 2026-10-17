@@ -9,9 +9,9 @@
 
 export async function compressImage(
   file: File,
-  maxWidth: number = 1800,
-  maxHeight: number = 1800,
-  quality: number = 0.85
+  maxWidth: number = 1400,
+  maxHeight: number = 1750,
+  quality: number = 0.82
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     // Check if it's an image file or has an image extension
@@ -45,8 +45,8 @@ export async function compressImage(
         try {
           let { width, height } = img;
 
-          // If image is already smaller than max dimensions and under 400KB, keep it
-          if (width <= maxWidth && height <= maxHeight && file.size < 400 * 1024) {
+          // If image is already WebP and under 120KB, preserve it directly
+          if (file.type === 'image/webp' && width <= maxWidth && height <= maxHeight && file.size < 120 * 1024) {
             return resolve(src);
           }
 
